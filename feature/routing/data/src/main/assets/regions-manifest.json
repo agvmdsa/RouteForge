@@ -1,0 +1,24 @@
+[
+  {
+    "id": "berlin-e10-n50",
+    "displayName": "Berlin area (E10_N50)",
+    "minLatitude": 50.0,
+    "minLongitude": 10.0,
+    "maxLatitude": 55.0,
+    "maxLongitude": 15.0,
+    "tileIds": ["E10_N50.rd5"],
+    "approximateSizeBytes": 124922981,
+    "status": "BUNDLED"
+  },
+  {
+    "id": "benelux-e5-n50",
+    "displayName": "Benelux area (E5_N50)",
+    "minLatitude": 50.0,
+    "minLongitude": 5.0,
+    "maxLatitude": 55.0,
+    "maxLongitude": 10.0,
+    "tileIds": ["E5_N50.rd5"],
+    "approximateSizeBytes": 45000000,
+    "status": "NOT_DOWNLOADED"
+  }
+]

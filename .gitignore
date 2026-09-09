@@ -12,3 +12,4 @@ local.properties
 .specify/
 .claude/
 /specs/
+feature/routing/data/src/main/assets/tiles/*.rd5
