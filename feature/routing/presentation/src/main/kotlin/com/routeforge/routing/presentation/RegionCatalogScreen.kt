@@ -119,7 +119,6 @@ private fun RegionRow(
 
 private fun RegionStatus.toDisplayText(): String =
     when (this) {
-        RegionStatus.BUNDLED -> "Bundled"
         RegionStatus.DOWNLOADED -> "Downloaded"
         RegionStatus.DOWNLOADING -> "Downloading…"
         RegionStatus.NOT_DOWNLOADED -> "Not downloaded"
@@ -135,7 +134,7 @@ private fun RegionCatalogScreenPreview() {
                     regions =
                         listOf(
                             Region(
-                                id = "bundled",
+                                id = "downloaded",
                                 displayName = "Berlin area",
                                 minLatitude = 50.0,
                                 minLongitude = 10.0,
@@ -143,7 +142,7 @@ private fun RegionCatalogScreenPreview() {
                                 maxLongitude = 15.0,
                                 tileIds = listOf("E10_N50.rd5"),
                                 approximateSizeBytes = 45_000_000,
-                                status = RegionStatus.BUNDLED,
+                                status = RegionStatus.DOWNLOADED,
                             ),
                             Region(
                                 id = "benelux",

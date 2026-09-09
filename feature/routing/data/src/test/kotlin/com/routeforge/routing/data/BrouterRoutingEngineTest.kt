@@ -19,7 +19,7 @@ private val coveredRegion =
         maxLongitude = 1.0,
         tileIds = listOf("E0_N0.rd5"),
         approximateSizeBytes = 1L,
-        status = RegionStatus.BUNDLED,
+        status = RegionStatus.NOT_DOWNLOADED,
     )
 
 class BrouterRoutingEngineTest {

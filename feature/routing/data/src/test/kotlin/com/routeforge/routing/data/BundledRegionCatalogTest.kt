@@ -12,17 +12,6 @@ private val manifestJson =
     """
     [
       {
-        "id": "bundled-region",
-        "displayName": "Bundled Region",
-        "minLatitude": 0.0,
-        "minLongitude": 0.0,
-        "maxLatitude": 1.0,
-        "maxLongitude": 1.0,
-        "tileIds": ["bundled.rd5"],
-        "approximateSizeBytes": 10,
-        "status": "BUNDLED"
-      },
-      {
         "id": "downloadable-region",
         "displayName": "Downloadable Region",
         "minLatitude": 2.0,
@@ -30,8 +19,7 @@ private val manifestJson =
         "maxLatitude": 3.0,
         "maxLongitude": 3.0,
         "tileIds": ["downloadable.rd5"],
-        "approximateSizeBytes": 20,
-        "status": "NOT_DOWNLOADED"
+        "approximateSizeBytes": 20
       }
     ]
     """.trimIndent()
@@ -43,18 +31,6 @@ private fun fakeAssetOpener(assetPath: String): InputStream =
     }
 
 class BundledRegionCatalogTest {
-    @Test
-    fun `bundled region always reports bundled status`(
-        @TempDir segmentDir: File,
-        @TempDir profileDir: File,
-    ) {
-        val catalog = BundledRegionCatalog(segmentDir, profileDir, ::fakeAssetOpener)
-
-        val region = catalog.listRegions().first { it.id == "bundled-region" }
-
-        assertEquals(RegionStatus.BUNDLED, region.status)
-    }
-
     @Test
     fun `region not yet downloaded reports not downloaded until its tile exists on disk`(
         @TempDir segmentDir: File,

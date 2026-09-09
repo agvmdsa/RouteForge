@@ -28,10 +28,6 @@ class BundledRegionCatalog(
 
     init {
         profileFile
-        manifest
-            .filter { it.status == RegionStatus.BUNDLED }
-            .flatMap { it.tileIds }
-            .forEach { tileId -> copyAssetIfMissing("tiles/$tileId", File(segmentDirectory, tileId)) }
     }
 
     override fun listRegions(): List<Region> = manifest.map { it.toRegion(currentStatus(it)) }
@@ -50,7 +46,6 @@ class BundledRegionCatalog(
     }
 
     private fun currentStatus(entry: RegionManifestEntry): RegionStatus {
-        if (entry.status == RegionStatus.BUNDLED) return RegionStatus.BUNDLED
         if (entry.id in downloadingRegionIds) return RegionStatus.DOWNLOADING
         val allTilesPresent = entry.tileIds.isNotEmpty() && entry.tileIds.all { File(segmentDirectory, it).exists() }
         return if (allTilesPresent) RegionStatus.DOWNLOADED else RegionStatus.NOT_DOWNLOADED

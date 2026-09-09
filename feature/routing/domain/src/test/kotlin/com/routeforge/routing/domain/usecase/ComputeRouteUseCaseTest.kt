@@ -12,22 +12,22 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 
-private val bundledRegion =
+private val availableRegion =
     Region(
-        id = "bundled",
-        displayName = "Bundled Region",
+        id = "available",
+        displayName = "Available Region",
         minLatitude = 0.0,
         minLongitude = 0.0,
         maxLatitude = 10.0,
         maxLongitude = 10.0,
         tileIds = listOf("E0_N0.rd5"),
         approximateSizeBytes = 1_000L,
-        status = RegionStatus.BUNDLED,
+        status = RegionStatus.DOWNLOADED,
     )
 
 class ComputeRouteUseCaseTest {
     private val routingEngine = FakeRoutingEngine()
-    private val regionCatalog = FakeRegionCatalog(regions = listOf(bundledRegion))
+    private val regionCatalog = FakeRegionCatalog(regions = listOf(availableRegion))
     private val useCase = ComputeRouteUseCase(routingEngine, regionCatalog)
 
     @Test

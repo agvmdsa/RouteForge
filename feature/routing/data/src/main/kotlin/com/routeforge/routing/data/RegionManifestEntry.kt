@@ -14,7 +14,6 @@ data class RegionManifestEntry(
     val maxLongitude: Double,
     val tileIds: List<String>,
     val approximateSizeBytes: Long,
-    val status: RegionStatus,
 ) {
     fun toRegion(resolvedStatus: RegionStatus): Region =
         Region(

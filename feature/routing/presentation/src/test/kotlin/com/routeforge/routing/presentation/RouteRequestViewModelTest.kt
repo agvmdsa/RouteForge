@@ -119,7 +119,7 @@ class RouteRequestViewModelTest {
                     maxLongitude = 10.0,
                     tileIds = listOf("t.rd5"),
                     approximateSizeBytes = 1,
-                    status = RegionStatus.BUNDLED,
+                    status = RegionStatus.DOWNLOADED,
                 ),
             )
         routingEngine.snappableLatitudes = setOf(2.0)
