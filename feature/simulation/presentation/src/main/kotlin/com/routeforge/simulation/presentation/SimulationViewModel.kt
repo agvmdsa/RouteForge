@@ -19,9 +19,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-private const val NOT_AUTHORIZED_MESSAGE =
-    "RouteForge isn't set up as the device's mock location provider yet. Finish setup to simulate a location."
-
 class SimulationViewModel(
     private val teleportUseCase: TeleportUseCase,
     private val startRouteSimulationUseCase: StartRouteSimulationUseCase,
@@ -84,7 +81,7 @@ class SimulationViewModel(
             reportUnauthorized()
             return
         }
-        _state.update { it.copy(errorMessage = null, isBlockedByAuthorization = false) }
+        _state.update { it.copy(errorType = null, isBlockedByAuthorization = false) }
         teleportUseCase(latitude, longitude)
     }
 
@@ -92,7 +89,7 @@ class SimulationViewModel(
         val route = _state.value.loadedRoute ?: return
         val speed = _state.value.speedInput.toFloatOrNull()
         if (speed == null || speed <= 0f) {
-            _state.update { it.copy(errorMessage = "Enter a valid simulated speed.") }
+            _state.update { it.copy(errorType = SimulationErrorType.INVALID_SPEED) }
             return
         }
 
@@ -100,11 +97,16 @@ class SimulationViewModel(
             reportUnauthorized()
             return
         }
-        _state.update { it.copy(errorMessage = null, isBlockedByAuthorization = false) }
+        _state.update { it.copy(errorType = null, isBlockedByAuthorization = false) }
         startRouteSimulationUseCase(route, speed)
     }
 
     private fun reportUnauthorized() {
-        _state.update { it.copy(errorMessage = NOT_AUTHORIZED_MESSAGE, isBlockedByAuthorization = true) }
+        _state.update {
+            it.copy(
+                errorType = SimulationErrorType.NOT_AUTHORIZED,
+                isBlockedByAuthorization = true,
+            )
+        }
     }
 }

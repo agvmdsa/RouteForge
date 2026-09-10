@@ -101,7 +101,7 @@ class SimulationViewModelTest {
 
         assertTrue(controller.teleportCalls.isEmpty())
         assertTrue(viewModel.state.value.isBlockedByAuthorization)
-        assertEquals(true, viewModel.state.value.errorMessage != null)
+        assertEquals(SimulationErrorType.NOT_AUTHORIZED, viewModel.state.value.errorType)
     }
 
     @Test
@@ -115,7 +115,7 @@ class SimulationViewModelTest {
 
         assertTrue(controller.startRouteCalls.isEmpty())
         assertTrue(viewModel.state.value.isBlockedByAuthorization)
-        assertEquals(true, viewModel.state.value.errorMessage != null)
+        assertEquals(SimulationErrorType.NOT_AUTHORIZED, viewModel.state.value.errorType)
     }
 
     @Test

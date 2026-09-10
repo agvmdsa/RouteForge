@@ -1,5 +1,9 @@
 package com.routeforge.simulation.presentation
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -28,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,6 +52,21 @@ fun SimulationRoot(
     viewModel: SimulationViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    val runtimePermissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
+
+    LaunchedEffect(Unit) {
+        val requiredPermissions =
+            buildList {
+                add(Manifest.permission.ACCESS_FINE_LOCATION)
+                add(Manifest.permission.ACCESS_COARSE_LOCATION)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    add(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        runtimePermissionLauncher.launch(requiredPermissions.toTypedArray())
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
@@ -78,13 +98,13 @@ fun SimulationScreen(
 
             if (state.isBlockedByAuthorization) {
                 BlockedByAuthorizationContent(
-                    message = state.errorMessage.orEmpty(),
+                    message = stringResource(R.string.simulation_error_not_authorized),
                     onOpenSetup = { onAction(SimulationAction.OnOpenSetupClick) },
                 )
             } else {
-                state.errorMessage?.let { message ->
+                state.errorType?.let { errorType ->
                     Text(
-                        text = message,
+                        text = errorType.toMessage(),
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.padding(horizontal = 16.dp),
                     )
@@ -94,7 +114,7 @@ fun SimulationScreen(
             RouteSimulationControls(state = state, onAction = onAction)
 
             TextButton(onClick = { onAction(SimulationAction.OnPlanRouteClick) }) {
-                Text("Plan a route")
+                Text(stringResource(R.string.simulation_plan_route_button))
             }
         }
     }
@@ -182,22 +202,33 @@ private fun TeleportConfirmationDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Teleport to this location?") },
-        text = { Text("Latitude: $latitude\nLongitude: $longitude") },
-        confirmButton = { TextButton(onClick = onConfirm) { Text("Confirm") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        title = { Text(stringResource(R.string.simulation_teleport_confirm_title)) },
+        text = { Text(stringResource(R.string.simulation_teleport_confirm_message, latitude, longitude)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.simulation_teleport_confirm_button)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.simulation_teleport_cancel_button)) }
+        },
     )
 }
+
+@Composable
+private fun SimulationErrorType.toMessage(): String =
+    when (this) {
+        SimulationErrorType.NOT_AUTHORIZED -> stringResource(R.string.simulation_error_not_authorized)
+        SimulationErrorType.INVALID_SPEED -> stringResource(R.string.simulation_error_invalid_speed)
+    }
 
 @Composable
 private fun SessionStatusText(session: SimulationSession?) {
     val text =
         when {
-            session == null -> "No simulation active"
-            session.mode == SimulationMode.STATIONARY -> "Teleported: reporting a fixed location"
-            session.status == SimulationStatus.PAUSED -> "Route simulation paused"
-            session.status == SimulationStatus.COMPLETED -> "Route simulation complete"
-            else -> "Simulating movement along the route"
+            session == null -> stringResource(R.string.simulation_status_no_simulation)
+            session.mode == SimulationMode.STATIONARY -> stringResource(R.string.simulation_status_teleported)
+            session.status == SimulationStatus.PAUSED -> stringResource(R.string.simulation_status_route_paused)
+            session.status == SimulationStatus.COMPLETED -> stringResource(R.string.simulation_status_route_complete)
+            else -> stringResource(R.string.simulation_status_route_running)
         }
     Text(text = text, modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.titleMedium)
 }
@@ -210,7 +241,7 @@ private fun BlockedByAuthorizationContent(
     Column(modifier = Modifier.padding(16.dp)) {
         Text(text = message, color = MaterialTheme.colorScheme.error)
         Button(onClick = onOpenSetup) {
-            Text("Go to setup")
+            Text(stringResource(R.string.simulation_go_to_setup_button))
         }
     }
 }
@@ -224,17 +255,20 @@ private fun RouteSimulationControls(
     val session = state.session
 
     Column(modifier = Modifier.padding(16.dp)) {
-        Text(text = "Loaded route: ${route.distanceMeters.toInt()} m", style = MaterialTheme.typography.bodyMedium)
+        Text(
+            text = stringResource(R.string.simulation_loaded_route_label, route.distanceMeters.toInt()),
+            style = MaterialTheme.typography.bodyMedium,
+        )
 
         if (session == null || session.mode != SimulationMode.ROUTE) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = state.speedInput,
                     onValueChange = { onAction(SimulationAction.OnSpeedInputChange(it)) },
-                    label = { Text("Speed (m/s)") },
+                    label = { Text(stringResource(R.string.simulation_speed_input_label)) },
                 )
                 Button(onClick = { onAction(SimulationAction.OnStartRouteSimulation) }) {
-                    Text("Start simulation")
+                    Text(stringResource(R.string.simulation_start_button))
                 }
             }
         } else {
@@ -242,16 +276,16 @@ private fun RouteSimulationControls(
                 when (session.status) {
                     SimulationStatus.RUNNING ->
                         Button(onClick = { onAction(SimulationAction.OnPauseSimulation) }) {
-                            Text("Pause")
+                            Text(stringResource(R.string.simulation_pause_button))
                         }
                     SimulationStatus.PAUSED ->
                         Button(onClick = { onAction(SimulationAction.OnResumeSimulation) }) {
-                            Text("Resume")
+                            Text(stringResource(R.string.simulation_resume_button))
                         }
                     SimulationStatus.COMPLETED -> Unit
                 }
                 Button(onClick = { onAction(SimulationAction.OnStopSimulation) }) {
-                    Text("Stop")
+                    Text(stringResource(R.string.simulation_stop_button))
                 }
             }
         }
@@ -274,7 +308,7 @@ private fun SimulationScreenBlockedPreview() {
             state =
                 SimulationState(
                     isBlockedByAuthorization = true,
-                    errorMessage = "RouteForge isn't set up as the device's mock location provider yet.",
+                    errorType = SimulationErrorType.NOT_AUTHORIZED,
                 ),
             onAction = {},
         )

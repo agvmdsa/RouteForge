@@ -29,7 +29,7 @@ class SimulationForegroundService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        startInForeground(buildNotification(contentText = "Simulating movement along a route."))
+        startInForeground(buildNotification(contentText = getString(R.string.simulation_notification_text_route_running)))
 
         simulationController.session
             .onEach { session ->
@@ -66,15 +66,16 @@ class SimulationForegroundService : Service() {
         val channel =
             NotificationChannel(
                 NOTIFICATION_CHANNEL_ID,
-                "Location simulation",
+                getString(R.string.simulation_notification_channel_name),
                 NotificationManager.IMPORTANCE_LOW,
             )
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
     private fun buildNotification(contentText: String): Notification =
-        Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setContentTitle("RouteForge is simulating your location")
+        Notification
+            .Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setContentTitle(getString(R.string.simulation_notification_title))
             .setContentText(contentText)
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setOngoing(true)
@@ -86,10 +87,10 @@ class SimulationForegroundService : Service() {
     ) {
         val contentText =
             when {
-                mode == SimulationMode.STATIONARY -> "Reporting a fixed simulated location."
-                status == SimulationStatus.PAUSED -> "Route simulation paused."
-                status == SimulationStatus.COMPLETED -> "Route simulation complete."
-                else -> "Simulating movement along a route."
+                mode == SimulationMode.STATIONARY -> getString(R.string.simulation_notification_text_stationary)
+                status == SimulationStatus.PAUSED -> getString(R.string.simulation_notification_text_route_paused)
+                status == SimulationStatus.COMPLETED -> getString(R.string.simulation_notification_text_route_complete)
+                else -> getString(R.string.simulation_notification_text_route_running)
             }
         getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, buildNotification(contentText))
     }

@@ -1,0 +1,8 @@
+<resources>
+    <string name="simulation_notification_channel_name">Location simulation</string>
+    <string name="simulation_notification_title">RouteForge is simulating your location</string>
+    <string name="simulation_notification_text_stationary">Reporting a fixed simulated location.</string>
+    <string name="simulation_notification_text_route_paused">Route simulation paused.</string>
+    <string name="simulation_notification_text_route_complete">Route simulation complete.</string>
+    <string name="simulation_notification_text_route_running">Simulating movement along a route.</string>
+</resources>

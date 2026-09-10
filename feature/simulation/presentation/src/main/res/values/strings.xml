@@ -1,0 +1,21 @@
+<resources>
+    <string name="simulation_teleport_confirm_title">Teleport to this location?</string>
+    <string name="simulation_teleport_confirm_message">Latitude: %1$s\nLongitude: %2$s</string>
+    <string name="simulation_teleport_confirm_button">Confirm</string>
+    <string name="simulation_teleport_cancel_button">Cancel</string>
+    <string name="simulation_plan_route_button">Plan a route</string>
+    <string name="simulation_status_no_simulation">No simulation active</string>
+    <string name="simulation_status_teleported">Teleported: reporting a fixed location</string>
+    <string name="simulation_status_route_paused">Route simulation paused</string>
+    <string name="simulation_status_route_complete">Route simulation complete</string>
+    <string name="simulation_status_route_running">Simulating movement along the route</string>
+    <string name="simulation_go_to_setup_button">Go to setup</string>
+    <string name="simulation_loaded_route_label">Loaded route: %1$d m</string>
+    <string name="simulation_speed_input_label">Speed (m/s)</string>
+    <string name="simulation_start_button">Start simulation</string>
+    <string name="simulation_pause_button">Pause</string>
+    <string name="simulation_resume_button">Resume</string>
+    <string name="simulation_stop_button">Stop</string>
+    <string name="simulation_error_not_authorized">RouteForge isn\'t set up as the device\'s mock location provider yet. Finish setup to simulate a location.</string>
+    <string name="simulation_error_invalid_speed">Enter a valid simulated speed.</string>
+</resources>
