@@ -1,8 +1,8 @@
 package com.routeforge.routing.domain
 
+import com.routeforge.coredomain.model.Route
+import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.model.Region
-import com.routeforge.routing.domain.model.Route
-import com.routeforge.routing.domain.model.RoutePoint
 
 class FakeRoutingEngine : RoutingEngine {
     var snapResult: (RoutePoint) -> RoutePoint = {

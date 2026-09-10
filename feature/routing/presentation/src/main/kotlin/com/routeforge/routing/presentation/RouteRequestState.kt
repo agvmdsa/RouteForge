@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation
 
-import com.routeforge.routing.domain.model.Route
+import com.routeforge.coredomain.model.Route
 
 data class RouteRequestState(
     val startLatitudeInput: String = "",

@@ -4,10 +4,10 @@ import btools.mapaccess.OsmNode
 import btools.router.OsmNodeNamed
 import btools.router.OsmTrack
 import btools.router.RoutingContext
+import com.routeforge.coredomain.model.Route
+import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.RoutingEngine
 import com.routeforge.routing.domain.model.Region
-import com.routeforge.routing.domain.model.Route
-import com.routeforge.routing.domain.model.RoutePoint
 import java.io.File
 import btools.router.RoutingEngine as BrouterEngine
 

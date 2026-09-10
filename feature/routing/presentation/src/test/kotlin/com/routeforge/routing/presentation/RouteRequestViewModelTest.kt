@@ -1,10 +1,11 @@
 package com.routeforge.routing.presentation
 
+import com.routeforge.coredomain.LastComputedRouteHolder
+import com.routeforge.coredomain.model.Route
+import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.RoutingEngine
 import com.routeforge.routing.domain.model.Region
 import com.routeforge.routing.domain.model.RegionStatus
-import com.routeforge.routing.domain.model.Route
-import com.routeforge.routing.domain.model.RoutePoint
 import com.routeforge.routing.domain.usecase.ComputeRouteUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -39,6 +40,7 @@ class RouteRequestViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val routingEngine = FakeRoutingEngine()
     private val regionCatalog = FakeRegionCatalog()
+    private val lastComputedRouteHolder = LastComputedRouteHolder()
 
     @BeforeEach
     fun setUp() {
@@ -53,6 +55,7 @@ class RouteRequestViewModelTest {
     private fun createViewModel(): RouteRequestViewModel =
         RouteRequestViewModel(
             computeRoute = ComputeRouteUseCase(routingEngine, regionCatalog),
+            lastComputedRouteHolder = lastComputedRouteHolder,
             backgroundDispatcher = dispatcher,
         )
 

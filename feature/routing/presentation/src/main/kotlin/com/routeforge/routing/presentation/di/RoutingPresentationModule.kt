@@ -8,6 +8,6 @@ import org.koin.dsl.module
 
 val routingPresentationModule =
     module {
-        viewModel { RouteRequestViewModel(computeRoute = get()) }
+        viewModel { RouteRequestViewModel(computeRoute = get(), lastComputedRouteHolder = get()) }
         viewModelOf(::RegionCatalogViewModel)
     }

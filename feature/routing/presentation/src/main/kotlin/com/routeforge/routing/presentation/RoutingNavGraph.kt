@@ -3,7 +3,7 @@ package com.routeforge.routing.presentation
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import com.routeforge.routing.domain.model.Route
+import com.routeforge.coredomain.model.Route
 
 fun NavGraphBuilder.routingGraph(
     navController: NavController,

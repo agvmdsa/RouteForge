@@ -1,4 +1,4 @@
-package com.routeforge.routing.domain.model
+package com.routeforge.coredomain.model
 
 data class RoutePoint(
     val latitude: Double,

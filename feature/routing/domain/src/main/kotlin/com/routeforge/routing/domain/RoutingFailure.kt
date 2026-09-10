@@ -1,7 +1,7 @@
 package com.routeforge.routing.domain
 
 import com.routeforge.coredomain.Error
-import com.routeforge.routing.domain.model.RoutePoint
+import com.routeforge.coredomain.model.RoutePoint
 
 sealed interface RoutingFailure : Error {
     data class PointNotRoutable(

@@ -8,5 +8,6 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:domain"))
     implementation(project(":feature:mocklocationsetup:domain"))
 }

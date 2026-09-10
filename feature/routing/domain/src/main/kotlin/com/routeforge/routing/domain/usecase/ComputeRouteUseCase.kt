@@ -1,11 +1,11 @@
 package com.routeforge.routing.domain.usecase
 
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.model.Route
+import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.RegionCatalog
 import com.routeforge.routing.domain.RoutingEngine
 import com.routeforge.routing.domain.RoutingFailure
-import com.routeforge.routing.domain.model.Route
-import com.routeforge.routing.domain.model.RoutePoint
 
 class ComputeRouteUseCase(
     private val routingEngine: RoutingEngine,

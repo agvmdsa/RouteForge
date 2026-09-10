@@ -2,9 +2,10 @@ package com.routeforge.routing.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routeforge.coredomain.LastComputedRouteHolder
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.RoutingFailure
-import com.routeforge.routing.domain.model.RoutePoint
 import com.routeforge.routing.domain.usecase.ComputeRouteUseCase
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +19,7 @@ import kotlinx.coroutines.withContext
 
 class RouteRequestViewModel(
     private val computeRoute: ComputeRouteUseCase,
+    private val lastComputedRouteHolder: LastComputedRouteHolder,
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val _state = MutableStateFlow(RouteRequestState())
@@ -75,6 +77,7 @@ class RouteRequestViewModel(
                     _state.update { it.copy(isComputing = false, route = null, errorMessage = result.error.toUserMessage()) }
             }
             if (result is Result.Success) {
+                lastComputedRouteHolder.set(result.data)
                 _events.send(RouteRequestEvent.RouteComputed(result.data))
             }
         }
