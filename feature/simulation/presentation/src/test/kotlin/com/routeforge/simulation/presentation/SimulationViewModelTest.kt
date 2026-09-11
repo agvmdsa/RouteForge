@@ -2,7 +2,14 @@ package com.routeforge.simulation.presentation
 
 import com.routeforge.coredomain.LastComputedRouteHolder
 import com.routeforge.coredomain.model.Route
-import com.routeforge.simulation.domain.usecase.ObserveSimulationSessionUseCase
+import com.routeforge.simulation.domain.LastKnownRealLocationHolder
+import com.routeforge.simulation.domain.model.RealLocation
+import com.routeforge.simulation.domain.model.SimulationMode
+import com.routeforge.simulation.domain.model.SimulationSession
+import com.routeforge.simulation.domain.model.SimulationStatus
+import com.routeforge.simulation.domain.usecase.IsNetworkConnectedUseCase
+import com.routeforge.simulation.domain.usecase.ObserveMockedSessionUseCase
+import com.routeforge.simulation.domain.usecase.ObserveRealLocationUseCase
 import com.routeforge.simulation.domain.usecase.PauseSimulationUseCase
 import com.routeforge.simulation.domain.usecase.ResumeSimulationUseCase
 import com.routeforge.simulation.domain.usecase.StartRouteSimulationUseCase
@@ -31,6 +38,9 @@ class SimulationViewModelTest {
     private val controller = FakeSimulationController()
     private val authorizationChecker = FakeMockLocationAuthorizationChecker()
     private val lastComputedRouteHolder = LastComputedRouteHolder()
+    private val realLocationDataSource = FakeRealLocationDataSource()
+    private val networkConnectivityChecker = FakeNetworkConnectivityChecker()
+    private val lastKnownRealLocationHolder = LastKnownRealLocationHolder()
 
     @BeforeEach
     fun setUp() {
@@ -49,9 +59,12 @@ class SimulationViewModelTest {
             pauseSimulationUseCase = PauseSimulationUseCase(controller),
             resumeSimulationUseCase = ResumeSimulationUseCase(controller),
             stopSimulationUseCase = StopSimulationUseCase(controller),
-            observeSimulationSessionUseCase = ObserveSimulationSessionUseCase(controller),
+            observeMockedSessionUseCase = ObserveMockedSessionUseCase(controller),
+            observeRealLocationUseCase = ObserveRealLocationUseCase(realLocationDataSource),
+            isNetworkConnectedUseCase = IsNetworkConnectedUseCase(networkConnectivityChecker),
             mockLocationAuthorizationChecker = authorizationChecker,
             lastComputedRouteHolder = lastComputedRouteHolder,
+            lastKnownRealLocationHolder = lastKnownRealLocationHolder,
         )
 
     @Test
@@ -142,5 +155,159 @@ class SimulationViewModelTest {
         assertEquals(1, controller.pauseCallCount)
         assertEquals(1, controller.resumeCallCount)
         assertEquals(1, controller.stopCallCount)
+    }
+
+    @Test
+    fun `clicking cancel mock sets a pending confirmation without stopping the controller`() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(SimulationAction.OnCancelMockClick)
+
+        assertTrue(viewModel.state.value.isPendingCancelMock)
+        assertEquals(0, controller.stopCallCount)
+    }
+
+    @Test
+    fun `confirming cancel mock stops the controller and clears the pending confirmation`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnCancelMockClick)
+
+        viewModel.onAction(SimulationAction.OnConfirmCancelMock)
+
+        assertEquals(1, controller.stopCallCount)
+        assertTrue(!viewModel.state.value.isPendingCancelMock)
+    }
+
+    @Test
+    fun `dismissing cancel mock clears the pending confirmation without stopping the controller`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnCancelMockClick)
+
+        viewModel.onAction(SimulationAction.OnDismissCancelMock)
+
+        assertEquals(0, controller.stopCallCount)
+        assertTrue(!viewModel.state.value.isPendingCancelMock)
+    }
+
+    @Test
+    fun `tapping the map while offline blocks the pending teleport from being confirmed`() {
+        networkConnectivityChecker.connected = false
+        val viewModel = createViewModel()
+
+        viewModel.onAction(SimulationAction.OnMapTap(latitude = 10.0, longitude = 20.0))
+        assertTrue(viewModel.state.value.isPendingTeleportBlockedOffline)
+
+        viewModel.onAction(SimulationAction.OnConfirmTeleport)
+
+        assertTrue(controller.teleportCalls.isEmpty())
+    }
+
+    @Test
+    fun `tapping the map while online never blocks the pending teleport`() {
+        networkConnectivityChecker.connected = true
+        val viewModel = createViewModel()
+
+        viewModel.onAction(SimulationAction.OnMapTap(latitude = 10.0, longitude = 20.0))
+
+        assertTrue(!viewModel.state.value.isPendingTeleportBlockedOffline)
+    }
+
+    @Test
+    fun `on startup with no active mock session the real location is searched and cached`() {
+        realLocationDataSource.location = RealLocation(latitude = 1.0, longitude = 2.0)
+
+        val viewModel = createViewModel()
+
+        assertEquals(RealLocation(latitude = 1.0, longitude = 2.0), viewModel.state.value.realLocation)
+        assertTrue(!viewModel.state.value.isSearchingRealLocation)
+    }
+
+    @Test
+    fun `real location keeps updating continuously while no mock is active`() {
+        val viewModel = createViewModel()
+        realLocationDataSource.location = RealLocation(latitude = 1.0, longitude = 1.0)
+        assertEquals(RealLocation(latitude = 1.0, longitude = 1.0), viewModel.state.value.realLocation)
+
+        realLocationDataSource.location = RealLocation(latitude = 2.0, longitude = 2.0)
+
+        assertEquals(RealLocation(latitude = 2.0, longitude = 2.0), viewModel.state.value.realLocation)
+    }
+
+    @Test
+    fun `stopping an active mock session triggers a fresh real location search`() {
+        realLocationDataSource.location = RealLocation(latitude = 1.0, longitude = 2.0)
+        val viewModel = createViewModel()
+        controller.emit(
+            SimulationSession(
+                mode = SimulationMode.STATIONARY,
+                status = SimulationStatus.RUNNING,
+                latitude = 10.0,
+                longitude = 20.0,
+                bearingDegrees = 0f,
+                speedMetersPerSecond = 0f,
+                route = null,
+                distanceTraveledMeters = 0.0,
+            ),
+        )
+        realLocationDataSource.location = RealLocation(latitude = 3.0, longitude = 4.0)
+
+        controller.emit(null)
+
+        assertEquals(RealLocation(latitude = 3.0, longitude = 4.0), viewModel.state.value.realLocation)
+    }
+
+    @Test
+    fun `real location updates while a mock is active are ignored`() {
+        val viewModel = createViewModel()
+        controller.emit(
+            SimulationSession(
+                mode = SimulationMode.STATIONARY,
+                status = SimulationStatus.RUNNING,
+                latitude = 10.0,
+                longitude = 20.0,
+                bearingDegrees = 0f,
+                speedMetersPerSecond = 0f,
+                route = null,
+                distanceTraveledMeters = 0.0,
+            ),
+        )
+
+        realLocationDataSource.location = RealLocation(latitude = 9.0, longitude = 9.0)
+
+        assertNull(viewModel.state.value.realLocation)
+    }
+
+    @Test
+    fun `granting location permission after an initial failure restarts the real location observation`() {
+        realLocationDataSource.permissionGranted = false
+        val viewModel = createViewModel()
+        realLocationDataSource.permissionGranted = true
+        realLocationDataSource.location = RealLocation(latitude = 5.0, longitude = 6.0)
+
+        viewModel.onAction(SimulationAction.OnLocationPermissionGranted)
+
+        assertEquals(RealLocation(latitude = 5.0, longitude = 6.0), viewModel.state.value.realLocation)
+    }
+
+    @Test
+    fun `granting location permission while a mock is active does not search the real location`() {
+        val viewModel = createViewModel()
+        controller.emit(
+            SimulationSession(
+                mode = SimulationMode.STATIONARY,
+                status = SimulationStatus.RUNNING,
+                latitude = 10.0,
+                longitude = 20.0,
+                bearingDegrees = 0f,
+                speedMetersPerSecond = 0f,
+                route = null,
+                distanceTraveledMeters = 0.0,
+            ),
+        )
+        realLocationDataSource.location = RealLocation(latitude = 5.0, longitude = 6.0)
+
+        viewModel.onAction(SimulationAction.OnLocationPermissionGranted)
+
+        assertNull(viewModel.state.value.realLocation)
     }
 }

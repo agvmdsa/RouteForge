@@ -22,7 +22,15 @@ sealed interface SimulationAction {
 
     data object OnStopSimulation : SimulationAction
 
+    data object OnCancelMockClick : SimulationAction
+
+    data object OnConfirmCancelMock : SimulationAction
+
+    data object OnDismissCancelMock : SimulationAction
+
     data object OnPlanRouteClick : SimulationAction
 
     data object OnOpenSetupClick : SimulationAction
+
+    data object OnLocationPermissionGranted : SimulationAction
 }

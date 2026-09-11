@@ -12,4 +12,5 @@ dependencies {
     implementation(project(":feature:simulation:domain"))
 
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.androidx.core.ktx)
 }

@@ -5,10 +5,17 @@
     <string name="simulation_teleport_cancel_button">Cancel</string>
     <string name="simulation_plan_route_button">Plan a route</string>
     <string name="simulation_status_no_simulation">No simulation active</string>
+    <string name="simulation_status_searching_real_location">Searching for your real location…</string>
     <string name="simulation_status_teleported">Teleported: reporting a fixed location</string>
     <string name="simulation_status_route_paused">Route simulation paused</string>
     <string name="simulation_status_route_complete">Route simulation complete</string>
     <string name="simulation_status_route_running">Simulating movement along the route</string>
+    <string name="simulation_cancel_mock_button">Cancel / return to real location</string>
+    <string name="simulation_cancel_mock_confirm_title">Cancel simulated location?</string>
+    <string name="simulation_cancel_mock_confirm_message">RouteForge will stop reporting the simulated location and switch back to your real location.</string>
+    <string name="simulation_cancel_mock_confirm_button">Cancel simulation</string>
+    <string name="simulation_cancel_mock_dismiss_button">Keep simulating</string>
+    <string name="simulation_teleport_blocked_offline_message">No internet connection — can\'t confirm a teleport to an area whose map couldn\'t load.</string>
     <string name="simulation_go_to_setup_button">Go to setup</string>
     <string name="simulation_loaded_route_label">Loaded route: %1$d m</string>
     <string name="simulation_speed_input_label">Speed (m/s)</string>

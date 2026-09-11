@@ -17,8 +17,8 @@ class FakeSimulationController : SimulationController {
         val speedMetersPerSecond: Float,
     )
 
-    private val _session = MutableStateFlow<SimulationSession?>(null)
-    override val session: StateFlow<SimulationSession?> = _session
+    private val _mockedSession = MutableStateFlow<SimulationSession?>(null)
+    override val mockedSession: StateFlow<SimulationSession?> = _mockedSession
 
     val teleportCalls = mutableListOf<TeleportCall>()
     val startRouteCalls = mutableListOf<StartRouteCall>()
@@ -29,8 +29,8 @@ class FakeSimulationController : SimulationController {
     var stopCallCount = 0
         private set
 
-    fun emit(session: SimulationSession?) {
-        _session.value = session
+    fun emit(mockedSession: SimulationSession?) {
+        _mockedSession.value = mockedSession
     }
 
     override fun teleport(

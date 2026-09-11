@@ -43,11 +43,11 @@ class SimulationControllerImplTest {
 
         controller.teleport(latitude = 12.0, longitude = 34.0)
 
-        val session = controller.session.value
-        assertEquals(SimulationMode.STATIONARY, session?.mode)
-        assertEquals(SimulationStatus.RUNNING, session?.status)
-        assertEquals(12.0, session?.latitude)
-        assertEquals(34.0, session?.longitude)
+        val mockedSession = controller.mockedSession.value
+        assertEquals(SimulationMode.STATIONARY, mockedSession?.mode)
+        assertEquals(SimulationStatus.RUNNING, mockedSession?.status)
+        assertEquals(12.0, mockedSession?.latitude)
+        assertEquals(34.0, mockedSession?.longitude)
         assertEquals(1, publisher.publishedFixes.size)
         assertEquals(12.0, publisher.publishedFixes.first().latitude)
     }
@@ -60,10 +60,10 @@ class SimulationControllerImplTest {
         controller.tick(elapsedSeconds = 1.0)
         controller.tick(elapsedSeconds = 1.0)
 
-        val session = controller.session.value
-        assertEquals(SimulationMode.ROUTE, session?.mode)
-        assertEquals(SimulationStatus.RUNNING, session?.status)
-        assertEquals(20.0, session?.distanceTraveledMeters)
+        val mockedSession = controller.mockedSession.value
+        assertEquals(SimulationMode.ROUTE, mockedSession?.mode)
+        assertEquals(SimulationStatus.RUNNING, mockedSession?.status)
+        assertEquals(20.0, mockedSession?.distanceTraveledMeters)
     }
 
     @Test
@@ -73,7 +73,7 @@ class SimulationControllerImplTest {
         controller.startRoute(shortRoute, speedMetersPerSecond = 100f)
         controller.tick(elapsedSeconds = 1.0)
 
-        val completedSession = controller.session.value
+        val completedSession = controller.mockedSession.value
         assertEquals(SimulationStatus.COMPLETED, completedSession?.status)
         assertEquals(0.0001, completedSession?.longitude)
         val distanceAtCompletion = completedSession?.distanceTraveledMeters
@@ -81,7 +81,7 @@ class SimulationControllerImplTest {
         controller.tick(elapsedSeconds = 1.0)
         controller.tick(elapsedSeconds = 1.0)
 
-        val stillCompletedSession = controller.session.value
+        val stillCompletedSession = controller.mockedSession.value
         assertEquals(SimulationStatus.COMPLETED, stillCompletedSession?.status)
         assertEquals(distanceAtCompletion, stillCompletedSession?.distanceTraveledMeters)
         assertEquals(0.0001, stillCompletedSession?.longitude)
@@ -95,17 +95,17 @@ class SimulationControllerImplTest {
         controller.startRoute(longRoute, speedMetersPerSecond = 10f)
         controller.tick(elapsedSeconds = 1.0)
         controller.pause()
-        val distanceWhenPaused = controller.session.value?.distanceTraveledMeters
+        val distanceWhenPaused = controller.mockedSession.value?.distanceTraveledMeters
 
         controller.tick(elapsedSeconds = 1.0)
-        assertEquals(SimulationStatus.PAUSED, controller.session.value?.status)
-        assertEquals(distanceWhenPaused, controller.session.value?.distanceTraveledMeters)
+        assertEquals(SimulationStatus.PAUSED, controller.mockedSession.value?.status)
+        assertEquals(distanceWhenPaused, controller.mockedSession.value?.distanceTraveledMeters)
 
         controller.resume()
-        assertEquals(SimulationStatus.RUNNING, controller.session.value?.status)
+        assertEquals(SimulationStatus.RUNNING, controller.mockedSession.value?.status)
         controller.tick(elapsedSeconds = 1.0)
 
-        assertEquals((distanceWhenPaused ?: 0.0) + 10.0, controller.session.value?.distanceTraveledMeters)
+        assertEquals((distanceWhenPaused ?: 0.0) + 10.0, controller.mockedSession.value?.distanceTraveledMeters)
     }
 
     @Test
@@ -115,7 +115,7 @@ class SimulationControllerImplTest {
 
         controller.stop()
 
-        assertNull(controller.session.value)
+        assertNull(controller.mockedSession.value)
         assertEquals(1, publisher.clearCallCount)
     }
 
@@ -127,7 +127,7 @@ class SimulationControllerImplTest {
         authorizationChecker.authorized = false
         controller.tick(elapsedSeconds = 1.0)
 
-        assertNull(controller.session.value)
+        assertNull(controller.mockedSession.value)
         assertEquals(1, publisher.clearCallCount)
     }
 }

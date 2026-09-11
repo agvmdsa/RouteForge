@@ -31,12 +31,12 @@ class SimulationForegroundService : Service() {
         createNotificationChannel()
         startInForeground(buildNotification(contentText = getString(R.string.simulation_notification_text_route_running)))
 
-        simulationController.session
-            .onEach { session ->
-                if (session == null) {
+        simulationController.mockedSession
+            .onEach { mockedSession ->
+                if (mockedSession == null) {
                     stopSelf()
                 } else {
-                    updateNotification(session.mode, session.status)
+                    updateNotification(mockedSession.mode, mockedSession.status)
                 }
             }.launchIn(serviceScope)
     }

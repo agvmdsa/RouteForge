@@ -33,8 +33,8 @@ class SimulationControllerImpl(
 ) : SimulationController {
     private val routeProgressCalculator = RouteProgressCalculator()
 
-    private val _session = MutableStateFlow<SimulationSession?>(null)
-    override val session: StateFlow<SimulationSession?> = _session.asStateFlow()
+    private val _mockedSession = MutableStateFlow<SimulationSession?>(null)
+    override val mockedSession: StateFlow<SimulationSession?> = _mockedSession.asStateFlow()
 
     private var tickJob: Job? = null
 
@@ -76,13 +76,13 @@ class SimulationControllerImpl(
     }
 
     override fun pause() {
-        _session.update { current ->
+        _mockedSession.update { current ->
             if (current?.status == SimulationStatus.RUNNING) current.copy(status = SimulationStatus.PAUSED) else current
         }
     }
 
     override fun resume() {
-        _session.update { current ->
+        _mockedSession.update { current ->
             if (current?.status == SimulationStatus.PAUSED) current.copy(status = SimulationStatus.RUNNING) else current
         }
     }
@@ -90,14 +90,14 @@ class SimulationControllerImpl(
     override fun stop() {
         tickJob?.cancel()
         tickJob = null
-        _session.value = null
+        _mockedSession.value = null
         mockLocationPublisher.clear()
         context?.stopService(Intent(context, SimulationForegroundService::class.java))
     }
 
-    private fun startSession(session: SimulationSession) {
+    private fun startSession(mockedSession: SimulationSession) {
         tickJob?.cancel()
-        _session.value = session
+        _mockedSession.value = mockedSession
         publishCurrent()
         context?.startForegroundService(Intent(context, SimulationForegroundService::class.java))
         tickJob =
@@ -110,7 +110,7 @@ class SimulationControllerImpl(
     }
 
     internal fun tick(elapsedSeconds: Double) {
-        val current = _session.value ?: return
+        val current = _mockedSession.value ?: return
 
         if (!mockLocationAuthorizationChecker.isAuthorized()) {
             stop()
@@ -133,12 +133,12 @@ class SimulationControllerImpl(
                 current
             }
 
-        _session.value = updated
+        _mockedSession.value = updated
         publishCurrent()
     }
 
     private fun publishCurrent() {
-        val current = _session.value ?: return
+        val current = _mockedSession.value ?: return
         mockLocationPublisher.publish(
             current.latitude,
             current.longitude,

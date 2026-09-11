@@ -5,7 +5,7 @@ import com.routeforge.simulation.domain.model.SimulationSession
 import kotlinx.coroutines.flow.StateFlow
 
 interface SimulationController {
-    val session: StateFlow<SimulationSession?>
+    val mockedSession: StateFlow<SimulationSession?>
 
     fun teleport(
         latitude: Double,

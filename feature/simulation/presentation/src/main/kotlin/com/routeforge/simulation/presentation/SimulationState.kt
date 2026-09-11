@@ -1,14 +1,19 @@
 package com.routeforge.simulation.presentation
 
 import com.routeforge.coredomain.model.Route
+import com.routeforge.simulation.domain.model.RealLocation
 import com.routeforge.simulation.domain.model.SimulationSession
 
 enum class SimulationErrorType { NOT_AUTHORIZED, INVALID_SPEED }
 
 data class SimulationState(
-    val session: SimulationSession? = null,
+    val mockedSession: SimulationSession? = null,
+    val realLocation: RealLocation? = null,
+    val isSearchingRealLocation: Boolean = false,
     val pendingTeleportLatitude: Double? = null,
     val pendingTeleportLongitude: Double? = null,
+    val isPendingTeleportBlockedOffline: Boolean = false,
+    val isPendingCancelMock: Boolean = false,
     val loadedRoute: Route? = null,
     val speedInput: String = "",
     val errorType: SimulationErrorType? = null,
