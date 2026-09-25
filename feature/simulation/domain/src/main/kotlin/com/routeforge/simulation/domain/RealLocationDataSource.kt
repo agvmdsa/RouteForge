@@ -1,6 +1,6 @@
 package com.routeforge.simulation.domain
 
-import com.routeforge.simulation.domain.model.RealLocation
+import com.routeforge.coredomain.model.RealLocation
 import kotlinx.coroutines.flow.Flow
 
 interface RealLocationDataSource {

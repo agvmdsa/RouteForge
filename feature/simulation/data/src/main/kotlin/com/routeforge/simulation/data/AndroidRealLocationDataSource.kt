@@ -8,8 +8,8 @@ import androidx.core.location.LocationCompat
 import androidx.core.location.LocationListenerCompat
 import androidx.core.location.LocationManagerCompat
 import androidx.core.location.LocationRequestCompat
+import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.simulation.domain.RealLocationDataSource
-import com.routeforge.simulation.domain.model.RealLocation
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow

@@ -1,7 +1,7 @@
 package com.routeforge.simulation.domain.usecase
 
+import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.simulation.domain.RealLocationDataSource
-import com.routeforge.simulation.domain.model.RealLocation
 import kotlinx.coroutines.flow.Flow
 
 class ObserveRealLocationUseCase(

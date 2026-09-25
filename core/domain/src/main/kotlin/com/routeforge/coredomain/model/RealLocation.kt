@@ -1,4 +1,4 @@
-package com.routeforge.simulation.domain.model
+package com.routeforge.coredomain.model
 
 data class RealLocation(
     val latitude: Double,

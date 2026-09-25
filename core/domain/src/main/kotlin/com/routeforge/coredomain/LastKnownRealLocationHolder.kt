@@ -1,6 +1,6 @@
-package com.routeforge.simulation.domain
+package com.routeforge.coredomain
 
-import com.routeforge.simulation.domain.model.RealLocation
+import com.routeforge.coredomain.model.RealLocation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

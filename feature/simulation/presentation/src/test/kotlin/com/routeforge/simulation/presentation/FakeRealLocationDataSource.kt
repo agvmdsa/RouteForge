@@ -1,7 +1,7 @@
 package com.routeforge.simulation.presentation
 
+import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.simulation.domain.RealLocationDataSource
-import com.routeforge.simulation.domain.model.RealLocation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
