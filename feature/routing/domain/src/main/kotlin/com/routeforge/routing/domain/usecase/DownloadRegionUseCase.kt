@@ -15,7 +15,7 @@ class DownloadRegionUseCase(
         onProgress: (Float) -> Unit,
     ): EmptyResult<DataError.Network> {
         val region =
-            regionCatalog.listRegions().firstOrNull { it.id == regionId }
+            regionCatalog.regionById(regionId)
                 ?: return Result.Error(DataError.Network.NOT_FOUND)
         return regionDownloader.download(region, onProgress)
     }

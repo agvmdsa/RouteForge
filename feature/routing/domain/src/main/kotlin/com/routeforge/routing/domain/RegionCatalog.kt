@@ -9,4 +9,8 @@ interface RegionCatalog {
         latitude: Double,
         longitude: Double,
     ): Region?
+
+    /** Resolves a region by id, synthesizing one from the BRouter tile grid if [id] isn't already
+     *  in [listRegions] — lets downloads target a computed tile the user hasn't fetched before. */
+    fun regionById(id: String): Region?
 }

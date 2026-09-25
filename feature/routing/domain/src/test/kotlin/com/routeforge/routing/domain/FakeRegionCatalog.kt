@@ -11,4 +11,6 @@ class FakeRegionCatalog(
         latitude: Double,
         longitude: Double,
     ): Region? = regions.firstOrNull { it.contains(latitude, longitude) }
+
+    override fun regionById(id: String): Region? = regions.firstOrNull { it.id == id }
 }

@@ -15,7 +15,10 @@ data class RegionManifestEntry(
     val tileIds: List<String>,
     val approximateSizeBytes: Long,
 ) {
-    fun toRegion(resolvedStatus: RegionStatus): Region =
+    fun toRegion(
+        resolvedStatus: RegionStatus,
+        missingTileCount: Int,
+    ): Region =
         Region(
             id = id,
             displayName = displayName,
@@ -26,5 +29,6 @@ data class RegionManifestEntry(
             tileIds = tileIds,
             approximateSizeBytes = approximateSizeBytes,
             status = resolvedStatus,
+            missingTileCount = missingTileCount,
         )
 }

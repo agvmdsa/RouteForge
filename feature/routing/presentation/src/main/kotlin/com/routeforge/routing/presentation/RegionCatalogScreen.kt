@@ -61,6 +61,7 @@ fun RegionCatalogScreen(
                 items(state.regions, key = { it.id }) { region ->
                     RegionRow(
                         region = region,
+                        isNeeded = region.id in state.neededRegionIds,
                         downloadProgress = if (state.downloadingRegionId == region.id) state.downloadProgress else null,
                         onDownloadClick = { onAction(RegionCatalogAction.OnDownloadRegion(region.id)) },
                     )
@@ -87,6 +88,7 @@ fun RegionCatalogScreen(
 @Composable
 private fun RegionRow(
     region: Region,
+    isNeeded: Boolean,
     downloadProgress: Float?,
     onDownloadClick: () -> Unit,
 ) {
@@ -97,12 +99,19 @@ private fun RegionRow(
         ) {
             Column {
                 Text(text = region.displayName, style = MaterialTheme.typography.titleMedium)
+                if (isNeeded) {
+                    Text(
+                        text = "Needed for your current route",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
                 Text(
-                    text = "${region.approximateSizeBytes / 1_000_000} MB • ${region.status.toDisplayText()}",
+                    text = "${region.sizeDisplayText()} • ${region.status.toDisplayText()}",
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-            if (region.status == RegionStatus.NOT_DOWNLOADED) {
+            if (region.status == RegionStatus.NOT_DOWNLOADED || region.status == RegionStatus.PARTIALLY_DOWNLOADED) {
                 Button(onClick = onDownloadClick) {
                     Text("Download")
                 }
@@ -117,10 +126,18 @@ private fun RegionRow(
     }
 }
 
+private fun Region.sizeDisplayText(): String =
+    if (status == RegionStatus.PARTIALLY_DOWNLOADED) {
+        "${estimatedMissingBytes / 1_000_000} MB missing of ${approximateSizeBytes / 1_000_000} MB"
+    } else {
+        "${approximateSizeBytes / 1_000_000} MB"
+    }
+
 private fun RegionStatus.toDisplayText(): String =
     when (this) {
         RegionStatus.DOWNLOADED -> "Downloaded"
         RegionStatus.DOWNLOADING -> "Downloading…"
+        RegionStatus.PARTIALLY_DOWNLOADED -> "Partially downloaded"
         RegionStatus.NOT_DOWNLOADED -> "Not downloaded"
     }
 
