@@ -1,0 +1,11 @@
+<resources>
+    <string name="setup_header_title">Set up RouteForge</string>
+    <string name="setup_header_subtitle">A couple of quick steps before RouteForge can simulate a location on this device.</string>
+    <string name="setup_progress_label">%1$d of %2$d done</string>
+    <string name="setup_step_number_label">Step %1$d of %2$d</string>
+    <string name="setup_open_settings_button">Open Settings</string>
+    <string name="setup_ready_title">You\'re all set!</string>
+    <string name="setup_ready_subtitle">Taking you to the map…</string>
+    <string name="setup_blocked_title">Developer Options is disabled</string>
+    <string name="setup_blocked_message">Your device administrator has disabled Developer Options. RouteForge cannot enable mock locations on a managed device where this capability is restricted.</string>
+</resources>

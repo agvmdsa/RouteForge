@@ -17,6 +17,7 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:design-system"))
     implementation(project(":feature:mocklocationsetup:data"))
+    implementation(project(":feature:mocklocationsetup:domain"))
     implementation(project(":feature:mocklocationsetup:presentation"))
     implementation(project(":feature:routing:domain"))
     implementation(project(":feature:routing:data"))

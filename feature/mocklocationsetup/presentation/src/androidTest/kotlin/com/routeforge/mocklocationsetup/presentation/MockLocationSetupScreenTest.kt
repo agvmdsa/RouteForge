@@ -75,7 +75,7 @@ class MockLocationSetupScreenTest {
             MockLocationSetupScreen(state = MockLocationSetupState(isReady = true), onAction = {})
         }
 
-        composeTestRule.onNodeWithText("RouteForge is ready to simulate locations").assertIsDisplayed()
+        composeTestRule.onNodeWithText("You're all set!").assertIsDisplayed()
     }
 
     @Test
@@ -85,7 +85,7 @@ class MockLocationSetupScreenTest {
         }
 
         composeTestRule
-            .onNodeWithText("Your device administrator has disabled Developer Options")
+            .onNodeWithText("Developer Options is disabled")
             .assertIsDisplayed()
     }
 }
