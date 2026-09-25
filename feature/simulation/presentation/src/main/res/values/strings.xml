@@ -46,5 +46,9 @@
     <string name="simulation_start_route_dialog_subtitle">How many times should it play?</string>
     <string name="simulation_start_route_dialog_confirm">Start</string>
     <string name="simulation_start_route_dialog_cancel">Cancel</string>
+    <string name="simulation_cancel_route_confirm_title">Cancel this route?</string>
+    <string name="simulation_cancel_route_confirm_message">This will stop playback (if running) and clear the loaded route. You\'ll need to plan it again to play it.</string>
+    <string name="simulation_cancel_route_confirm_button">Cancel route</string>
+    <string name="simulation_cancel_route_dismiss_button">Keep route</string>
 </resources>
 

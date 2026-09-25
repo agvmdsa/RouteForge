@@ -282,7 +282,7 @@ fun SimulationScreen(
                     verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
                     modifier = Modifier.align(Alignment.BottomEnd).padding(ScreenContentPadding),
                 ) {
-                    FloatingActionButton(onClick = { onAction(SimulationAction.OnStopSimulation) }) {
+                    FloatingActionButton(onClick = { onAction(SimulationAction.OnCancelRouteClick) }) {
                         Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_route_button))
                     }
                     PlaybackButton(state = state, onAction = onAction)
@@ -321,6 +321,13 @@ fun SimulationScreen(
         JoystickInterruptSheet(
             onConfirm = { onAction(SimulationAction.OnConfirmJoystickInterrupt) },
             onDismiss = { onAction(SimulationAction.OnDismissJoystickInterrupt) },
+        )
+    }
+
+    if (state.isPendingCancelRoute) {
+        CancelRouteConfirmationSheet(
+            onConfirm = { onAction(SimulationAction.OnStopSimulation) },
+            onDismiss = { onAction(SimulationAction.OnDismissCancelRoute) },
         )
     }
 

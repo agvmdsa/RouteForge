@@ -34,6 +34,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -270,6 +271,44 @@ class SimulationViewModelTest {
 
         assertEquals(0, controller.stopCallCount)
         assertTrue(!viewModel.state.value.isPendingCancelMock)
+    }
+
+    @Test
+    fun `clicking cancel route sets a pending confirmation without clearing the route`() {
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(SimulationAction.OnCancelRouteClick)
+
+        assertTrue(viewModel.state.value.isPendingCancelRoute)
+        assertEquals(0, controller.stopCallCount)
+        assertNotNull(viewModel.state.value.loadedRoute)
+    }
+
+    @Test
+    fun `confirming cancel route stops the controller, clears the route, and closes the confirmation`() {
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnCancelRouteClick)
+
+        viewModel.onAction(SimulationAction.OnStopSimulation)
+
+        assertEquals(1, controller.stopCallCount)
+        assertTrue(!viewModel.state.value.isPendingCancelRoute)
+        assertNull(viewModel.state.value.loadedRoute)
+    }
+
+    @Test
+    fun `dismissing cancel route keeps the route and clears the pending confirmation`() {
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnCancelRouteClick)
+
+        viewModel.onAction(SimulationAction.OnDismissCancelRoute)
+
+        assertEquals(0, controller.stopCallCount)
+        assertTrue(!viewModel.state.value.isPendingCancelRoute)
+        assertNotNull(viewModel.state.value.loadedRoute)
     }
 
     @Test

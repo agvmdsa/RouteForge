@@ -36,6 +36,12 @@ sealed interface SimulationAction {
 
     data object OnStopSimulation : SimulationAction
 
+    /** Tapping the "cancel route" button opens a confirmation sheet — it doesn't clear the route
+     *  by itself; confirming it dispatches [OnStopSimulation]. */
+    data object OnCancelRouteClick : SimulationAction
+
+    data object OnDismissCancelRoute : SimulationAction
+
     data class OnJoystickDrag(
         val bearingDegrees: Float,
     ) : SimulationAction

@@ -123,9 +123,12 @@ class SimulationViewModel(
             SimulationAction.OnPauseSimulation -> pauseSimulationUseCase()
             SimulationAction.OnResumeSimulation -> resumeSimulationUseCase()
             SimulationAction.OnStopSimulation -> {
+                _state.update { it.copy(isPendingCancelRoute = false) }
                 stopSimulationUseCase()
                 lastComputedRouteHolder.clear()
             }
+            SimulationAction.OnCancelRouteClick -> _state.update { it.copy(isPendingCancelRoute = true) }
+            SimulationAction.OnDismissCancelRoute -> _state.update { it.copy(isPendingCancelRoute = false) }
             is SimulationAction.OnJoystickDrag -> onJoystickDrag(action.bearingDegrees)
             SimulationAction.OnJoystickReleased -> pauseSimulationUseCase()
             SimulationAction.OnToggleJoystick -> onToggleJoystick()

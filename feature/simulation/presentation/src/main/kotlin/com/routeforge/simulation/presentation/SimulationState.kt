@@ -21,6 +21,7 @@ data class SimulationState(
     val executionModeSelection: ExecutionModeSelection = ExecutionModeSelection.ONCE,
     val executionTimesInput: String = "2",
     val isStartRouteDialogOpen: Boolean = false,
+    val isPendingCancelRoute: Boolean = false,
     val isJoystickVisible: Boolean = false,
     val joystickSpeedKmh: Float = 5f,
     val isJoystickInterruptPending: Boolean = false,

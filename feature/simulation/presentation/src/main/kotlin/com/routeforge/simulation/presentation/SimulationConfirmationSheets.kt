@@ -65,3 +65,17 @@ internal fun JoystickInterruptSheet(
         }
     }
 }
+
+@Composable
+internal fun CancelRouteConfirmationSheet(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ConfirmationBottomSheet(title = stringResource(R.string.simulation_cancel_route_confirm_title), onDismiss = onDismiss) {
+        Text(stringResource(R.string.simulation_cancel_route_confirm_message))
+        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+            Button(onClick = onConfirm) { Text(stringResource(R.string.simulation_cancel_route_confirm_button)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.simulation_cancel_route_dismiss_button)) }
+        }
+    }
+}
