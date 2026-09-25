@@ -24,8 +24,13 @@ import com.routeforge.simulation.domain.usecase.StopSimulationUseCase
 import com.routeforge.simulation.domain.usecase.TeleportUseCase
 import com.routeforge.simulation.domain.usecase.UpdateJoystickDirectionUseCase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -144,26 +149,78 @@ class SimulationViewModelTest {
     }
 
     @Test
-    fun `starting a route simulation while unauthorized reports a distinct error and never calls the controller`() {
-        authorizationChecker.authorized = false
+    fun `tapping play with nothing running opens the start route dialog without starting anything`() {
         lastComputedRouteHolder.set(sampleRoute)
         val viewModel = createViewModel()
 
         viewModel.onAction(SimulationAction.OnStartRouteSimulation)
 
+        assertTrue(viewModel.state.value.isStartRouteDialogOpen)
         assertTrue(controller.startRouteCalls.isEmpty())
+    }
+
+    @Test
+    fun `dismissing the start route dialog closes it without starting anything`() {
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnStartRouteSimulation)
+
+        viewModel.onAction(SimulationAction.OnDismissStartRouteDialog)
+
+        assertTrue(!viewModel.state.value.isStartRouteDialogOpen)
+        assertTrue(controller.startRouteCalls.isEmpty())
+    }
+
+    @Test
+    fun `confirming the start route dialog while unauthorized reports a distinct error, closes the dialog, and never calls the controller`() {
+        authorizationChecker.authorized = false
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnStartRouteSimulation)
+
+        viewModel.onAction(SimulationAction.OnConfirmStartRoute)
+
+        assertTrue(controller.startRouteCalls.isEmpty())
+        assertTrue(!viewModel.state.value.isStartRouteDialogOpen)
         assertTrue(viewModel.state.value.isBlockedByAuthorization)
         assertEquals(SimulationErrorType.NOT_AUTHORIZED, viewModel.state.value.errorType)
     }
 
     @Test
-    fun `starting a route simulation with a loaded route and valid speed calls the controller`() {
+    fun `resuming the screen while still authorized does not navigate away`() =
+        runTest(dispatcher) {
+            val viewModel = createViewModel()
+            val receivedEvents = mutableListOf<SimulationEvent>()
+            val collectJob = launch { viewModel.events.toList(receivedEvents) }
+
+            viewModel.onAction(SimulationAction.OnScreenResumed)
+
+            assertTrue(receivedEvents.isEmpty())
+            collectJob.cancel()
+        }
+
+    @Test
+    fun `resuming the screen after authorization was revoked navigates back to setup`() =
+        runTest(dispatcher) {
+            val viewModel = createViewModel()
+            val eventDeferred = async { viewModel.events.first() }
+
+            authorizationChecker.authorized = false
+            viewModel.onAction(SimulationAction.OnScreenResumed)
+
+            assertEquals(SimulationEvent.NavigateToSetup, eventDeferred.await())
+        }
+
+    @Test
+    fun `confirming the start route dialog with a loaded route and valid speed calls the controller`() {
         lastComputedRouteHolder.set(sampleRoute)
         val viewModel = createViewModel()
         viewModel.onAction(SimulationAction.OnPlaybackSpeedChange(18f))
-
         viewModel.onAction(SimulationAction.OnStartRouteSimulation)
 
+        viewModel.onAction(SimulationAction.OnConfirmStartRoute)
+
+        assertTrue(!viewModel.state.value.isStartRouteDialogOpen)
         assertEquals(1, controller.startRouteCalls.size)
         assertEquals(sampleRoute, controller.startRouteCalls.first().route)
         assertEquals(5.0f, controller.startRouteCalls.first().speedSetting.metersPerSecond, 0.001f)
@@ -330,15 +387,17 @@ class SimulationViewModelTest {
     // --- User Story 6: execution mode ---
 
     @Test
-    fun `starting a route with Times and an invalid count reports an error and never calls the controller`() {
+    fun `starting a route with Times and an invalid count reports an error, never calls the controller, and keeps the dialog open`() {
         lastComputedRouteHolder.set(sampleRoute)
         val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnStartRouteSimulation)
         viewModel.onAction(SimulationAction.OnExecutionModeSelected(ExecutionModeSelection.TIMES))
         viewModel.onAction(SimulationAction.OnExecutionTimesInputChange("0"))
 
-        viewModel.onAction(SimulationAction.OnStartRouteSimulation)
+        viewModel.onAction(SimulationAction.OnConfirmStartRoute)
 
         assertTrue(controller.startRouteCalls.isEmpty())
+        assertTrue(viewModel.state.value.isStartRouteDialogOpen)
         assertEquals(SimulationErrorType.INVALID_EXECUTION_TIMES, viewModel.state.value.errorType)
     }
 
@@ -346,10 +405,11 @@ class SimulationViewModelTest {
     fun `starting a route with a valid Times count passes it through to the controller`() {
         lastComputedRouteHolder.set(sampleRoute)
         val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnStartRouteSimulation)
         viewModel.onAction(SimulationAction.OnExecutionModeSelected(ExecutionModeSelection.TIMES))
         viewModel.onAction(SimulationAction.OnExecutionTimesInputChange("3"))
 
-        viewModel.onAction(SimulationAction.OnStartRouteSimulation)
+        viewModel.onAction(SimulationAction.OnConfirmStartRoute)
 
         assertEquals(ExecutionMode.Times(3), controller.startRouteCalls.first().executionMode)
     }

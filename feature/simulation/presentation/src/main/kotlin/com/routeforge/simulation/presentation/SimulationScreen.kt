@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,11 +22,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Loop
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.SportsEsports
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -33,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
@@ -55,6 +59,8 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapMarker
@@ -62,6 +68,7 @@ import com.routeforge.designsystem.map.RouteForgeMapMarkerIcon
 import com.routeforge.designsystem.speed.SpeedSelectorDialog
 import com.routeforge.designsystem.speed.SpeedSelectorFab
 import com.routeforge.designsystem.theme.RouteForgeTheme
+import com.routeforge.simulation.domain.RouteProgressCalculator
 import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.domain.model.SimulationSession
 import com.routeforge.simulation.domain.model.SimulationStatus
@@ -86,7 +93,10 @@ private val BannerContentPadding = 12.dp
 private const val MIN_SPEED_KMH = 0f
 private const val MAX_SPEED_KMH = 150f
 private val SpeedSelectorRangeKmh = MIN_SPEED_KMH..MAX_SPEED_KMH
-private const val MPS_TO_KMH_MULTIPLIER = 3.6f
+private val StartDialogOptionSpacing = 12.dp
+private val StartDialogOptionCornerRadius = 16.dp
+private val StartDialogOptionHorizontalPadding = 16.dp
+private val StartDialogOptionVerticalPadding = 12.dp
 
 @Composable
 fun SimulationRoot(
@@ -127,6 +137,10 @@ fun SimulationRoot(
         }
     }
 
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        viewModel.onAction(SimulationAction.OnScreenResumed)
+    }
+
     SimulationScreen(state = state, onAction = viewModel::onAction)
 }
 
@@ -156,15 +170,43 @@ fun SimulationScreen(
         }
     }
 
+    val markerBackground = MaterialTheme.colorScheme.primary.toArgb()
+    val markerText = MaterialTheme.colorScheme.onPrimary.toArgb()
+    val routeProgressCalculator = remember { RouteProgressCalculator() }
+    val loadedRoute = state.loadedRoute
+    val routeProgress =
+        loadedRoute?.let {
+            val distanceTraveled = state.mockedSession?.takeIf { session -> session.mode == SimulationMode.ROUTE }?.distanceTraveledMeters ?: 0.0
+            routeProgressCalculator.interpolate(it, distanceTraveled)
+        }
+    val traveledPolylinePoints =
+        if (loadedRoute != null && routeProgress != null) {
+            loadedRoute.geometry.subList(0, (routeProgress.segmentIndex + 1).coerceAtMost(loadedRoute.geometry.size)) +
+                (routeProgress.latitude to routeProgress.longitude)
+        } else {
+            emptyList()
+        }
+
     val markers =
         buildList {
+            loadedRoute?.points?.forEachIndexed { index, point ->
+                add(
+                    RouteForgeMapMarker(
+                        id = "waypoint-$index",
+                        latitude = point.latitude,
+                        longitude = point.longitude,
+                        icon = RouteForgeMapMarkerIcon.Numbered(index + 1, markerBackground, markerText),
+                    ),
+                )
+            }
             state.mockedSession?.let {
                 add(
                     RouteForgeMapMarker(
                         id = "mocked",
                         latitude = it.latitude,
                         longitude = it.longitude,
-                        icon = RouteForgeMapMarkerIcon.Dot(AndroidColor.RED),
+                        icon = RouteForgeMapMarkerIcon.Arrow(AndroidColor.RED),
+                        rotationDegrees = it.bearingDegrees,
                     ),
                 )
             }
@@ -187,6 +229,7 @@ fun SimulationScreen(
             RouteForgeMap(
                 markers = markers,
                 polylinePoints = state.loadedRoute?.geometry.orEmpty(),
+                traveledPolylinePoints = traveledPolylinePoints,
                 cameraTarget = cameraTarget,
                 onMapTap = { latitude, longitude -> onAction(SimulationAction.OnMapTap(latitude, longitude)) },
                 modifier = Modifier.fillMaxSize(),
@@ -225,20 +268,41 @@ fun SimulationScreen(
             }
 
             var isJoystickSpeedDialogOpen by remember { mutableStateOf(false) }
+            var isPlaybackSpeedDialogOpen by remember { mutableStateOf(false) }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
                 modifier = Modifier.align(Alignment.BottomStart).padding(ScreenContentPadding),
             ) {
-                if (state.isJoystickVisible) {
+                if (state.loadedRoute != null) {
+                    // A route and the joystick are mutually exclusive (engaging one clears the
+                    // other), so only the controls relevant to what's actually loaded are shown.
                     SpeedSelectorFab(
-                        onClick = { isJoystickSpeedDialogOpen = true },
-                        contentDescription = stringResource(R.string.simulation_joystick_speed_button),
+                        onClick = { isPlaybackSpeedDialogOpen = true },
+                        contentDescription = stringResource(R.string.simulation_playback_speed_button),
                     )
+                } else {
+                    if (state.isJoystickVisible) {
+                        SpeedSelectorFab(
+                            onClick = { isJoystickSpeedDialogOpen = true },
+                            contentDescription = stringResource(R.string.simulation_joystick_speed_button),
+                        )
+                    }
+                    FloatingActionButton(onClick = { onAction(SimulationAction.OnToggleJoystick) }) {
+                        Icon(Icons.Filled.SportsEsports, contentDescription = stringResource(R.string.simulation_joystick_label))
+                    }
                 }
-                FloatingActionButton(onClick = { onAction(SimulationAction.OnToggleJoystick) }) {
-                    Icon(Icons.Filled.SportsEsports, contentDescription = stringResource(R.string.simulation_joystick_label))
-                }
+            }
+            if (isPlaybackSpeedDialogOpen) {
+                SpeedSelectorDialog(
+                    title = stringResource(R.string.simulation_playback_speed_dialog_title),
+                    speedLabel = stringResource(R.string.simulation_speed_value_label, state.playbackSpeedKmh.roundToInt()),
+                    confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
+                    speedKmh = state.playbackSpeedKmh,
+                    onSpeedChange = { kmh -> onAction(SimulationAction.OnPlaybackSpeedChange(kmh)) },
+                    onDismiss = { isPlaybackSpeedDialogOpen = false },
+                    speedRangeKmh = SpeedSelectorRangeKmh,
+                )
             }
 
             if (state.isJoystickVisible) {
@@ -261,35 +325,23 @@ fun SimulationScreen(
             }
 
             if (state.loadedRoute != null) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = ScreenContentPadding),
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(ScreenContentPadding),
                 ) {
-                    if (state.mockedSession?.mode == SimulationMode.ROUTE) {
-                        FloatingActionButton(onClick = { onAction(SimulationAction.OnStopSimulation) }) {
-                            Icon(Icons.Filled.Stop, contentDescription = stringResource(R.string.simulation_stop_button))
-                        }
+                    FloatingActionButton(onClick = { onAction(SimulationAction.OnStopSimulation) }) {
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_route_button))
                     }
                     PlaybackButton(state = state, onAction = onAction)
-                    var isTuneSheetOpen by remember { mutableStateOf(false) }
-                    FloatingActionButton(onClick = { isTuneSheetOpen = true }) {
-                        Icon(Icons.Filled.Tune, contentDescription = stringResource(R.string.simulation_tune_button))
-                    }
-                    if (isTuneSheetOpen) {
-                        val sheetState = rememberModalBottomSheetState()
-                        ModalBottomSheet(onDismissRequest = { isTuneSheetOpen = false }, sheetState = sheetState) {
-                            PlaybackTuningSheetContent(state = state, onAction = onAction)
-                        }
-                    }
                 }
-            }
-
-            FloatingActionButton(
-                onClick = { onAction(SimulationAction.OnPlanRouteClick) },
-                modifier = Modifier.align(Alignment.BottomEnd).padding(ScreenContentPadding),
-            ) {
-                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.simulation_plan_route_button))
+            } else {
+                FloatingActionButton(
+                    onClick = { onAction(SimulationAction.OnPlanRouteClick) },
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(ScreenContentPadding),
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.simulation_plan_route_button))
+                }
             }
         }
     }
@@ -317,6 +369,13 @@ fun SimulationScreen(
         JoystickInterruptSheet(
             onConfirm = { onAction(SimulationAction.OnConfirmJoystickInterrupt) },
             onDismiss = { onAction(SimulationAction.OnDismissJoystickInterrupt) },
+        )
+    }
+
+    if (state.isStartRouteDialogOpen) {
+        StartRouteDialog(
+            state = state,
+            onAction = onAction,
         )
     }
 }
@@ -379,57 +438,6 @@ private fun PlaybackButton(
         modifier = Modifier.size(BigButtonDiameter),
     ) {
         Icon(icon, contentDescription = description)
-    }
-}
-
-@Composable
-private fun PlaybackTuningSheetContent(
-    state: SimulationState,
-    onAction: (SimulationAction) -> Unit,
-) {
-    Column(modifier = Modifier.padding(ScreenContentPadding)) {
-        Text(
-            text =
-                stringResource(
-                    R.string.simulation_effective_speed_label,
-                    (state.mockedSession?.speedMetersPerSecond ?: 0f) * MPS_TO_KMH_MULTIPLIER,
-                ),
-            style = MaterialTheme.typography.titleMedium,
-        )
-
-        var isPlaybackSpeedDialogOpen by remember { mutableStateOf(false) }
-        SpeedSelectorFab(
-            onClick = { isPlaybackSpeedDialogOpen = true },
-            contentDescription = stringResource(R.string.simulation_playback_speed_button),
-        )
-        if (isPlaybackSpeedDialogOpen) {
-            SpeedSelectorDialog(
-                title = stringResource(R.string.simulation_playback_speed_dialog_title),
-                speedLabel = stringResource(R.string.simulation_speed_value_label, state.playbackSpeedKmh.roundToInt()),
-                confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
-                speedKmh = state.playbackSpeedKmh,
-                onSpeedChange = { kmh -> onAction(SimulationAction.OnPlaybackSpeedChange(kmh)) },
-                onDismiss = { isPlaybackSpeedDialogOpen = false },
-                speedRangeKmh = SpeedSelectorRangeKmh,
-            )
-        }
-
-        if (state.mockedSession?.mode != SimulationMode.ROUTE) {
-            Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
-                ExecutionModeSelection.entries.forEach { selection ->
-                    TextButton(onClick = { onAction(SimulationAction.OnExecutionModeSelected(selection)) }) {
-                        Text(selection.toLabel())
-                    }
-                }
-            }
-            if (state.executionModeSelection == ExecutionModeSelection.TIMES) {
-                OutlinedTextField(
-                    value = state.executionTimesInput,
-                    onValueChange = { onAction(SimulationAction.OnExecutionTimesInputChange(it)) },
-                    label = { Text(stringResource(R.string.simulation_execution_times_input_label)) },
-                )
-            }
-        }
     }
 }
 
@@ -497,6 +505,96 @@ private fun JoystickInterruptSheet(
         }
     }
 }
+
+/** Asked right when the user taps Play, so "how many times should this run" is a deliberate,
+ *  well-presented choice rather than a setting buried in the tuning sheet. */
+@Composable
+private fun StartRouteDialog(
+    state: SimulationState,
+    onAction: (SimulationAction) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = { onAction(SimulationAction.OnDismissStartRouteDialog) },
+        title = { Text(stringResource(R.string.simulation_start_route_dialog_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(StartDialogOptionSpacing)) {
+                Text(
+                    text = stringResource(R.string.simulation_start_route_dialog_subtitle),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                ExecutionModeSelection.entries.forEach { selection ->
+                    ExecutionModeOption(
+                        selection = selection,
+                        isSelected = state.executionModeSelection == selection,
+                        onClick = { onAction(SimulationAction.OnExecutionModeSelected(selection)) },
+                    )
+                }
+                if (state.executionModeSelection == ExecutionModeSelection.TIMES) {
+                    OutlinedTextField(
+                        value = state.executionTimesInput,
+                        onValueChange = { onAction(SimulationAction.OnExecutionTimesInputChange(it)) },
+                        label = { Text(stringResource(R.string.simulation_execution_times_input_label)) },
+                        isError = state.errorType == SimulationErrorType.INVALID_EXECUTION_TIMES,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onAction(SimulationAction.OnConfirmStartRoute) }) {
+                Text(stringResource(R.string.simulation_start_route_dialog_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { onAction(SimulationAction.OnDismissStartRouteDialog) }) {
+                Text(stringResource(R.string.simulation_start_route_dialog_cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun ExecutionModeOption(
+    selection: ExecutionModeSelection,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    val contentColor =
+        if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(StartDialogOptionCornerRadius),
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
+            modifier =
+                Modifier.padding(
+                    horizontal = StartDialogOptionHorizontalPadding,
+                    vertical = StartDialogOptionVerticalPadding,
+                ),
+        ) {
+            Icon(imageVector = selection.toIcon(), contentDescription = null, tint = contentColor)
+            Text(
+                text = selection.toLabel(),
+                style = MaterialTheme.typography.bodyLarge,
+                color = contentColor,
+                modifier = Modifier.weight(1f),
+            )
+            RadioButton(selected = isSelected, onClick = onClick)
+        }
+    }
+}
+
+private fun ExecutionModeSelection.toIcon() =
+    when (this) {
+        ExecutionModeSelection.ONCE -> Icons.Filled.PlayArrow
+        ExecutionModeSelection.TIMES -> Icons.Filled.Repeat
+        ExecutionModeSelection.LOOP -> Icons.Filled.Loop
+    }
 
 /** FR-022/FR-023: drag anywhere on this pad to move; bearing is measured clockwise from north.
  *  The inner knob visually tracks the drag so the current direction is always obvious. */

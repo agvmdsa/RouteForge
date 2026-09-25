@@ -22,7 +22,13 @@ sealed interface SimulationAction {
         val value: String,
     ) : SimulationAction
 
+    /** Tapping Play while nothing is running opens the "how many times" dialog — it doesn't start
+     *  the route by itself. */
     data object OnStartRouteSimulation : SimulationAction
+
+    data object OnConfirmStartRoute : SimulationAction
+
+    data object OnDismissStartRouteDialog : SimulationAction
 
     data object OnPauseSimulation : SimulationAction
 
@@ -57,4 +63,8 @@ sealed interface SimulationAction {
     data object OnOpenSetupClick : SimulationAction
 
     data object OnLocationPermissionGranted : SimulationAction
+
+    /** Fired when the screen resumes (app foregrounded, or returning from Settings) — re-checks
+     *  mock-location authorization so a revocation is caught even without the user acting on it. */
+    data object OnScreenResumed : SimulationAction
 }

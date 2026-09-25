@@ -3,9 +3,12 @@ package com.routeforge.designsystem.map
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.drawable.BitmapDrawable
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -14,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
@@ -36,8 +40,11 @@ private const val OSMDROID_PREFS_NAME = "osmdroid_config_routeforge"
 private const val DEFAULT_MAP_ZOOM = 15.0
 private const val FALLBACK_WORLD_MAP_ZOOM = 3.0
 private const val ROUTE_LINE_WIDTH_PX = 6f
+private const val TRAVELED_LINE_COLOR = 0xB2616161.toInt()
+private const val ARROW_BORDER_WIDTH_FRACTION = 0.06f
 private val MarkerDotSize = 20.dp
 private val MarkerBadgeSize = 28.dp
+private val MarkerArrowSize = 32.dp
 
 private fun buildDotDrawable(
     context: Context,
@@ -75,6 +82,35 @@ private fun buildNumberedDrawable(
     return BitmapDrawable(context.resources, bitmap)
 }
 
+private fun buildArrowDrawable(
+    context: Context,
+    colorArgb: Int,
+    sizePx: Int,
+): BitmapDrawable {
+    val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    // A north-facing chevron (Waze/Google-Maps-style nav puck); rotated per-marker via
+    // Marker.rotation to reflect the mocked position's current bearing.
+    val path =
+        Path().apply {
+            moveTo(sizePx * 0.5f, 0f)
+            lineTo(sizePx * 0.9f, sizePx * 0.9f)
+            lineTo(sizePx * 0.5f, sizePx * 0.65f)
+            lineTo(sizePx * 0.1f, sizePx * 0.9f)
+            close()
+        }
+    val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorArgb; style = Paint.Style.FILL }
+    canvas.drawPath(path, fillPaint)
+    val borderPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            style = Paint.Style.STROKE
+            strokeWidth = sizePx * ARROW_BORDER_WIDTH_FRACTION
+        }
+    canvas.drawPath(path, borderPaint)
+    return BitmapDrawable(context.resources, bitmap)
+}
+
 private fun RouteForgeMapMarkerIcon.toDrawable(
     context: Context,
     density: Density,
@@ -88,11 +124,16 @@ private fun RouteForgeMapMarkerIcon.toDrawable(
             val sizePx = with(density) { MarkerBadgeSize.roundToPx() }
             buildNumberedDrawable(context, number, backgroundColorArgb, textColorArgb, sizePx)
         }
+        is RouteForgeMapMarkerIcon.Arrow -> {
+            val sizePx = with(density) { MarkerArrowSize.roundToPx() }
+            buildArrowDrawable(context, colorArgb, sizePx)
+        }
     }
 
 private data class RouteForgeMapComponents(
     val mapView: MapView,
     val routeOverlay: Polyline,
+    val traveledOverlay: Polyline,
 )
 
 private fun buildMapComponents(
@@ -111,6 +152,11 @@ private fun buildMapComponents(
             controller.setZoom(FALLBACK_WORLD_MAP_ZOOM)
         }
     val routeOverlay = Polyline().apply { outlinePaint.strokeWidth = ROUTE_LINE_WIDTH_PX }
+    val traveledOverlay =
+        Polyline().apply {
+            outlinePaint.strokeWidth = ROUTE_LINE_WIDTH_PX
+            outlinePaint.color = TRAVELED_LINE_COLOR
+        }
     val tapOverlay =
         MapEventsOverlay(
             object : MapEventsReceiver {
@@ -124,7 +170,8 @@ private fun buildMapComponents(
         )
     mapView.overlays.add(tapOverlay)
     mapView.overlays.add(routeOverlay)
-    return RouteForgeMapComponents(mapView, routeOverlay)
+    mapView.overlays.add(traveledOverlay)
+    return RouteForgeMapComponents(mapView, routeOverlay, traveledOverlay)
 }
 
 /**
@@ -142,6 +189,7 @@ fun RouteForgeMap(
     markers: List<RouteForgeMapMarker>,
     modifier: Modifier = Modifier,
     polylinePoints: List<Pair<Double, Double>> = emptyList(),
+    traveledPolylinePoints: List<Pair<Double, Double>> = emptyList(),
     cameraTarget: Pair<Double, Double>? = null,
     onMapTap: ((Double, Double) -> Unit)? = null,
 ) {
@@ -149,6 +197,7 @@ fun RouteForgeMap(
     val density = LocalDensity.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnTap by rememberUpdatedState(onMapTap)
+    val routeColorArgb = MaterialTheme.colorScheme.primary.toArgb()
 
     val components =
         remember {
@@ -157,6 +206,11 @@ fun RouteForgeMap(
                 onTap = { latitude, longitude -> currentOnTap?.invoke(latitude, longitude) },
             )
         }
+
+    LaunchedEffect(routeColorArgb) {
+        components.routeOverlay.outlinePaint.color = routeColorArgb
+        components.mapView.invalidate()
+    }
 
     DisposableEffect(lifecycleOwner) {
         val observer =
@@ -183,6 +237,13 @@ fun RouteForgeMap(
                     position = GeoPoint(marker.latitude, marker.longitude)
                     icon = marker.icon.toDrawable(context, density)
                     isDraggable = marker.draggable
+                    if (marker.icon is RouteForgeMapMarkerIcon.Arrow) {
+                        // Non-flat markers ignore rotation in osmdroid — flat mode is required
+                        // for the icon to actually turn to face marker.rotationDegrees.
+                        setFlat(true)
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                    }
+                    rotation = marker.rotationDegrees
                     marker.onClick?.let { onClick ->
                         setOnMarkerClickListener { _, _ ->
                             onClick()
@@ -210,6 +271,11 @@ fun RouteForgeMap(
 
     LaunchedEffect(polylinePoints) {
         components.routeOverlay.setPoints(polylinePoints.map { (latitude, longitude) -> GeoPoint(latitude, longitude) })
+        components.mapView.invalidate()
+    }
+
+    LaunchedEffect(traveledPolylinePoints) {
+        components.traveledOverlay.setPoints(traveledPolylinePoints.map { (latitude, longitude) -> GeoPoint(latitude, longitude) })
         components.mapView.invalidate()
     }
 

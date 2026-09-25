@@ -116,7 +116,10 @@ class SimulationViewModel(
             is SimulationAction.OnPlaybackSpeedChange -> onPlaybackSpeedChange(action.kmh)
             is SimulationAction.OnExecutionModeSelected -> _state.update { it.copy(executionModeSelection = action.selection) }
             is SimulationAction.OnExecutionTimesInputChange -> _state.update { it.copy(executionTimesInput = action.value) }
-            SimulationAction.OnStartRouteSimulation -> startRouteSimulation()
+            SimulationAction.OnStartRouteSimulation -> _state.update { it.copy(isStartRouteDialogOpen = true) }
+            SimulationAction.OnConfirmStartRoute -> confirmStartRoute()
+            SimulationAction.OnDismissStartRouteDialog ->
+                _state.update { it.copy(isStartRouteDialogOpen = false, errorType = null) }
             SimulationAction.OnPauseSimulation -> pauseSimulationUseCase()
             SimulationAction.OnResumeSimulation -> resumeSimulationUseCase()
             SimulationAction.OnStopSimulation -> {
@@ -141,6 +144,16 @@ class SimulationViewModel(
                 viewModelScope.launch { _events.send(SimulationEvent.NavigateToSetup) }
             SimulationAction.OnLocationPermissionGranted ->
                 if (_state.value.mockedSession == null) startObservingRealLocation()
+            SimulationAction.OnScreenResumed -> checkAuthorizationStillGranted()
+        }
+    }
+
+    /** Mock-location authorization can be revoked at any time from outside the app (Developer
+     *  Options, an MDM policy, the user picking a different mock-location app) — catch that here
+     *  instead of only at the next explicit action, and send the user back to setup to fix it. */
+    private fun checkAuthorizationStillGranted() {
+        if (!mockLocationAuthorizationChecker.isAuthorized()) {
+            viewModelScope.launch { _events.send(SimulationEvent.NavigateToSetup) }
         }
     }
 
@@ -175,11 +188,15 @@ class SimulationViewModel(
         if (_state.value.mockedSession != null) setSpeedUseCase(speed)
     }
 
-    private fun startRouteSimulation() {
+    /** Called from the "how many times" dialog's confirm button — validates and, if everything
+     *  checks out, actually starts playback and closes the dialog. An invalid times count keeps
+     *  the dialog open (the fix belongs right there); an authorization failure closes it, since
+     *  that's resolved elsewhere (the setup screen). */
+    private fun confirmStartRoute() {
         val route = _state.value.loadedRoute ?: return
         val speedKmh = _state.value.playbackSpeedKmh
         if (speedKmh <= 0f) {
-            _state.update { it.copy(errorType = SimulationErrorType.INVALID_SPEED) }
+            _state.update { it.copy(isStartRouteDialogOpen = false, errorType = SimulationErrorType.INVALID_SPEED) }
             return
         }
         val executionMode = resolveExecutionMode()
@@ -189,10 +206,11 @@ class SimulationViewModel(
         }
 
         if (!mockLocationAuthorizationChecker.isAuthorized()) {
+            _state.update { it.copy(isStartRouteDialogOpen = false) }
             reportUnauthorized()
             return
         }
-        _state.update { it.copy(errorType = null, isBlockedByAuthorization = false) }
+        _state.update { it.copy(isStartRouteDialogOpen = false, errorType = null, isBlockedByAuthorization = false) }
         startRouteSimulationUseCase(route, SpeedSetting.Manual(speedKmh / KMH_TO_MPS_DIVISOR), executionMode)
     }
 
