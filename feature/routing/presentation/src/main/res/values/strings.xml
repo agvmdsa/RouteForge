@@ -27,4 +27,13 @@
     <string name="routing_missing_regions_uncovered_note">%1$d waypoint(s) have no map data available at all — Guided won\'t be possible there even after downloading.</string>
     <string name="routing_missing_regions_go_to_downloads">Go to downloads</string>
     <string name="routing_missing_regions_continue_anyway">Continue anyway</string>
+    <string name="region_catalog_needed_label">Needed for your current route</string>
+    <string name="region_catalog_download_button">Download</string>
+    <string name="region_catalog_status_downloaded">Downloaded</string>
+    <string name="region_catalog_status_downloading">Downloading…</string>
+    <string name="region_catalog_status_partially_downloaded">Partially downloaded</string>
+    <string name="region_catalog_status_not_downloaded">Not downloaded</string>
+    <string name="region_catalog_attribution">© OpenStreetMap contributors</string>
+    <string name="region_catalog_empty_title">No map data needed right now</string>
+    <string name="region_catalog_empty_message">Regions show up here once your route needs them, or once you\'ve downloaded them for offline use.</string>
 </resources>

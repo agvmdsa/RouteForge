@@ -89,11 +89,19 @@ class RegionCatalogViewModelTest {
         )
 
     @Test
-    fun `initial state reflects the current region catalog`() {
+    fun `a region that is neither needed nor downloaded is hidden`() {
         val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion))
         val viewModel = createViewModel(catalog)
 
-        assertEquals(listOf(downloadableRegion), viewModel.state.value.regions)
+        assertEquals(emptyList<Region>(), viewModel.state.value.regions)
+    }
+
+    @Test
+    fun `a region that is already downloaded is shown even when not needed`() {
+        val catalog = FakeRegionCatalog(regions = listOf(otherRegion))
+        val viewModel = createViewModel(catalog)
+
+        assertEquals(listOf(otherRegion), viewModel.state.value.regions)
     }
 
     @Test
@@ -103,7 +111,7 @@ class RegionCatalogViewModelTest {
 
         val viewModel = createViewModel(catalog)
 
-        assertEquals(listOf(otherRegion, downloadableRegion), viewModel.state.value.regions)
+        assertEquals(listOf(otherRegion), viewModel.state.value.regions)
         assertEquals(setOf(otherRegion.id), viewModel.state.value.neededRegionIds)
     }
 
