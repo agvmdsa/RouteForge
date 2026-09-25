@@ -13,6 +13,8 @@ data class RouteDraft(
     val points: List<RoutePoint> = emptyList(),
     private val history: List<List<RoutePoint>> = emptyList(),
 ) {
+    val canUndo: Boolean get() = history.isNotEmpty()
+
     fun add(point: RoutePoint): RouteDraft = withNewPoints(points + point)
 
     fun update(

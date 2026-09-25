@@ -178,8 +178,10 @@ fun RouteRequestScreen(
                 FloatingActionButton(onClick = onImportClick) {
                     Icon(Icons.Filled.FileUpload, contentDescription = stringResource(R.string.routing_import_button))
                 }
-                FloatingActionButton(onClick = { onAction(RouteRequestAction.OnUndo) }) {
-                    Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.routing_undo_button))
+                if (state.draft.canUndo) {
+                    FloatingActionButton(onClick = { onAction(RouteRequestAction.OnUndo) }) {
+                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.routing_undo_button))
+                    }
                 }
             }
 

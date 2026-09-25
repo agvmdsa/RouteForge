@@ -2,7 +2,9 @@ package com.routeforge.routing.domain.model
 
 import com.routeforge.coredomain.model.RoutePoint
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 private fun point(
@@ -14,6 +16,23 @@ class RouteDraftTest {
     @Test
     fun `starts empty`() {
         assertEquals(emptyList<RoutePoint>(), RouteDraft().points)
+    }
+
+    @Test
+    fun `a fresh draft cannot be undone`() {
+        assertFalse(RouteDraft().canUndo)
+    }
+
+    @Test
+    fun `a draft with a prior state can be undone`() {
+        assertTrue(RouteDraft().add(point(1.0, 1.0)).canUndo)
+    }
+
+    @Test
+    fun `undoing back to the original state can no longer be undone`() {
+        val draft = RouteDraft().add(point(1.0, 1.0)).undo()
+
+        assertFalse(draft.canUndo)
     }
 
     @Test
