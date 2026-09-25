@@ -12,4 +12,8 @@ class LastComputedRouteHolder {
     fun set(route: Route) {
         _route.value = route
     }
+
+    fun clear() {
+        _route.value = null
+    }
 }

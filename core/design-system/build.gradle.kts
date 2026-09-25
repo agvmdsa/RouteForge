@@ -6,3 +6,8 @@ plugins {
 android {
     namespace = "com.routeforge.designsystem"
 }
+
+dependencies {
+    implementation(libs.osmdroid.android)
+    implementation(libs.compose.material.icons.extended)
+}

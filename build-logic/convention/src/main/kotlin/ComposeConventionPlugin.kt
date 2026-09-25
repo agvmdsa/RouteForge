@@ -5,6 +5,8 @@ import com.android.build.api.dsl.LibraryExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.findByType
+import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 class ComposeConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -13,6 +15,15 @@ class ComposeConventionPlugin : Plugin<Project> {
 
             extensions.findByType<LibraryExtension>()?.buildFeatures?.compose = true
             extensions.findByType<ApplicationExtension>()?.buildFeatures?.compose = true
+
+            // Material3's newer surfaces (bottom sheets, etc.) are still marked experimental
+            // even though they're the recommended, stable-in-practice API — opt in project-wide
+            // instead of scattering @OptIn annotations across every screen that uses one.
+            tasks.withType<KotlinCompile>().configureEach {
+                compilerOptions {
+                    freeCompilerArgs.add("-opt-in=androidx.compose.material3.ExperimentalMaterial3Api")
+                }
+            }
 
             val composeBom = libs.findLibrary("compose-bom").get()
             dependencies.add("implementation", dependencies.platform(composeBom))
