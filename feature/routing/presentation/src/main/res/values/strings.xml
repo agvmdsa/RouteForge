@@ -1,0 +1,30 @@
+<resources>
+    <string name="routing_undo_button">Undo</string>
+    <string name="routing_import_button">Import route</string>
+    <string name="routing_proceed_button">Proceed to play</string>
+    <string name="routing_choose_mode_label">Choose how to play this route</string>
+    <string name="routing_mode_guided_button">Guided (follow roads)</string>
+    <string name="routing_mode_free_roam_button">Free-roam (straight line)</string>
+    <string name="routing_export_json_button">Export as JSON</string>
+    <string name="routing_export_gpx_button">Export as GPX</string>
+    <string name="routing_manage_regions_button">Manage offline regions</string>
+    <string name="routing_edit_waypoint_title">Edit waypoint</string>
+    <string name="routing_latitude_label">Latitude</string>
+    <string name="routing_longitude_label">Longitude</string>
+    <string name="routing_save_button">Save</string>
+    <string name="routing_delete_button">Delete</string>
+    <string name="routing_cancel_button">Cancel</string>
+    <string name="routing_route_ready_label">Route ready (%1$s): %2$d m, %3$d points</string>
+    <string name="routing_error_invalid_edit_coordinates">Enter valid coordinates for this point.</string>
+    <string name="routing_error_too_few_waypoints">Add at least 2 points before proceeding to play.</string>
+    <string name="routing_error_import_too_few_waypoints">That file has fewer than 2 waypoints.</string>
+    <string name="routing_error_import_coordinate_out_of_range">That file has a coordinate outside the valid range.</string>
+    <string name="routing_error_import_malformed">That file could not be read as a route.</string>
+    <string name="routing_use_route_button">Use this route</string>
+    <string name="routing_points_count_label">%1$d points</string>
+    <string name="routing_missing_regions_title">Missing map data for Guided</string>
+    <string name="routing_missing_regions_message">Guided routing needs about %1$d MB more map data for: %2$s</string>
+    <string name="routing_missing_regions_uncovered_note">%1$d waypoint(s) have no map data available at all — Guided won\'t be possible there even after downloading.</string>
+    <string name="routing_missing_regions_go_to_downloads">Go to downloads</string>
+    <string name="routing_missing_regions_continue_anyway">Continue anyway</string>
+</resources>

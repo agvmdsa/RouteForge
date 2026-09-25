@@ -1,15 +1,31 @@
 package com.routeforge.routing.presentation
 
+import com.routeforge.coredomain.DraftWaypointsHolder
 import com.routeforge.coredomain.LastComputedRouteHolder
+import com.routeforge.coredomain.LastKnownRealLocationHolder
+import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.model.Route
+import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.routing.domain.FreeRoamRouteBuilder
+import com.routeforge.routing.domain.RouteFileCodec
 import com.routeforge.routing.domain.RoutingEngine
 import com.routeforge.routing.domain.model.Region
 import com.routeforge.routing.domain.model.RegionStatus
+import com.routeforge.routing.domain.model.RouteDraft
+import com.routeforge.routing.domain.model.RouteFileFailure
+import com.routeforge.routing.domain.model.RouteFileFormat
+import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.usecase.ComputeRouteUseCase
+import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
+import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
+import com.routeforge.routing.domain.usecase.PrepareRouteOptionsUseCase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -36,11 +52,27 @@ private class FakeRoutingEngine : RoutingEngine {
     override fun computePath(points: List<RoutePoint>): Route? = computePathResult
 }
 
+private class FakeRouteFileCodec(
+    var parseResult: Result<RouteDraft, RouteFileFailure> = Result.Success(RouteDraft()),
+) : RouteFileCodec {
+    var lastSerialized: Route? = null
+
+    override fun parse(bytes: ByteArray): Result<RouteDraft, RouteFileFailure> = parseResult
+
+    override fun serialize(route: Route): ByteArray {
+        lastSerialized = route
+        return byteArrayOf(1, 2, 3)
+    }
+}
+
 class RouteRequestViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val routingEngine = FakeRoutingEngine()
     private val regionCatalog = FakeRegionCatalog()
     private val lastComputedRouteHolder = LastComputedRouteHolder()
+    private val jsonCodec = FakeRouteFileCodec()
+    private val gpxCodec = FakeRouteFileCodec()
+    private val codecs = mapOf(RouteFileFormat.JSON to jsonCodec, RouteFileFormat.GPX to gpxCodec)
 
     @BeforeEach
     fun setUp() {
@@ -54,100 +86,375 @@ class RouteRequestViewModelTest {
 
     private fun createViewModel(): RouteRequestViewModel =
         RouteRequestViewModel(
-            computeRoute = ComputeRouteUseCase(routingEngine, regionCatalog),
+            prepareRouteOptions =
+                PrepareRouteOptionsUseCase(
+                    computeRoute = ComputeRouteUseCase(routingEngine, regionCatalog),
+                    freeRoamRouteBuilder = FreeRoamRouteBuilder(),
+                ),
             lastComputedRouteHolder = lastComputedRouteHolder,
+            importRouteFile = ImportRouteFileUseCase(codecs),
+            exportRouteFile = ExportRouteFileUseCase(codecs),
+            lastKnownRealLocationHolder = LastKnownRealLocationHolder(),
+            computeRequiredRegions = ComputeRequiredRegionsUseCase(regionCatalog),
+            draftWaypointsHolder = DraftWaypointsHolder(),
             backgroundDispatcher = dispatcher,
         )
 
+    private fun RouteRequestViewModel.tapTwoPoints() {
+        onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
+        onAction(RouteRequestAction.OnMapTap(2.0, 2.0))
+    }
+
+    // --- User Story 2: manual point management ---
+
     @Test
-    fun `requesting a route with a valid start and end populates state with the resulting route`() {
+    fun `tapping the map adds a numbered waypoint connected in order`() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
+        viewModel.onAction(RouteRequestAction.OnMapTap(2.0, 2.0))
+
+        assertEquals(
+            listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)),
+            viewModel.state.value.draft.points,
+        )
+    }
+
+    @Test
+    fun `dragging a marker updates its position`() {
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+
+        viewModel.onAction(RouteRequestAction.OnMarkerDragged(index = 1, latitude = 9.0, longitude = 9.0))
+
+        assertEquals(
+            listOf(RoutePoint(1.0, 1.0), RoutePoint(9.0, 9.0)),
+            viewModel.state.value.draft.points,
+        )
+    }
+
+    @Test
+    fun `clicking a marker opens the edit dialog prefilled with its coordinates`() {
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+
+        viewModel.onAction(RouteRequestAction.OnMarkerClick(0))
+
+        val state = viewModel.state.value
+        assertEquals(0, state.editingIndex)
+        assertEquals("1.0", state.editLatitudeInput)
+        assertEquals("1.0", state.editLongitudeInput)
+    }
+
+    @Test
+    fun `confirming an edit replaces the waypoint's coordinates and closes the dialog`() {
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        viewModel.onAction(RouteRequestAction.OnMarkerClick(0))
+
+        viewModel.onAction(RouteRequestAction.OnEditLatitudeChange("5.0"))
+        viewModel.onAction(RouteRequestAction.OnEditLongitudeChange("5.0"))
+        viewModel.onAction(RouteRequestAction.OnConfirmEdit)
+
+        val state = viewModel.state.value
+        assertEquals(RoutePoint(5.0, 5.0), state.draft.points[0])
+        assertNull(state.editingIndex)
+    }
+
+    @Test
+    fun `deleting the waypoint being edited removes it and keeps the rest connected`() {
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        viewModel.onAction(RouteRequestAction.OnMapTap(3.0, 3.0))
+        viewModel.onAction(RouteRequestAction.OnMarkerClick(1))
+
+        viewModel.onAction(RouteRequestAction.OnDeleteEditingWaypoint)
+
+        assertEquals(
+            listOf(RoutePoint(1.0, 1.0), RoutePoint(3.0, 3.0)),
+            viewModel.state.value.draft.points,
+        )
+        assertNull(viewModel.state.value.editingIndex)
+    }
+
+    @Test
+    fun `undo reverts the most recent change and repeated undo is a no-op once history is empty`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
+        viewModel.onAction(RouteRequestAction.OnMapTap(2.0, 2.0))
+
+        viewModel.onAction(RouteRequestAction.OnUndo)
+        assertEquals(listOf(RoutePoint(1.0, 1.0)), viewModel.state.value.draft.points)
+
+        viewModel.onAction(RouteRequestAction.OnUndo)
+        assertEquals(emptyList<RoutePoint>(), viewModel.state.value.draft.points)
+
+        viewModel.onAction(RouteRequestAction.OnUndo)
+        assertEquals(emptyList<RoutePoint>(), viewModel.state.value.draft.points)
+    }
+
+    @Test
+    fun `proceeding to play with fewer than 2 points is blocked with a clear message`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
+
+        viewModel.onAction(RouteRequestAction.OnRequestRoute)
+
+        assertNotNull(viewModel.state.value.errorType)
+        assertNull(viewModel.state.value.routeOptions)
+        assertNull(viewModel.state.value.route)
+    }
+
+    // --- Region-awareness before play ---
+
+    @Test
+    fun `waypoints with no matching region data at all proceed straight to computation`() {
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+
+        viewModel.onAction(RouteRequestAction.OnRequestRoute)
+
+        assertNull(viewModel.state.value.missingRegionsWarning)
+        assertNotNull(viewModel.state.value.route)
+    }
+
+    @Test
+    fun `an undownloaded region covering a waypoint blocks play with a warning instead of computing`() {
+        regionCatalog.regions =
+            listOf(
+                Region(
+                    id = "north-zone",
+                    displayName = "North Zone",
+                    minLatitude = 0.0,
+                    minLongitude = 0.0,
+                    maxLatitude = 5.0,
+                    maxLongitude = 5.0,
+                    tileIds = listOf("north.rd5"),
+                    approximateSizeBytes = 1_000L,
+                    status = RegionStatus.NOT_DOWNLOADED,
+                    missingTileCount = 1,
+                ),
+            )
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+
+        viewModel.onAction(RouteRequestAction.OnRequestRoute)
+
+        assertNotNull(viewModel.state.value.missingRegionsWarning)
+        assertNull(viewModel.state.value.route)
+        assertNull(viewModel.state.value.routeOptions)
+    }
+
+    @Test
+    fun `continuing anyway from the missing regions warning proceeds with computation`() {
+        regionCatalog.regions =
+            listOf(
+                Region(
+                    id = "north-zone",
+                    displayName = "North Zone",
+                    minLatitude = 0.0,
+                    minLongitude = 0.0,
+                    maxLatitude = 5.0,
+                    maxLongitude = 5.0,
+                    tileIds = listOf("north.rd5"),
+                    approximateSizeBytes = 1_000L,
+                    status = RegionStatus.NOT_DOWNLOADED,
+                    missingTileCount = 1,
+                ),
+            )
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        viewModel.onAction(RouteRequestAction.OnRequestRoute)
+
+        viewModel.onAction(RouteRequestAction.OnProceedDespiteMissingRegions)
+
+        assertNull(viewModel.state.value.missingRegionsWarning)
+        assertNotNull(viewModel.state.value.route)
+    }
+
+    // --- User Story 1: mode gate ---
+
+    @Test
+    fun `both modes are offered when guided is fully computable, and route stays null until a mode is chosen`() {
         routingEngine.snappableLatitudes = setOf(1.0, 2.0)
-        val expectedRoute =
+        routingEngine.computePathResult =
             Route(
                 points = listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)),
                 geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
                 distanceMeters = 100.0,
             )
-        routingEngine.computePathResult = expectedRoute
         val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
 
-        viewModel.onAction(RouteRequestAction.OnStartLatitudeChange("1.0"))
-        viewModel.onAction(RouteRequestAction.OnStartLongitudeChange("1.0"))
-        viewModel.onAction(RouteRequestAction.OnEndLatitudeChange("2.0"))
-        viewModel.onAction(RouteRequestAction.OnEndLongitudeChange("2.0"))
         viewModel.onAction(RouteRequestAction.OnRequestRoute)
 
-        assertEquals(expectedRoute, viewModel.state.value.route)
-        assertNull(viewModel.state.value.errorMessage)
-        assertTrue(!viewModel.state.value.isComputing)
+        val state = viewModel.state.value
+        assertNotNull(state.routeOptions?.guided)
+        assertNotNull(state.routeOptions?.freeRoam)
+        assertNull(state.route)
+        assertNull(state.chosenMode)
+        assertTrue(!state.isComputing)
     }
 
     @Test
-    fun `adding and removing a waypoint updates state and is included in the next route request`() {
-        routingEngine.snappableLatitudes = setOf(1.0, 2.0, 3.0)
+    fun `choosing guided finalizes the guided route and locks the mode`() {
+        routingEngine.snappableLatitudes = setOf(1.0, 2.0)
         routingEngine.computePathResult =
-            Route(points = emptyList(), geometry = emptyList(), distanceMeters = 0.0)
+            Route(
+                points = listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)),
+                geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
+                distanceMeters = 100.0,
+            )
         val viewModel = createViewModel()
-
-        viewModel.onAction(RouteRequestAction.OnAddWaypoint)
-        assertEquals(1, viewModel.state.value.waypoints.size)
-
-        viewModel.onAction(RouteRequestAction.OnWaypointLatitudeChange(0, "3.0"))
-        viewModel.onAction(RouteRequestAction.OnWaypointLongitudeChange(0, "3.0"))
-        val stateAfterEdit = viewModel.state.value
-        assertEquals("3.0", stateAfterEdit.waypoints[0].latitudeInput)
-
-        viewModel.onAction(RouteRequestAction.OnStartLatitudeChange("1.0"))
-        viewModel.onAction(RouteRequestAction.OnStartLongitudeChange("1.0"))
-        viewModel.onAction(RouteRequestAction.OnEndLatitudeChange("2.0"))
-        viewModel.onAction(RouteRequestAction.OnEndLongitudeChange("2.0"))
+        viewModel.tapTwoPoints()
         viewModel.onAction(RouteRequestAction.OnRequestRoute)
-        assertNotNull(viewModel.state.value.route)
 
-        viewModel.onAction(RouteRequestAction.OnRemoveWaypoint(0))
-        val stateAfterRemoval = viewModel.state.value
-        assertTrue(stateAfterRemoval.waypoints.isEmpty())
+        viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.GUIDED))
+
+        val state = viewModel.state.value
+        assertEquals(RoutePlaybackMode.GUIDED, state.route?.mode)
+        assertEquals(RoutePlaybackMode.GUIDED, state.chosenMode)
+        assertNull(state.routeOptions)
     }
 
     @Test
-    fun `a point that cannot snap but is inside a known region reports a distinct not routable message`() {
-        regionCatalog.regions =
-            listOf(
-                Region(
-                    id = "r",
-                    displayName = "R",
-                    minLatitude = -10.0,
-                    minLongitude = -10.0,
-                    maxLatitude = 10.0,
-                    maxLongitude = 10.0,
-                    tileIds = listOf("t.rd5"),
-                    approximateSizeBytes = 1,
-                    status = RegionStatus.DOWNLOADED,
-                ),
+    fun `choosing free-roam finalizes the free-roam route even when guided was also available`() {
+        routingEngine.snappableLatitudes = setOf(1.0, 2.0)
+        routingEngine.computePathResult =
+            Route(
+                points = listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)),
+                geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
+                distanceMeters = 100.0,
             )
-        routingEngine.snappableLatitudes = setOf(2.0)
         val viewModel = createViewModel()
-
-        viewModel.onAction(RouteRequestAction.OnStartLatitudeChange("1.0"))
-        viewModel.onAction(RouteRequestAction.OnStartLongitudeChange("1.0"))
-        viewModel.onAction(RouteRequestAction.OnEndLatitudeChange("2.0"))
-        viewModel.onAction(RouteRequestAction.OnEndLongitudeChange("2.0"))
+        viewModel.tapTwoPoints()
         viewModel.onAction(RouteRequestAction.OnRequestRoute)
 
-        val notRoutableMessage = viewModel.state.value.errorMessage
-        assertNotNull(notRoutableMessage)
+        viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
 
-        regionCatalog.regions = emptyList()
+        val state = viewModel.state.value
+        assertEquals(RoutePlaybackMode.FREE_ROAM, state.route?.mode)
+        assertEquals(RoutePlaybackMode.FREE_ROAM, state.chosenMode)
+    }
+
+    @Test
+    fun `an unroutable point skips straight to free-roam with no error shown`() {
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+
         viewModel.onAction(RouteRequestAction.OnRequestRoute)
-        val outsideCoverageMessage = viewModel.state.value.errorMessage
-        assertNotNull(outsideCoverageMessage)
-        assertTrue(notRoutableMessage != outsideCoverageMessage)
 
+        val state = viewModel.state.value
+        assertEquals(RoutePlaybackMode.FREE_ROAM, state.chosenMode)
+        assertNotNull(state.route)
+        assertNull(state.routeOptions)
+        assertNull(state.errorType)
+    }
+
+    @Test
+    fun `no connecting path between snapped points also skips straight to free-roam`() {
         routingEngine.snappableLatitudes = setOf(1.0, 2.0)
         routingEngine.computePathResult = null
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+
         viewModel.onAction(RouteRequestAction.OnRequestRoute)
-        val noPathMessage = viewModel.state.value.errorMessage
-        assertNotNull(noPathMessage)
-        assertTrue(noPathMessage != notRoutableMessage && noPathMessage != outsideCoverageMessage)
+
+        assertEquals(RoutePlaybackMode.FREE_ROAM, viewModel.state.value.chosenMode)
+        assertNull(viewModel.state.value.errorType)
     }
+
+    @Test
+    fun `re-running the check clears a previously locked mode`() {
+        routingEngine.snappableLatitudes = setOf(1.0, 2.0)
+        routingEngine.computePathResult =
+            Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        viewModel.onAction(RouteRequestAction.OnRequestRoute)
+        viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.GUIDED))
+        assertNotNull(viewModel.state.value.chosenMode)
+
+        viewModel.onAction(RouteRequestAction.OnRequestRoute)
+
+        assertNull(viewModel.state.value.chosenMode)
+        assertNull(viewModel.state.value.route)
+        assertNotNull(viewModel.state.value.routeOptions)
+    }
+
+    // --- User Story 3: file import/export ---
+
+    @Test
+    fun `a successful import replaces the current draft and clears any prior route`() {
+        val imported = RouteDraft().add(RoutePoint(9.0, 9.0)).add(RoutePoint(8.0, 8.0))
+        jsonCodec.parseResult = Result.Success(imported)
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+
+        viewModel.onAction(RouteRequestAction.OnRouteFileImported(byteArrayOf(0), RouteFileFormat.JSON))
+
+        val state = viewModel.state.value
+        assertEquals(imported.points, state.draft.points)
+        assertNull(state.errorType)
+    }
+
+    @Test
+    fun `a failed import surfaces a clear error and leaves the draft untouched`() {
+        jsonCodec.parseResult = Result.Error(RouteFileFailure.TooFewWaypoints)
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        val pointsBefore = viewModel.state.value.draft.points
+
+        viewModel.onAction(RouteRequestAction.OnRouteFileImported(byteArrayOf(0), RouteFileFormat.JSON))
+
+        assertNotNull(viewModel.state.value.errorType)
+        assertEquals(pointsBefore, viewModel.state.value.draft.points)
+    }
+
+    @Test
+    fun `exporting a finalized route serializes it through the matching codec`() {
+        routingEngine.snappableLatitudes = setOf(1.0, 2.0)
+        routingEngine.computePathResult =
+            Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        viewModel.onAction(RouteRequestAction.OnRequestRoute)
+        viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
+
+        viewModel.onAction(RouteRequestAction.OnExportRoute(RouteFileFormat.GPX))
+
+        assertEquals(viewModel.state.value.route, gpxCodec.lastSerialized)
+        assertNull(jsonCodec.lastSerialized)
+    }
+
+    @Test
+    fun `choosing a mode finalizes the route but does not navigate away by itself`() {
+        routingEngine.snappableLatitudes = setOf(1.0, 2.0)
+        routingEngine.computePathResult =
+            Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        viewModel.onAction(RouteRequestAction.OnRequestRoute)
+
+        viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
+
+        assertNotNull(viewModel.state.value.route)
+    }
+
+    @Test
+    fun `OnUseRoute sends the RouteComputed event only after a mode has been chosen`() =
+        runTest(dispatcher) {
+            routingEngine.snappableLatitudes = setOf(1.0, 2.0)
+            routingEngine.computePathResult =
+                Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
+            val viewModel = createViewModel()
+            viewModel.tapTwoPoints()
+            viewModel.onAction(RouteRequestAction.OnRequestRoute)
+            viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
+
+            val eventDeferred = async { viewModel.events.first() }
+            viewModel.onAction(RouteRequestAction.OnUseRoute)
+
+            assertEquals(viewModel.state.value.route, (eventDeferred.await() as RouteRequestEvent.RouteComputed).route)
+        }
 }
