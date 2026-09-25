@@ -18,11 +18,31 @@
     <string name="simulation_teleport_blocked_offline_message">No internet connection — can\'t confirm a teleport to an area whose map couldn\'t load.</string>
     <string name="simulation_go_to_setup_button">Go to setup</string>
     <string name="simulation_loaded_route_label">Loaded route: %1$d m</string>
-    <string name="simulation_speed_input_label">Speed (m/s)</string>
     <string name="simulation_start_button">Start simulation</string>
     <string name="simulation_pause_button">Pause</string>
     <string name="simulation_resume_button">Resume</string>
     <string name="simulation_stop_button">Stop</string>
     <string name="simulation_error_not_authorized">RouteForge isn\'t set up as the device\'s mock location provider yet. Finish setup to simulate a location.</string>
     <string name="simulation_error_invalid_speed">Enter a valid simulated speed.</string>
+    <string name="simulation_error_invalid_execution_times">Enter a positive number of times to play the route.</string>
+    <string name="simulation_effective_speed_label">Effective speed: %1$.1f km/h</string>
+    <string name="simulation_execution_once">Once</string>
+    <string name="simulation_execution_times">N times</string>
+    <string name="simulation_execution_loop">Loop</string>
+    <string name="simulation_execution_times_input_label">Times</string>
+    <string name="simulation_joystick_label">Joystick</string>
+    <string name="simulation_joystick_interrupt_title">Clear route and use joystick?</string>
+    <string name="simulation_joystick_interrupt_message">This will clear the loaded route (stopping it first, if it\'s playing) and switch to manual joystick control.</string>
+    <string name="simulation_joystick_interrupt_confirm">Clear route and switch</string>
+    <string name="simulation_joystick_interrupt_cancel">Keep the route</string>
+    <string name="simulation_joystick_no_fix_message">Waiting for a real GPS fix before the joystick can be used.</string>
+    <string name="simulation_tune_button">Playback settings</string>
+    <string name="simulation_copy_coordinates">Copy coordinates</string>
+    <string name="simulation_joystick_speed_button">Joystick speed</string>
+    <string name="simulation_joystick_speed_dialog_title">Joystick speed</string>
+    <string name="simulation_playback_speed_button">Playback speed</string>
+    <string name="simulation_playback_speed_dialog_title">Playback speed</string>
+    <string name="simulation_speed_value_label">Speed: %1$d km/h</string>
+    <string name="simulation_speed_dialog_close">Done</string>
 </resources>
+

@@ -10,7 +10,15 @@ sealed interface SimulationAction {
 
     data object OnCancelTeleport : SimulationAction
 
-    data class OnSpeedInputChange(
+    data class OnPlaybackSpeedChange(
+        val kmh: Float,
+    ) : SimulationAction
+
+    data class OnExecutionModeSelected(
+        val selection: ExecutionModeSelection,
+    ) : SimulationAction
+
+    data class OnExecutionTimesInputChange(
         val value: String,
     ) : SimulationAction
 
@@ -21,6 +29,22 @@ sealed interface SimulationAction {
     data object OnResumeSimulation : SimulationAction
 
     data object OnStopSimulation : SimulationAction
+
+    data class OnJoystickDrag(
+        val bearingDegrees: Float,
+    ) : SimulationAction
+
+    data object OnJoystickReleased : SimulationAction
+
+    data object OnToggleJoystick : SimulationAction
+
+    data class OnJoystickSpeedChange(
+        val kmh: Float,
+    ) : SimulationAction
+
+    data object OnConfirmJoystickInterrupt : SimulationAction
+
+    data object OnDismissJoystickInterrupt : SimulationAction
 
     data object OnCancelMockClick : SimulationAction
 

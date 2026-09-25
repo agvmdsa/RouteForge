@@ -3,16 +3,26 @@ package com.routeforge.simulation.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeforge.coredomain.LastComputedRouteHolder
+import com.routeforge.coredomain.LastKnownRealLocationHolder
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
-import com.routeforge.simulation.domain.LastKnownRealLocationHolder
+import com.routeforge.coredomain.Result
+import com.routeforge.simulation.domain.model.ExecutionMode
+import com.routeforge.simulation.domain.model.JoystickInterruptDecision
+import com.routeforge.simulation.domain.model.SimulationMode
+import com.routeforge.simulation.domain.model.SimulationStatus
+import com.routeforge.simulation.domain.model.SpeedSetting
+import com.routeforge.simulation.domain.usecase.ConfirmJoystickInterruptUseCase
 import com.routeforge.simulation.domain.usecase.IsNetworkConnectedUseCase
 import com.routeforge.simulation.domain.usecase.ObserveMockedSessionUseCase
 import com.routeforge.simulation.domain.usecase.ObserveRealLocationUseCase
 import com.routeforge.simulation.domain.usecase.PauseSimulationUseCase
+import com.routeforge.simulation.domain.usecase.RequestJoystickInterruptUseCase
 import com.routeforge.simulation.domain.usecase.ResumeSimulationUseCase
+import com.routeforge.simulation.domain.usecase.SetSpeedUseCase
 import com.routeforge.simulation.domain.usecase.StartRouteSimulationUseCase
 import com.routeforge.simulation.domain.usecase.StopSimulationUseCase
 import com.routeforge.simulation.domain.usecase.TeleportUseCase
+import com.routeforge.simulation.domain.usecase.UpdateJoystickDirectionUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +33,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+private const val KMH_TO_MPS_DIVISOR = 3.6f
+
 class SimulationViewModel(
     private val teleportUseCase: TeleportUseCase,
     private val startRouteSimulationUseCase: StartRouteSimulationUseCase,
@@ -32,6 +44,10 @@ class SimulationViewModel(
     observeMockedSessionUseCase: ObserveMockedSessionUseCase,
     private val observeRealLocationUseCase: ObserveRealLocationUseCase,
     private val isNetworkConnectedUseCase: IsNetworkConnectedUseCase,
+    private val setSpeedUseCase: SetSpeedUseCase,
+    private val requestJoystickInterruptUseCase: RequestJoystickInterruptUseCase,
+    private val confirmJoystickInterruptUseCase: ConfirmJoystickInterruptUseCase,
+    private val updateJoystickDirectionUseCase: UpdateJoystickDirectionUseCase,
     private val mockLocationAuthorizationChecker: MockLocationAuthorizationChecker,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
     private val lastKnownRealLocationHolder: LastKnownRealLocationHolder,
@@ -44,10 +60,24 @@ class SimulationViewModel(
 
     private var realLocationObservationJob: Job? = null
 
+    /**
+     * Tracks locally (synchronously) whether the current joystick drag has already started a
+     * session, instead of relying on [SimulationState.mockedSession] — that mirror updates
+     * asynchronously via [observeMockedSessionUseCase], and drag events fire many times per
+     * second. Checking the mirrored state let every frame of a drag think no session existed
+     * yet, so `startJoystick()` (and its `SimulationControllerImpl.startSession()`, which cancels
+     * and relaunches the tick loop) fired on *every* frame — the tick loop's 1-second delay never
+     * got a chance to complete, so the mocked position never actually moved.
+     */
+    private var joystickSessionStarted = false
+
     init {
         observeMockedSessionUseCase()
             .onEach { mockedSession ->
                 _state.update { it.copy(mockedSession = mockedSession) }
+                if (mockedSession?.mode != SimulationMode.JOYSTICK) {
+                    joystickSessionStarted = false
+                }
                 if (mockedSession == null) {
                     startObservingRealLocation()
                 } else {
@@ -83,11 +113,22 @@ class SimulationViewModel(
                         isPendingTeleportBlockedOffline = false,
                     )
                 }
-            is SimulationAction.OnSpeedInputChange -> _state.update { it.copy(speedInput = action.value) }
+            is SimulationAction.OnPlaybackSpeedChange -> onPlaybackSpeedChange(action.kmh)
+            is SimulationAction.OnExecutionModeSelected -> _state.update { it.copy(executionModeSelection = action.selection) }
+            is SimulationAction.OnExecutionTimesInputChange -> _state.update { it.copy(executionTimesInput = action.value) }
             SimulationAction.OnStartRouteSimulation -> startRouteSimulation()
             SimulationAction.OnPauseSimulation -> pauseSimulationUseCase()
             SimulationAction.OnResumeSimulation -> resumeSimulationUseCase()
-            SimulationAction.OnStopSimulation -> stopSimulationUseCase()
+            SimulationAction.OnStopSimulation -> {
+                stopSimulationUseCase()
+                lastComputedRouteHolder.clear()
+            }
+            is SimulationAction.OnJoystickDrag -> onJoystickDrag(action.bearingDegrees)
+            SimulationAction.OnJoystickReleased -> pauseSimulationUseCase()
+            SimulationAction.OnToggleJoystick -> onToggleJoystick()
+            is SimulationAction.OnJoystickSpeedChange -> onJoystickSpeedChange(action.kmh)
+            SimulationAction.OnConfirmJoystickInterrupt -> confirmJoystickInterrupt()
+            SimulationAction.OnDismissJoystickInterrupt -> _state.update { it.copy(isJoystickInterruptPending = false) }
             SimulationAction.OnCancelMockClick -> _state.update { it.copy(isPendingCancelMock = true) }
             SimulationAction.OnConfirmCancelMock -> {
                 _state.update { it.copy(isPendingCancelMock = false) }
@@ -124,11 +165,26 @@ class SimulationViewModel(
         teleportUseCase(latitude, longitude)
     }
 
+    private fun onPlaybackSpeedChange(kmh: Float) {
+        _state.update { it.copy(playbackSpeedKmh = kmh) }
+        applyLiveSpeed(SpeedSetting.Manual(kmh / KMH_TO_MPS_DIVISOR))
+    }
+
+    /** FR-016: only takes effect immediately if a session is already active; otherwise it's just staged for the next start. */
+    private fun applyLiveSpeed(speed: SpeedSetting) {
+        if (_state.value.mockedSession != null) setSpeedUseCase(speed)
+    }
+
     private fun startRouteSimulation() {
         val route = _state.value.loadedRoute ?: return
-        val speed = _state.value.speedInput.toFloatOrNull()
-        if (speed == null || speed <= 0f) {
+        val speedKmh = _state.value.playbackSpeedKmh
+        if (speedKmh <= 0f) {
             _state.update { it.copy(errorType = SimulationErrorType.INVALID_SPEED) }
+            return
+        }
+        val executionMode = resolveExecutionMode()
+        if (executionMode == null) {
+            _state.update { it.copy(errorType = SimulationErrorType.INVALID_EXECUTION_TIMES) }
             return
         }
 
@@ -137,7 +193,80 @@ class SimulationViewModel(
             return
         }
         _state.update { it.copy(errorType = null, isBlockedByAuthorization = false) }
-        startRouteSimulationUseCase(route, speed)
+        startRouteSimulationUseCase(route, SpeedSetting.Manual(speedKmh / KMH_TO_MPS_DIVISOR), executionMode)
+    }
+
+    private fun resolveExecutionMode(): ExecutionMode? =
+        when (_state.value.executionModeSelection) {
+            ExecutionModeSelection.ONCE -> ExecutionMode.Once
+            ExecutionModeSelection.LOOP -> ExecutionMode.Loop
+            ExecutionModeSelection.TIMES -> {
+                val count = _state.value.executionTimesInput.toIntOrNull()
+                if (count == null || count <= 0) null else ExecutionMode.Times(count)
+            }
+        }
+
+    /**
+     * FR-022/FR-024–FR-026 (revised): the joystick's visibility is an explicit toggle, separate
+     * from whether it is actually mocking a position yet (that only starts once the user drags —
+     * see [onJoystickDrag]). Turning it on while a route is loaded or actively playing requires
+     * confirmation, because confirming clears the loaded route entirely. Turning it off while it
+     * was actively mocking fully stops the session, returning to the real location.
+     */
+    private fun onJoystickDrag(bearingDegrees: Float) {
+        if (!joystickSessionStarted) {
+            when (confirmJoystickInterruptUseCase()) {
+                is Result.Success -> {
+                    joystickSessionStarted = true
+                    _state.update { it.copy(errorType = null) }
+                    setSpeedUseCase(SpeedSetting.Manual(_state.value.joystickSpeedKmh / KMH_TO_MPS_DIVISOR))
+                }
+                is Result.Error -> {
+                    _state.update { it.copy(errorType = SimulationErrorType.JOYSTICK_NO_REAL_FIX) }
+                    return
+                }
+            }
+        } else if (_state.value.mockedSession?.status == SimulationStatus.PAUSED) {
+            // A prior drag gesture ended (which pauses in place, per FR "releasing stops in
+            // place"); a *new* drag gesture on an already-started session must resume it, or
+            // every drag after the first release would silently update direction with the
+            // session still paused and never actually move.
+            resumeSimulationUseCase()
+        }
+        updateJoystickDirectionUseCase(bearingDegrees)
+    }
+
+    private fun onToggleJoystick() {
+        if (_state.value.isJoystickVisible) {
+            if (_state.value.mockedSession?.mode == SimulationMode.JOYSTICK) {
+                stopSimulationUseCase()
+            }
+            joystickSessionStarted = false
+            _state.update { it.copy(isJoystickVisible = false) }
+            return
+        }
+
+        val routeIsLoadedOrRunning =
+            _state.value.loadedRoute != null ||
+                requestJoystickInterruptUseCase() == JoystickInterruptDecision.ConfirmationRequired
+        if (routeIsLoadedOrRunning) {
+            _state.update { it.copy(isJoystickInterruptPending = true) }
+        } else {
+            _state.update { it.copy(isJoystickVisible = true) }
+        }
+    }
+
+    /** The joystick's own speed control, always available while it's visible — no need to load a route. */
+    private fun onJoystickSpeedChange(kmh: Float) {
+        _state.update { it.copy(joystickSpeedKmh = kmh) }
+        applyLiveSpeed(SpeedSetting.Manual(kmh / KMH_TO_MPS_DIVISOR))
+    }
+
+    private fun confirmJoystickInterrupt() {
+        lastComputedRouteHolder.clear()
+        stopSimulationUseCase()
+        joystickSessionStarted = false
+        _state.update { it.copy(isJoystickInterruptPending = false, isJoystickVisible = true) }
     }
 
     private fun reportUnauthorized() {

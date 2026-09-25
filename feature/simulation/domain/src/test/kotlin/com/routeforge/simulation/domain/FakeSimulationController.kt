@@ -1,7 +1,10 @@
 package com.routeforge.simulation.domain
 
+import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.model.Route
+import com.routeforge.simulation.domain.model.ExecutionMode
 import com.routeforge.simulation.domain.model.SimulationSession
+import com.routeforge.simulation.domain.model.SpeedSetting
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -13,7 +16,8 @@ class FakeSimulationController : SimulationController {
 
     data class StartRouteCall(
         val route: Route,
-        val speedMetersPerSecond: Float,
+        val speedSetting: SpeedSetting,
+        val executionMode: ExecutionMode,
     )
 
     private val _mockedSession = MutableStateFlow<SimulationSession?>(null)
@@ -21,12 +25,18 @@ class FakeSimulationController : SimulationController {
 
     val teleportCalls = mutableListOf<TeleportCall>()
     val startRouteCalls = mutableListOf<StartRouteCall>()
+    val setSpeedCalls = mutableListOf<SpeedSetting>()
+    val setExecutionModeCalls = mutableListOf<ExecutionMode>()
     var pauseCallCount = 0
         private set
     var resumeCallCount = 0
         private set
     var stopCallCount = 0
         private set
+    var startJoystickResult: Result<Unit, JoystickStartFailure> = Result.Success(Unit)
+    var startJoystickCallCount = 0
+        private set
+    val updateJoystickDirectionCalls = mutableListOf<Float>()
 
     fun emit(mockedSession: SimulationSession?) {
         _mockedSession.value = mockedSession
@@ -41,9 +51,10 @@ class FakeSimulationController : SimulationController {
 
     override fun startRoute(
         route: Route,
-        speedMetersPerSecond: Float,
+        speedSetting: SpeedSetting,
+        executionMode: ExecutionMode,
     ) {
-        startRouteCalls.add(StartRouteCall(route, speedMetersPerSecond))
+        startRouteCalls.add(StartRouteCall(route, speedSetting, executionMode))
     }
 
     override fun pause() {
@@ -56,5 +67,24 @@ class FakeSimulationController : SimulationController {
 
     override fun stop() {
         stopCallCount++
+    }
+
+    override fun setSpeed(speed: SpeedSetting) {
+        setSpeedCalls.add(speed)
+    }
+
+    override fun setExecutionMode(mode: ExecutionMode): Result<Unit, ExecutionModeFailure> {
+        setExecutionModeCalls.add(mode)
+        if (mode is ExecutionMode.Times && mode.count <= 0) return Result.Error(ExecutionModeFailure.NonPositiveCount)
+        return Result.Success(Unit)
+    }
+
+    override fun startJoystick(): Result<Unit, JoystickStartFailure> {
+        startJoystickCallCount++
+        return startJoystickResult
+    }
+
+    override fun updateJoystickDirection(bearingDegrees: Float) {
+        updateJoystickDirectionCalls.add(bearingDegrees)
     }
 }

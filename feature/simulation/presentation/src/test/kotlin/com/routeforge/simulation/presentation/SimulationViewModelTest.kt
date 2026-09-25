@@ -1,20 +1,28 @@
 package com.routeforge.simulation.presentation
 
 import com.routeforge.coredomain.LastComputedRouteHolder
+import com.routeforge.coredomain.LastKnownRealLocationHolder
+import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
-import com.routeforge.simulation.domain.LastKnownRealLocationHolder
-import com.routeforge.simulation.domain.model.RealLocation
+import com.routeforge.simulation.domain.JoystickStartFailure
+import com.routeforge.simulation.domain.model.ExecutionMode
 import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.domain.model.SimulationSession
 import com.routeforge.simulation.domain.model.SimulationStatus
+import com.routeforge.simulation.domain.model.SpeedSetting
+import com.routeforge.simulation.domain.usecase.ConfirmJoystickInterruptUseCase
 import com.routeforge.simulation.domain.usecase.IsNetworkConnectedUseCase
 import com.routeforge.simulation.domain.usecase.ObserveMockedSessionUseCase
 import com.routeforge.simulation.domain.usecase.ObserveRealLocationUseCase
 import com.routeforge.simulation.domain.usecase.PauseSimulationUseCase
+import com.routeforge.simulation.domain.usecase.RequestJoystickInterruptUseCase
 import com.routeforge.simulation.domain.usecase.ResumeSimulationUseCase
+import com.routeforge.simulation.domain.usecase.SetSpeedUseCase
 import com.routeforge.simulation.domain.usecase.StartRouteSimulationUseCase
 import com.routeforge.simulation.domain.usecase.StopSimulationUseCase
 import com.routeforge.simulation.domain.usecase.TeleportUseCase
+import com.routeforge.simulation.domain.usecase.UpdateJoystickDirectionUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -32,6 +40,20 @@ private val sampleRoute =
         geometry = listOf(0.0 to 0.0, 1.0 to 1.0),
         distanceMeters = 100.0,
     )
+
+private fun stationarySession(
+    latitude: Double = 10.0,
+    longitude: Double = 20.0,
+) = SimulationSession(
+    mode = SimulationMode.STATIONARY,
+    status = SimulationStatus.RUNNING,
+    latitude = latitude,
+    longitude = longitude,
+    bearingDegrees = 0f,
+    speedMetersPerSecond = 0f,
+    route = null,
+    distanceTraveledMeters = 0.0,
+)
 
 class SimulationViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
@@ -62,6 +84,10 @@ class SimulationViewModelTest {
             observeMockedSessionUseCase = ObserveMockedSessionUseCase(controller),
             observeRealLocationUseCase = ObserveRealLocationUseCase(realLocationDataSource),
             isNetworkConnectedUseCase = IsNetworkConnectedUseCase(networkConnectivityChecker),
+            setSpeedUseCase = SetSpeedUseCase(controller),
+            requestJoystickInterruptUseCase = RequestJoystickInterruptUseCase(controller),
+            confirmJoystickInterruptUseCase = ConfirmJoystickInterruptUseCase(controller),
+            updateJoystickDirectionUseCase = UpdateJoystickDirectionUseCase(controller),
             mockLocationAuthorizationChecker = authorizationChecker,
             lastComputedRouteHolder = lastComputedRouteHolder,
             lastKnownRealLocationHolder = lastKnownRealLocationHolder,
@@ -122,7 +148,6 @@ class SimulationViewModelTest {
         authorizationChecker.authorized = false
         lastComputedRouteHolder.set(sampleRoute)
         val viewModel = createViewModel()
-        viewModel.onAction(SimulationAction.OnSpeedInputChange("5.0"))
 
         viewModel.onAction(SimulationAction.OnStartRouteSimulation)
 
@@ -135,13 +160,14 @@ class SimulationViewModelTest {
     fun `starting a route simulation with a loaded route and valid speed calls the controller`() {
         lastComputedRouteHolder.set(sampleRoute)
         val viewModel = createViewModel()
-        viewModel.onAction(SimulationAction.OnSpeedInputChange("5.0"))
+        viewModel.onAction(SimulationAction.OnPlaybackSpeedChange(18f))
 
         viewModel.onAction(SimulationAction.OnStartRouteSimulation)
 
         assertEquals(1, controller.startRouteCalls.size)
         assertEquals(sampleRoute, controller.startRouteCalls.first().route)
-        assertEquals(5.0f, controller.startRouteCalls.first().speedMetersPerSecond)
+        assertEquals(5.0f, controller.startRouteCalls.first().speedSetting.metersPerSecond, 0.001f)
+        assertEquals(ExecutionMode.Once, controller.startRouteCalls.first().executionMode)
     }
 
     @Test
@@ -237,18 +263,7 @@ class SimulationViewModelTest {
     fun `stopping an active mock session triggers a fresh real location search`() {
         realLocationDataSource.location = RealLocation(latitude = 1.0, longitude = 2.0)
         val viewModel = createViewModel()
-        controller.emit(
-            SimulationSession(
-                mode = SimulationMode.STATIONARY,
-                status = SimulationStatus.RUNNING,
-                latitude = 10.0,
-                longitude = 20.0,
-                bearingDegrees = 0f,
-                speedMetersPerSecond = 0f,
-                route = null,
-                distanceTraveledMeters = 0.0,
-            ),
-        )
+        controller.emit(stationarySession())
         realLocationDataSource.location = RealLocation(latitude = 3.0, longitude = 4.0)
 
         controller.emit(null)
@@ -259,18 +274,7 @@ class SimulationViewModelTest {
     @Test
     fun `real location updates while a mock is active are ignored`() {
         val viewModel = createViewModel()
-        controller.emit(
-            SimulationSession(
-                mode = SimulationMode.STATIONARY,
-                status = SimulationStatus.RUNNING,
-                latitude = 10.0,
-                longitude = 20.0,
-                bearingDegrees = 0f,
-                speedMetersPerSecond = 0f,
-                route = null,
-                distanceTraveledMeters = 0.0,
-            ),
-        )
+        controller.emit(stationarySession())
 
         realLocationDataSource.location = RealLocation(latitude = 9.0, longitude = 9.0)
 
@@ -292,22 +296,232 @@ class SimulationViewModelTest {
     @Test
     fun `granting location permission while a mock is active does not search the real location`() {
         val viewModel = createViewModel()
-        controller.emit(
-            SimulationSession(
-                mode = SimulationMode.STATIONARY,
-                status = SimulationStatus.RUNNING,
-                latitude = 10.0,
-                longitude = 20.0,
-                bearingDegrees = 0f,
-                speedMetersPerSecond = 0f,
-                route = null,
-                distanceTraveledMeters = 0.0,
-            ),
-        )
+        controller.emit(stationarySession())
         realLocationDataSource.location = RealLocation(latitude = 5.0, longitude = 6.0)
 
         viewModel.onAction(SimulationAction.OnLocationPermissionGranted)
 
         assertNull(viewModel.state.value.realLocation)
+    }
+
+    // --- User Story 4: speed control ---
+
+    @Test
+    fun `changing the playback speed while a session is active applies it immediately in meters per second`() {
+        val viewModel = createViewModel()
+        controller.emit(stationarySession())
+
+        viewModel.onAction(SimulationAction.OnPlaybackSpeedChange(36f))
+
+        assertEquals(listOf(SpeedSetting.Manual(10f)), controller.setSpeedCalls)
+        assertEquals(36f, viewModel.state.value.playbackSpeedKmh)
+    }
+
+    @Test
+    fun `changing the playback speed with no active session only stages the value`() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(SimulationAction.OnPlaybackSpeedChange(36f))
+
+        assertTrue(controller.setSpeedCalls.isEmpty())
+        assertEquals(36f, viewModel.state.value.playbackSpeedKmh)
+    }
+
+    // --- User Story 6: execution mode ---
+
+    @Test
+    fun `starting a route with Times and an invalid count reports an error and never calls the controller`() {
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnExecutionModeSelected(ExecutionModeSelection.TIMES))
+        viewModel.onAction(SimulationAction.OnExecutionTimesInputChange("0"))
+
+        viewModel.onAction(SimulationAction.OnStartRouteSimulation)
+
+        assertTrue(controller.startRouteCalls.isEmpty())
+        assertEquals(SimulationErrorType.INVALID_EXECUTION_TIMES, viewModel.state.value.errorType)
+    }
+
+    @Test
+    fun `starting a route with a valid Times count passes it through to the controller`() {
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnExecutionModeSelected(ExecutionModeSelection.TIMES))
+        viewModel.onAction(SimulationAction.OnExecutionTimesInputChange("3"))
+
+        viewModel.onAction(SimulationAction.OnStartRouteSimulation)
+
+        assertEquals(ExecutionMode.Times(3), controller.startRouteCalls.first().executionMode)
+    }
+
+    // --- User Story 7: joystick (toggle-based) ---
+
+    @Test
+    fun `toggling the joystick on with nothing loaded or running reveals it immediately`() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(SimulationAction.OnToggleJoystick)
+
+        assertTrue(viewModel.state.value.isJoystickVisible)
+        assertTrue(!viewModel.state.value.isJoystickInterruptPending)
+        assertEquals(0, controller.startJoystickCallCount)
+    }
+
+    @Test
+    fun `toggling the joystick on while a route is only loaded, not yet playing, asks for confirmation`() {
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(SimulationAction.OnToggleJoystick)
+
+        assertTrue(viewModel.state.value.isJoystickInterruptPending)
+        assertTrue(!viewModel.state.value.isJoystickVisible)
+    }
+
+    @Test
+    fun `toggling the joystick on while a route is actively playing asks for confirmation`() {
+        val viewModel = createViewModel()
+        controller.emit(stationarySession().copy(mode = SimulationMode.ROUTE, route = sampleRoute))
+
+        viewModel.onAction(SimulationAction.OnToggleJoystick)
+
+        assertTrue(viewModel.state.value.isJoystickInterruptPending)
+        assertTrue(!viewModel.state.value.isJoystickVisible)
+    }
+
+    @Test
+    fun `dismissing the interrupt leaves the loaded route and session untouched`() {
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnToggleJoystick)
+
+        viewModel.onAction(SimulationAction.OnDismissJoystickInterrupt)
+
+        assertTrue(!viewModel.state.value.isJoystickInterruptPending)
+        assertTrue(!viewModel.state.value.isJoystickVisible)
+        assertEquals(sampleRoute, viewModel.state.value.loadedRoute)
+        assertEquals(0, controller.stopCallCount)
+    }
+
+    @Test
+    fun `confirming the interrupt clears the loaded route, stops any session, and reveals the joystick`() {
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+        controller.emit(stationarySession().copy(mode = SimulationMode.ROUTE, route = sampleRoute))
+        viewModel.onAction(SimulationAction.OnToggleJoystick)
+
+        viewModel.onAction(SimulationAction.OnConfirmJoystickInterrupt)
+
+        assertNull(viewModel.state.value.loadedRoute)
+        assertEquals(1, controller.stopCallCount)
+        assertTrue(viewModel.state.value.isJoystickVisible)
+        assertTrue(!viewModel.state.value.isJoystickInterruptPending)
+    }
+
+    @Test
+    fun `toggling an already-visible joystick off, while actively mocking, stops the session`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnToggleJoystick)
+        controller.emit(stationarySession().copy(mode = SimulationMode.JOYSTICK))
+
+        viewModel.onAction(SimulationAction.OnToggleJoystick)
+
+        assertTrue(!viewModel.state.value.isJoystickVisible)
+        assertEquals(1, controller.stopCallCount)
+    }
+
+    @Test
+    fun `toggling an already-visible joystick off, before it was ever dragged, does not stop anything`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnToggleJoystick)
+
+        viewModel.onAction(SimulationAction.OnToggleJoystick)
+
+        assertTrue(!viewModel.state.value.isJoystickVisible)
+        assertEquals(0, controller.stopCallCount)
+    }
+
+    @Test
+    fun `the first drag after revealing the joystick starts the session`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnToggleJoystick)
+
+        viewModel.onAction(SimulationAction.OnJoystickDrag(bearingDegrees = 45f))
+
+        assertEquals(1, controller.startJoystickCallCount)
+        assertEquals(listOf(45f), controller.updateJoystickDirectionCalls)
+    }
+
+    @Test
+    fun `dragging again after a release resumes the paused session instead of leaving it stuck`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnToggleJoystick)
+        viewModel.onAction(SimulationAction.OnJoystickDrag(bearingDegrees = 45f))
+        controller.emit(stationarySession().copy(mode = SimulationMode.JOYSTICK, status = SimulationStatus.PAUSED))
+
+        viewModel.onAction(SimulationAction.OnJoystickDrag(bearingDegrees = 90f))
+
+        assertEquals(1, controller.resumeCallCount)
+        assertEquals(1, controller.startJoystickCallCount)
+        assertEquals(listOf(45f, 90f), controller.updateJoystickDirectionCalls)
+    }
+
+    @Test
+    fun `multiple drag events within the same gesture only start the joystick session once`() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(SimulationAction.OnJoystickDrag(bearingDegrees = 10f))
+        viewModel.onAction(SimulationAction.OnJoystickDrag(bearingDegrees = 15f))
+        viewModel.onAction(SimulationAction.OnJoystickDrag(bearingDegrees = 20f))
+
+        assertEquals(1, controller.startJoystickCallCount)
+        assertEquals(listOf(10f, 15f, 20f), controller.updateJoystickDirectionCalls)
+    }
+
+    @Test
+    fun `a failed drag-start surfaces the no-real-fix error and never updates direction`() {
+        controller.startJoystickResult = Result.Error(JoystickStartFailure.NoRealLocationFixYet)
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnToggleJoystick)
+
+        viewModel.onAction(SimulationAction.OnJoystickDrag(bearingDegrees = 0f))
+
+        assertEquals(SimulationErrorType.JOYSTICK_NO_REAL_FIX, viewModel.state.value.errorType)
+        assertTrue(controller.updateJoystickDirectionCalls.isEmpty())
+    }
+
+    @Test
+    fun `releasing the joystick pauses the session in place`() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(SimulationAction.OnJoystickReleased)
+
+        assertEquals(1, controller.pauseCallCount)
+    }
+
+    @Test
+    fun `changing the joystick speed slider updates the label and applies live while active`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnToggleJoystick)
+        viewModel.onAction(SimulationAction.OnJoystickDrag(bearingDegrees = 0f))
+        controller.emit(stationarySession().copy(mode = SimulationMode.JOYSTICK))
+        controller.setSpeedCalls.clear()
+
+        viewModel.onAction(SimulationAction.OnJoystickSpeedChange(kmh = 36f))
+
+        assertEquals(36f, viewModel.state.value.joystickSpeedKmh)
+        assertEquals(listOf(SpeedSetting.Manual(10f)), controller.setSpeedCalls)
+    }
+
+    @Test
+    fun `starting the joystick session applies the current speed slider value`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnToggleJoystick)
+        viewModel.onAction(SimulationAction.OnJoystickSpeedChange(kmh = 18f))
+        controller.setSpeedCalls.clear()
+
+        viewModel.onAction(SimulationAction.OnJoystickDrag(bearingDegrees = 0f))
+
+        assertEquals(listOf(SpeedSetting.Manual(5f)), controller.setSpeedCalls)
     }
 }

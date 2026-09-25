@@ -11,4 +11,7 @@ data class SimulationSession(
     val speedMetersPerSecond: Float,
     val route: Route?,
     val distanceTraveledMeters: Double,
+    val speedSetting: SpeedSetting = SpeedSetting.DEFAULT,
+    val executionMode: ExecutionMode = ExecutionMode.DEFAULT,
+    val completedRuns: Int = 0,
 )

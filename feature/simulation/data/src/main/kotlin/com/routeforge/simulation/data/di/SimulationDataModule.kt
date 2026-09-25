@@ -4,7 +4,6 @@ import com.routeforge.simulation.data.AndroidMockLocationPublisher
 import com.routeforge.simulation.data.AndroidNetworkConnectivityChecker
 import com.routeforge.simulation.data.AndroidRealLocationDataSource
 import com.routeforge.simulation.data.SimulationControllerImpl
-import com.routeforge.simulation.domain.LastKnownRealLocationHolder
 import com.routeforge.simulation.domain.MockLocationPublisher
 import com.routeforge.simulation.domain.NetworkConnectivityChecker
 import com.routeforge.simulation.domain.RealLocationDataSource
@@ -18,12 +17,12 @@ val simulationDataModule =
         single { AndroidMockLocationPublisher(androidContext()) }.bind<MockLocationPublisher>()
         single { AndroidRealLocationDataSource(androidContext()) }.bind<RealLocationDataSource>()
         single { AndroidNetworkConnectivityChecker(androidContext()) }.bind<NetworkConnectivityChecker>()
-        single { LastKnownRealLocationHolder() }
 
         single {
             SimulationControllerImpl(
                 mockLocationPublisher = get(),
                 mockLocationAuthorizationChecker = get(),
+                lastKnownRealLocationHolder = get(),
                 context = androidContext(),
             )
         }.bind<SimulationController>()

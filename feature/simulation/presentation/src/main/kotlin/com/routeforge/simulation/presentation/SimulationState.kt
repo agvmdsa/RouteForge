@@ -1,10 +1,12 @@
 package com.routeforge.simulation.presentation
 
+import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
-import com.routeforge.simulation.domain.model.RealLocation
 import com.routeforge.simulation.domain.model.SimulationSession
 
-enum class SimulationErrorType { NOT_AUTHORIZED, INVALID_SPEED }
+enum class SimulationErrorType { NOT_AUTHORIZED, INVALID_SPEED, INVALID_EXECUTION_TIMES, JOYSTICK_NO_REAL_FIX }
+
+enum class ExecutionModeSelection { ONCE, TIMES, LOOP }
 
 data class SimulationState(
     val mockedSession: SimulationSession? = null,
@@ -15,7 +17,12 @@ data class SimulationState(
     val isPendingTeleportBlockedOffline: Boolean = false,
     val isPendingCancelMock: Boolean = false,
     val loadedRoute: Route? = null,
-    val speedInput: String = "",
+    val playbackSpeedKmh: Float = 5f,
+    val executionModeSelection: ExecutionModeSelection = ExecutionModeSelection.ONCE,
+    val executionTimesInput: String = "2",
+    val isJoystickVisible: Boolean = false,
+    val joystickSpeedKmh: Float = 5f,
+    val isJoystickInterruptPending: Boolean = false,
     val errorType: SimulationErrorType? = null,
     val isBlockedByAuthorization: Boolean = false,
 )
