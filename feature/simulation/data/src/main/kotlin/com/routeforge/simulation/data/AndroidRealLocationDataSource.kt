@@ -10,6 +10,8 @@ import androidx.core.location.LocationManagerCompat
 import androidx.core.location.LocationRequestCompat
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.simulation.domain.RealLocationDataSource
+import com.routeforge.simulation.domain.RealLocationFailure
+import com.routeforge.simulation.domain.RealLocationUpdate
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -19,18 +21,25 @@ private const val LOCATION_UPDATE_INTERVAL_MILLIS = 5_000L
 class AndroidRealLocationDataSource(
     private val context: Context,
 ) : RealLocationDataSource {
-    override fun observeLocation(): Flow<RealLocation> =
+    override fun observeLocation(): Flow<RealLocationUpdate> =
         callbackFlow {
             val locationManager = context.getSystemService(LocationManager::class.java)
             if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                trySend(RealLocationUpdate.Unavailable(RealLocationFailure.ProviderDisabled))
                 close()
                 return@callbackFlow
+            }
+
+            locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.let { lastKnownLocation ->
+                if (!LocationCompat.isMock(lastKnownLocation)) {
+                    trySend(RealLocationUpdate.Fix(RealLocation(lastKnownLocation.latitude, lastKnownLocation.longitude)))
+                }
             }
 
             val listener =
                 LocationListenerCompat { location: Location ->
                     if (!LocationCompat.isMock(location)) {
-                        trySend(RealLocation(location.latitude, location.longitude))
+                        trySend(RealLocationUpdate.Fix(RealLocation(location.latitude, location.longitude)))
                     }
                 }
 
@@ -43,7 +52,9 @@ class AndroidRealLocationDataSource(
                     listener,
                 )
             } catch (_: SecurityException) {
+                trySend(RealLocationUpdate.Unavailable(RealLocationFailure.PermissionDenied))
                 close()
+                return@callbackFlow
             }
 
             awaitClose { LocationManagerCompat.removeUpdates(locationManager, listener) }

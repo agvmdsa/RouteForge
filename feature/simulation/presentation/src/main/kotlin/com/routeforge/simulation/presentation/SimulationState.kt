@@ -4,7 +4,15 @@ import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
 import com.routeforge.simulation.domain.model.SimulationSession
 
-enum class SimulationErrorType { NOT_AUTHORIZED, INVALID_SPEED, INVALID_EXECUTION_TIMES, JOYSTICK_NO_REAL_FIX }
+enum class SimulationErrorType {
+    NOT_AUTHORIZED,
+    INVALID_SPEED,
+    INVALID_EXECUTION_TIMES,
+    JOYSTICK_NO_REAL_FIX,
+    REAL_LOCATION_PROVIDER_DISABLED,
+    REAL_LOCATION_PERMISSION_DENIED,
+    REAL_LOCATION_TIMED_OUT,
+}
 
 enum class ExecutionModeSelection { ONCE, TIMES, LOOP }
 

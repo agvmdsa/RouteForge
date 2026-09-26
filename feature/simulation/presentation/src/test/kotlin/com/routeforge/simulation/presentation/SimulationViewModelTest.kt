@@ -390,6 +390,39 @@ class SimulationViewModelTest {
     }
 
     @Test
+    fun `an unavailable real location signal surfaces a distinct error and stops searching`() {
+        realLocationDataSource.permissionGranted = false
+
+        val viewModel = createViewModel()
+
+        assertTrue(!viewModel.state.value.isSearchingRealLocation)
+        assertEquals(SimulationErrorType.REAL_LOCATION_PERMISSION_DENIED, viewModel.state.value.errorType)
+    }
+
+    @Test
+    fun `the real location search times out and surfaces an error if nothing arrives`() {
+        val viewModel = createViewModel()
+        assertTrue(viewModel.state.value.isSearchingRealLocation)
+
+        dispatcher.scheduler.advanceTimeBy(30_001L)
+        dispatcher.scheduler.runCurrent()
+
+        assertTrue(!viewModel.state.value.isSearchingRealLocation)
+        assertEquals(SimulationErrorType.REAL_LOCATION_TIMED_OUT, viewModel.state.value.errorType)
+    }
+
+    @Test
+    fun `a fix arriving quickly cancels the pending timeout so no error appears later`() {
+        realLocationDataSource.location = RealLocation(latitude = 1.0, longitude = 2.0)
+        val viewModel = createViewModel()
+
+        dispatcher.scheduler.advanceTimeBy(30_001L)
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(viewModel.state.value.errorType)
+    }
+
+    @Test
     fun `granting location permission while a mock is active does not search the real location`() {
         val viewModel = createViewModel()
         controller.emit(stationarySession())

@@ -26,6 +26,9 @@
     <string name="simulation_error_not_authorized">RouteForge isn\'t set up as the device\'s mock location provider yet. Finish setup to simulate a location.</string>
     <string name="simulation_error_invalid_speed">Enter a valid simulated speed.</string>
     <string name="simulation_error_invalid_execution_times">Enter a positive number of times to play the route.</string>
+    <string name="simulation_error_real_location_provider_disabled">Turn on Location/GPS on your device to find your real position.</string>
+    <string name="simulation_error_real_location_permission_denied">RouteForge needs location permission to find your real position. Grant it in system settings.</string>
+    <string name="simulation_error_real_location_timed_out">Still couldn\'t get your location — try somewhere with a clearer view of the sky, or check your location settings.</string>
     <string name="simulation_execution_once">Once</string>
     <string name="simulation_execution_times">N times</string>
     <string name="simulation_execution_loop">Loop</string>
