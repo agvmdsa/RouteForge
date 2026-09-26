@@ -8,8 +8,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -20,6 +24,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,6 +57,7 @@ private val ScreenContentPadding = 16.dp
 private val ControlsRowSpacing = 8.dp
 private val JoystickBottomPadding = 24.dp
 private val BannerTopOffset = 72.dp
+private val SmallFabSize = 40.dp
 private const val MIN_SPEED_KMH = 0f
 private const val MAX_SPEED_KMH = 150f
 private val SpeedSelectorRangeKmh = MIN_SPEED_KMH..MAX_SPEED_KMH
@@ -195,18 +201,26 @@ fun SimulationScreen(
                 modifier = Modifier.fillMaxSize(),
             )
 
-            CoordinatePill(
-                mockedSession = state.mockedSession,
-                isSearchingRealLocation = state.isSearchingRealLocation,
-                onCancelMockClick = { onAction(SimulationAction.OnCancelMockClick) },
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = ScreenContentPadding),
-            )
-
-            FloatingActionButton(
-                onClick = { onAction(SimulationAction.OnOpenSettingsClick) },
-                modifier = Modifier.align(Alignment.TopEnd).padding(ScreenContentPadding),
+            Row(
+                modifier =
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .padding(top = ScreenContentPadding, start = ScreenContentPadding, end = ScreenContentPadding),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(imageVector = Icons.Filled.Settings, contentDescription = stringResource(R.string.simulation_open_settings_button))
+                Spacer(modifier = Modifier.size(SmallFabSize))
+                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                    CoordinatePill(
+                        mockedSession = state.mockedSession,
+                        isSearchingRealLocation = state.isSearchingRealLocation,
+                        hasKnownRealLocation = state.realLocation != null,
+                        onCancelMockClick = { onAction(SimulationAction.OnCancelMockClick) },
+                    )
+                }
+                SmallFloatingActionButton(onClick = { onAction(SimulationAction.OnOpenSettingsClick) }) {
+                    Icon(imageVector = Icons.Filled.Settings, contentDescription = stringResource(R.string.simulation_open_settings_button))
+                }
             }
 
             if (state.isBlockedByAuthorization) {
