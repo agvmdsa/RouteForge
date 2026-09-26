@@ -1,8 +1,8 @@
 package com.routeforge.simulation.presentation
 
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +20,7 @@ import com.routeforge.simulation.domain.model.SimulationSession
 internal fun CoordinatePill(
     mockedSession: SimulationSession?,
     isSearchingRealLocation: Boolean,
+    hasKnownRealLocation: Boolean,
     onCancelMockClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -27,16 +28,21 @@ internal fun CoordinatePill(
     val text =
         when {
             mockedSession != null -> "%.5f, %.5f".format(mockedSession.latitude, mockedSession.longitude)
-            isSearchingRealLocation -> stringResource(R.string.simulation_status_searching_real_location)
+            isSearchingRealLocation && !hasKnownRealLocation -> stringResource(R.string.simulation_status_searching_real_location)
             else -> stringResource(R.string.simulation_status_no_simulation)
         }
+    val copyLabel = stringResource(R.string.simulation_copy_coordinates)
     StatusPill(modifier = modifier) {
-        Text(text = text, style = MaterialTheme.typography.bodyMedium)
-        if (mockedSession != null) {
-            IconButton(onClick = { clipboardManager.setText(AnnotatedString(text)) }) {
-                Icon(Icons.Filled.ContentCopy, contentDescription = stringResource(R.string.simulation_copy_coordinates))
-            }
-        }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier =
+                if (mockedSession != null) {
+                    Modifier.clickable(onClickLabel = copyLabel) { clipboardManager.setText(AnnotatedString(text)) }
+                } else {
+                    Modifier
+                },
+        )
         if (mockedSession?.mode == SimulationMode.STATIONARY) {
             IconButton(onClick = onCancelMockClick) {
                 Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_mock_button))
