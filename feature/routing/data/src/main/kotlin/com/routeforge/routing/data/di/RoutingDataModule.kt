@@ -6,10 +6,14 @@ import com.routeforge.routing.data.BundledRegionCatalog
 import com.routeforge.routing.data.GpxRouteFileCodec
 import com.routeforge.routing.data.HttpRegionDownloader
 import com.routeforge.routing.data.JsonRouteFileCodec
+import com.routeforge.routing.data.SharedPreferencesRegionUsageTracker
+import com.routeforge.routing.data.SharedPreferencesStorageQuotaStore
 import com.routeforge.routing.domain.RegionCatalog
 import com.routeforge.routing.domain.RegionDownloader
+import com.routeforge.routing.domain.RegionUsageTracker
 import com.routeforge.routing.domain.RouteFileCodec
 import com.routeforge.routing.domain.RoutingEngine
+import com.routeforge.routing.domain.StorageQuotaStore
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
@@ -43,6 +47,10 @@ val routingDataModule =
                 regionCatalog = get<BundledRegionCatalog>(),
             )
         }.bind<RegionDownloader>()
+
+        single { SharedPreferencesStorageQuotaStore(androidContext()) }.bind<StorageQuotaStore>()
+
+        single { SharedPreferencesRegionUsageTracker(androidContext()) }.bind<RegionUsageTracker>()
 
         single<Map<RouteFileFormat, RouteFileCodec>> {
             mapOf(

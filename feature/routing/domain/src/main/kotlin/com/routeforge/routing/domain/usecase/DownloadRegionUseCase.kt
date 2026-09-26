@@ -9,6 +9,8 @@ import com.routeforge.routing.domain.RegionDownloader
 class DownloadRegionUseCase(
     private val regionDownloader: RegionDownloader,
     private val regionCatalog: RegionCatalog,
+    private val recordRegionUsage: RecordRegionUsageUseCase,
+    private val enforceStorageQuota: EnforceStorageQuotaUseCase,
 ) {
     suspend operator fun invoke(
         regionId: String,
@@ -17,6 +19,11 @@ class DownloadRegionUseCase(
         val region =
             regionCatalog.regionById(regionId)
                 ?: return Result.Error(DataError.Network.NOT_FOUND)
-        return regionDownloader.download(region, onProgress)
+        val result = regionDownloader.download(region, onProgress)
+        if (result is Result.Success) {
+            recordRegionUsage(setOf(regionId))
+            enforceStorageQuota()
+        }
+        return result
     }
 }

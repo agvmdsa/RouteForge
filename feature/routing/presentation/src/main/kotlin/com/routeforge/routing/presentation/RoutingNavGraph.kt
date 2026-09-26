@@ -18,4 +18,7 @@ fun NavGraphBuilder.routingGraph(
     composable<RegionCatalogRoute> {
         RegionCatalogRoot()
     }
+    composable<SettingsRoute> {
+        SettingsRoot(onManageDownloadsClick = { navController.navigate(RegionCatalogRoute) })
+    }
 }

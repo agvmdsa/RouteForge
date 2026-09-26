@@ -36,4 +36,14 @@
     <string name="region_catalog_attribution">© OpenStreetMap contributors</string>
     <string name="region_catalog_empty_title">No map data needed right now</string>
     <string name="region_catalog_empty_message">Regions show up here once your route needs them, or once you\'ve downloaded them for offline use.</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_storage_section_title">Offline map storage</string>
+    <string name="settings_quota_500mb">500 MB</string>
+    <string name="settings_quota_1gb">1 GB</string>
+    <string name="settings_quota_2gb">2 GB</string>
+    <string name="settings_quota_5gb">5 GB</string>
+    <string name="settings_quota_unlimited">Unlimited</string>
+    <string name="settings_usage_label">%1$d MB of %2$d MB used</string>
+    <string name="settings_usage_unlimited_label">%1$d MB used</string>
+    <string name="settings_manage_downloads_button">Manage downloads</string>
 </resources>

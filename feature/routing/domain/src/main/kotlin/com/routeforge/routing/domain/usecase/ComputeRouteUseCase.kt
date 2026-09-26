@@ -10,6 +10,7 @@ import com.routeforge.routing.domain.RoutingFailure
 class ComputeRouteUseCase(
     private val routingEngine: RoutingEngine,
     private val regionCatalog: RegionCatalog,
+    private val recordRegionUsage: RecordRegionUsageUseCase,
 ) {
     operator fun invoke(points: List<RoutePoint>): Result<Route, RoutingFailure> {
         val availableRegions = regionCatalog.listRegions()
@@ -34,6 +35,8 @@ class ComputeRouteUseCase(
         return if (route == null) {
             Result.Error(RoutingFailure.NoPathBetweenPoints)
         } else {
+            val touchedRegionIds = points.mapNotNull { regionCatalog.regionContaining(it.latitude, it.longitude)?.id }.toSet()
+            recordRegionUsage(touchedRegionIds)
             Result.Success(route)
         }
     }

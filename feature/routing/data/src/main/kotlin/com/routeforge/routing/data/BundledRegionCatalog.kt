@@ -57,6 +57,15 @@ class BundledRegionCatalog(
 
     override fun regionById(id: String): Region? = listRegions().firstOrNull { it.id == id } ?: computedRegion(id)
 
+    override fun actualSizeOnDiskBytes(region: Region): Long =
+        region.tileIds.sumOf { fileName -> File(segmentDirectory, fileName).let { if (it.exists()) it.length() else 0L } }
+
+    override fun deleteRegion(region: Region): Boolean =
+        region.tileIds.all { fileName ->
+            val file = File(segmentDirectory, fileName)
+            !file.exists() || file.delete()
+        }
+
     fun markDownloading(regionId: String) {
         downloadingRegionIds.add(regionId)
     }

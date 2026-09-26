@@ -17,6 +17,7 @@
     <string name="simulation_cancel_mock_dismiss_button">Keep simulating</string>
     <string name="simulation_teleport_blocked_offline_message">No internet connection — can\'t confirm a teleport to an area whose map couldn\'t load.</string>
     <string name="simulation_go_to_setup_button">Go to setup</string>
+    <string name="simulation_open_settings_button">Settings</string>
     <string name="simulation_loaded_route_label">Loaded route: %1$d m</string>
     <string name="simulation_start_button">Start simulation</string>
     <string name="simulation_pause_button">Pause</string>

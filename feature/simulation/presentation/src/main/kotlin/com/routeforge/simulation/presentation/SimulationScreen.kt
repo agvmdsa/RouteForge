@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
@@ -59,6 +60,7 @@ private val SpeedSelectorRangeKmh = MIN_SPEED_KMH..MAX_SPEED_KMH
 fun SimulationRoot(
     onPlanRoute: () -> Unit,
     onOpenSetup: () -> Unit,
+    onOpenSettings: () -> Unit,
     viewModel: SimulationViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -90,6 +92,7 @@ fun SimulationRoot(
             when (event) {
                 SimulationEvent.NavigateToPlanRoute -> onPlanRoute()
                 SimulationEvent.NavigateToSetup -> onOpenSetup()
+                SimulationEvent.NavigateToSettings -> onOpenSettings()
             }
         }
     }
@@ -198,6 +201,13 @@ fun SimulationScreen(
                 onCancelMockClick = { onAction(SimulationAction.OnCancelMockClick) },
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = ScreenContentPadding),
             )
+
+            FloatingActionButton(
+                onClick = { onAction(SimulationAction.OnOpenSettingsClick) },
+                modifier = Modifier.align(Alignment.TopEnd).padding(ScreenContentPadding),
+            ) {
+                Icon(imageVector = Icons.Filled.Settings, contentDescription = stringResource(R.string.simulation_open_settings_button))
+            }
 
             if (state.isBlockedByAuthorization) {
                 TopBanner(

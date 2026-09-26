@@ -145,6 +145,8 @@ class SimulationViewModel(
                 viewModelScope.launch { _events.send(SimulationEvent.NavigateToPlanRoute) }
             SimulationAction.OnOpenSetupClick ->
                 viewModelScope.launch { _events.send(SimulationEvent.NavigateToSetup) }
+            SimulationAction.OnOpenSettingsClick ->
+                viewModelScope.launch { _events.send(SimulationEvent.NavigateToSettings) }
             SimulationAction.OnLocationPermissionGranted ->
                 if (_state.value.mockedSession == null) startObservingRealLocation()
             SimulationAction.OnScreenResumed -> checkAuthorizationStillGranted()
