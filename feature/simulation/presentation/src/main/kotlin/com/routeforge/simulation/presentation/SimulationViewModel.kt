@@ -6,6 +6,8 @@ import com.routeforge.coredomain.LastComputedRouteHolder
 import com.routeforge.coredomain.LastKnownRealLocationHolder
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
 import com.routeforge.coredomain.Result
+import com.routeforge.simulation.domain.RealLocationFailure
+import com.routeforge.simulation.domain.RealLocationUpdate
 import com.routeforge.simulation.domain.model.ExecutionMode
 import com.routeforge.simulation.domain.model.JoystickInterruptDecision
 import com.routeforge.simulation.domain.model.SimulationMode
@@ -25,6 +27,7 @@ import com.routeforge.simulation.domain.usecase.TeleportUseCase
 import com.routeforge.simulation.domain.usecase.UpdateJoystickDirectionUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -34,6 +37,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val KMH_TO_MPS_DIVISOR = 3.6f
+private const val REAL_LOCATION_TIMEOUT_MILLIS = 30_000L
 
 class SimulationViewModel(
     private val teleportUseCase: TeleportUseCase,
@@ -59,6 +63,7 @@ class SimulationViewModel(
     val events = _events.receiveAsFlow()
 
     private var realLocationObservationJob: Job? = null
+    private var realLocationTimeoutJob: Job? = null
 
     /**
      * Tracks locally (synchronously) whether the current joystick drag has already started a
@@ -304,16 +309,43 @@ class SimulationViewModel(
     private fun startObservingRealLocation() {
         if (realLocationObservationJob?.isActive == true) return
         _state.update { it.copy(isSearchingRealLocation = true) }
+        realLocationTimeoutJob =
+            viewModelScope.launch {
+                delay(REAL_LOCATION_TIMEOUT_MILLIS)
+                if (_state.value.isSearchingRealLocation) {
+                    _state.update {
+                        it.copy(isSearchingRealLocation = false, errorType = SimulationErrorType.REAL_LOCATION_TIMED_OUT)
+                    }
+                }
+            }
         realLocationObservationJob =
             observeRealLocationUseCase()
-                .onEach { location ->
-                    lastKnownRealLocationHolder.set(location)
-                    _state.update { it.copy(isSearchingRealLocation = false) }
+                .onEach { update ->
+                    realLocationTimeoutJob?.cancel()
+                    when (update) {
+                        is RealLocationUpdate.Fix -> {
+                            lastKnownRealLocationHolder.set(update.location)
+                            _state.update { it.copy(isSearchingRealLocation = false) }
+                        }
+                        is RealLocationUpdate.Unavailable -> {
+                            _state.update {
+                                it.copy(isSearchingRealLocation = false, errorType = update.reason.toSimulationErrorType())
+                            }
+                        }
+                    }
                 }.launchIn(viewModelScope)
     }
 
     private fun stopObservingRealLocation() {
         realLocationObservationJob?.cancel()
         realLocationObservationJob = null
+        realLocationTimeoutJob?.cancel()
+        realLocationTimeoutJob = null
     }
+
+    private fun RealLocationFailure.toSimulationErrorType(): SimulationErrorType =
+        when (this) {
+            RealLocationFailure.ProviderDisabled -> SimulationErrorType.REAL_LOCATION_PROVIDER_DISABLED
+            RealLocationFailure.PermissionDenied -> SimulationErrorType.REAL_LOCATION_PERMISSION_DENIED
+        }
 }
