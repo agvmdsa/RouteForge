@@ -68,6 +68,8 @@ sealed interface SimulationAction {
 
     data object OnOpenSetupClick : SimulationAction
 
+    data object OnOpenSettingsClick : SimulationAction
+
     data object OnLocationPermissionGranted : SimulationAction
 
     /** Fired when the screen resumes (app foregrounded, or returning from Settings) — re-checks

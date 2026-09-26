@@ -3,6 +3,7 @@ package com.routeforge.routing.presentation
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.DraftWaypointsHolder
 import com.routeforge.coredomain.EmptyResult
+import com.routeforge.coredomain.LastComputedRouteHolder
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.RegionDownloader
@@ -10,7 +11,9 @@ import com.routeforge.routing.domain.model.Region
 import com.routeforge.routing.domain.model.RegionStatus
 import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.usecase.DownloadRegionUseCase
+import com.routeforge.routing.domain.usecase.EnforceStorageQuotaUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
+import com.routeforge.routing.domain.usecase.RecordRegionUsageUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -83,7 +86,20 @@ class RegionCatalogViewModelTest {
     ): RegionCatalogViewModel =
         RegionCatalogViewModel(
             observeRegionCatalog = ObserveRegionCatalogUseCase(catalog),
-            downloadRegion = DownloadRegionUseCase(downloader, catalog),
+            downloadRegion =
+                DownloadRegionUseCase(
+                    regionDownloader = downloader,
+                    regionCatalog = catalog,
+                    recordRegionUsage = RecordRegionUsageUseCase(FakeRegionUsageTracker()),
+                    enforceStorageQuota =
+                        EnforceStorageQuotaUseCase(
+                            storageQuotaStore = FakeStorageQuotaStore(),
+                            regionCatalog = catalog,
+                            regionUsageTracker = FakeRegionUsageTracker(),
+                            draftWaypointsHolder = draftWaypointsHolder,
+                            lastComputedRouteHolder = LastComputedRouteHolder(),
+                        ),
+                ),
             computeRequiredRegions = ComputeRequiredRegionsUseCase(catalog),
             draftWaypointsHolder = draftWaypointsHolder,
         )

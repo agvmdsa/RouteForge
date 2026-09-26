@@ -20,6 +20,7 @@ import com.routeforge.routing.domain.usecase.ComputeRouteUseCase
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.PrepareRouteOptionsUseCase
+import com.routeforge.routing.domain.usecase.RecordRegionUsageUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -88,7 +89,7 @@ class RouteRequestViewModelTest {
         RouteRequestViewModel(
             prepareRouteOptions =
                 PrepareRouteOptionsUseCase(
-                    computeRoute = ComputeRouteUseCase(routingEngine, regionCatalog),
+                    computeRoute = ComputeRouteUseCase(routingEngine, regionCatalog, RecordRegionUsageUseCase(FakeRegionUsageTracker())),
                     freeRoamRouteBuilder = FreeRoamRouteBuilder(),
                 ),
             lastComputedRouteHolder = lastComputedRouteHolder,

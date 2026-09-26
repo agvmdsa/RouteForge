@@ -4,12 +4,15 @@ import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.FakeRegionCatalog
+import com.routeforge.routing.domain.FakeRegionUsageTracker
 import com.routeforge.routing.domain.FakeRoutingEngine
 import com.routeforge.routing.domain.RoutingFailure
 import com.routeforge.routing.domain.model.Region
 import com.routeforge.routing.domain.model.RegionStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 private val availableRegion =
@@ -28,7 +31,8 @@ private val availableRegion =
 class ComputeRouteUseCaseTest {
     private val routingEngine = FakeRoutingEngine()
     private val regionCatalog = FakeRegionCatalog(regions = listOf(availableRegion))
-    private val useCase = ComputeRouteUseCase(routingEngine, regionCatalog)
+    private val regionUsageTracker = FakeRegionUsageTracker()
+    private val useCase = ComputeRouteUseCase(routingEngine, regionCatalog, RecordRegionUsageUseCase(regionUsageTracker))
 
     @Test
     fun `start and end that both snap and have a connecting path return a route`() {
@@ -45,6 +49,28 @@ class ComputeRouteUseCaseTest {
         val result = useCase(listOf(start, end))
 
         assertEquals(Result.Success(expectedRoute), result)
+    }
+
+    @Test
+    fun `a successful computation records usage for every touched region`() {
+        val start = RoutePoint(latitude = 1.0, longitude = 1.0)
+        val end = RoutePoint(latitude = 2.0, longitude = 2.0)
+        routingEngine.computePathResult = Route(points = listOf(start, end), geometry = emptyList(), distanceMeters = 150.0)
+
+        useCase(listOf(start, end))
+
+        assertNotNull(regionUsageTracker.lastUsedAt("available"))
+    }
+
+    @Test
+    fun `a failed computation does not record any usage`() {
+        val start = RoutePoint(latitude = 1.0, longitude = 1.0)
+        val end = RoutePoint(latitude = 2.0, longitude = 2.0)
+        routingEngine.computePathResult = null
+
+        useCase(listOf(start, end))
+
+        assertNull(regionUsageTracker.lastUsedAt("available"))
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.FakeRegionCatalog
+import com.routeforge.routing.domain.FakeRegionUsageTracker
 import com.routeforge.routing.domain.FakeRoutingEngine
 import com.routeforge.routing.domain.FreeRoamRouteBuilder
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Test
 class PrepareRouteOptionsUseCaseTest {
     private val routingEngine = FakeRoutingEngine()
     private val regionCatalog = FakeRegionCatalog()
-    private val computeRoute = ComputeRouteUseCase(routingEngine, regionCatalog)
+    private val computeRoute = ComputeRouteUseCase(routingEngine, regionCatalog, RecordRegionUsageUseCase(FakeRegionUsageTracker()))
     private val freeRoamRouteBuilder = FreeRoamRouteBuilder()
     private val useCase = PrepareRouteOptionsUseCase(computeRoute, freeRoamRouteBuilder)
 

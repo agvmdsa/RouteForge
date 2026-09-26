@@ -11,6 +11,7 @@ import com.routeforge.mocklocationsetup.domain.usecase.ObserveSetupStateUseCase
 import com.routeforge.mocklocationsetup.presentation.MockLocationSetupRoute
 import com.routeforge.mocklocationsetup.presentation.mockLocationSetupGraph
 import com.routeforge.routing.presentation.RouteRequestRoute
+import com.routeforge.routing.presentation.SettingsRoute
 import com.routeforge.routing.presentation.routingGraph
 import com.routeforge.simulation.presentation.SimulationRoute
 import com.routeforge.simulation.presentation.simulationGraph
@@ -43,6 +44,7 @@ class MainActivity : ComponentActivity() {
                     simulationGraph(
                         onPlanRoute = { navController.navigate(RouteRequestRoute) },
                         onOpenSetup = { navController.navigate(MockLocationSetupRoute) },
+                        onOpenSettings = { navController.navigate(SettingsRoute) },
                     )
                     routingGraph(
                         navController = navController,
