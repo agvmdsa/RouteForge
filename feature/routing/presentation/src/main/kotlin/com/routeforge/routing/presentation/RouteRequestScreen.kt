@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -51,6 +52,7 @@ private const val GPX_MIME_TYPE = "application/gpx+xml"
 fun RouteRequestRoot(
     onRouteComputed: (Route) -> Unit,
     onOpenRegionCatalog: () -> Unit,
+    onOpenFavorites: () -> Unit,
     viewModel: RouteRequestViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -81,6 +83,7 @@ fun RouteRequestRoot(
             when (event) {
                 is RouteRequestEvent.RouteComputed -> onRouteComputed(event.route)
                 RouteRequestEvent.NavigateToRegionCatalog -> onOpenRegionCatalog()
+                RouteRequestEvent.NavigateToFavorites -> onOpenFavorites()
                 is RouteRequestEvent.ExportReady -> {
                     pendingExportBytes = event.bytes
                     when (event.format) {
@@ -178,6 +181,9 @@ fun RouteRequestScreen(
                 FloatingActionButton(onClick = onImportClick) {
                     Icon(Icons.Filled.FileUpload, contentDescription = stringResource(R.string.routing_import_button))
                 }
+                FloatingActionButton(onClick = { onAction(RouteRequestAction.OnOpenFavoritesClick) }) {
+                    Icon(Icons.Filled.Star, contentDescription = stringResource(R.string.routing_add_from_favorites_button))
+                }
                 if (state.draft.canUndo) {
                     FloatingActionButton(onClick = { onAction(RouteRequestAction.OnUndo) }) {
                         Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.routing_undo_button))
@@ -243,6 +249,21 @@ fun RouteRequestScreen(
             onGoToDownloads = { onAction(RouteRequestAction.OnOpenRegionCatalog) },
             onContinueAnyway = { onAction(RouteRequestAction.OnProceedDespiteMissingRegions) },
             onDismiss = { onAction(RouteRequestAction.OnDismissMissingRegionsWarning) },
+        )
+    }
+
+    val pendingAddLatitude = state.pendingAddLatitude
+    val pendingAddLongitude = state.pendingAddLongitude
+    if (pendingAddLatitude != null && pendingAddLongitude != null) {
+        AddWaypointConfirmationSheet(
+            latitude = pendingAddLatitude,
+            longitude = pendingAddLongitude,
+            isSaveAsFavoriteChecked = state.isSaveAsFavoriteChecked,
+            favoriteNameInput = state.favoriteNameInput,
+            onToggleSaveAsFavorite = { onAction(RouteRequestAction.OnToggleSaveAsFavorite) },
+            onFavoriteNameChange = { onAction(RouteRequestAction.OnFavoriteNameInputChange(it)) },
+            onConfirm = { onAction(RouteRequestAction.OnConfirmAddWaypoint) },
+            onDismiss = { onAction(RouteRequestAction.OnDismissAddWaypoint) },
         )
     }
 }

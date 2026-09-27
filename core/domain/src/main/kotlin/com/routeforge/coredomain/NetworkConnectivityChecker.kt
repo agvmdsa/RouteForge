@@ -1,4 +1,4 @@
-package com.routeforge.simulation.domain
+package com.routeforge.coredomain
 
 interface NetworkConnectivityChecker {
     fun isConnected(): Boolean

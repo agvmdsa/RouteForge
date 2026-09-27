@@ -35,6 +35,18 @@ sealed interface RouteRequestAction {
 
     data object OnUndo : RouteRequestAction
 
+    data object OnConfirmAddWaypoint : RouteRequestAction
+
+    data object OnDismissAddWaypoint : RouteRequestAction
+
+    data object OnToggleSaveAsFavorite : RouteRequestAction
+
+    data class OnFavoriteNameInputChange(
+        val value: String,
+    ) : RouteRequestAction
+
+    data object OnOpenFavoritesClick : RouteRequestAction
+
     class OnRouteFileImported(
         val bytes: ByteArray,
         val format: RouteFileFormat,

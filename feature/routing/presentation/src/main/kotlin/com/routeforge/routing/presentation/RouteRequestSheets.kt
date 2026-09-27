@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -19,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -157,6 +159,40 @@ internal fun MissingRegionsWarningSheet(
         Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
             Button(onClick = onGoToDownloads) { Text(stringResource(R.string.routing_missing_regions_go_to_downloads)) }
             TextButton(onClick = onContinueAnyway) { Text(stringResource(R.string.routing_missing_regions_continue_anyway)) }
+        }
+    }
+}
+
+@Composable
+internal fun AddWaypointConfirmationSheet(
+    latitude: Double,
+    longitude: Double,
+    isSaveAsFavoriteChecked: Boolean,
+    favoriteNameInput: String,
+    onToggleSaveAsFavorite: () -> Unit,
+    onFavoriteNameChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ConfirmationBottomSheet(title = stringResource(R.string.routing_add_waypoint_title), onDismiss = onDismiss) {
+        Text(stringResource(R.string.routing_add_waypoint_message, latitude, longitude))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = isSaveAsFavoriteChecked, onCheckedChange = { onToggleSaveAsFavorite() })
+            Text(stringResource(R.string.routing_save_as_favorite_label))
+        }
+        if (isSaveAsFavoriteChecked) {
+            OutlinedTextField(
+                value = favoriteNameInput,
+                onValueChange = onFavoriteNameChange,
+                label = { Text(stringResource(R.string.routing_favorite_name_label)) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+            Button(onClick = onConfirm, enabled = !isSaveAsFavoriteChecked || favoriteNameInput.isNotBlank()) {
+                Text(stringResource(R.string.routing_add_waypoint_confirm_button))
+            }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.routing_add_waypoint_cancel_button)) }
         }
     }
 }

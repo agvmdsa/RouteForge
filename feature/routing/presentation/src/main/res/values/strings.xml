@@ -46,4 +46,27 @@
     <string name="settings_usage_label">%1$d MB of %2$d MB used</string>
     <string name="settings_usage_unlimited_label">%1$d MB used</string>
     <string name="settings_manage_downloads_button">Manage downloads</string>
+    <string name="routing_add_waypoint_title">Add this waypoint?</string>
+    <string name="routing_add_waypoint_message">Latitude: %1$s\nLongitude: %2$s</string>
+    <string name="routing_add_waypoint_confirm_button">Add waypoint</string>
+    <string name="routing_add_waypoint_cancel_button">Cancel</string>
+    <string name="routing_save_as_favorite_label">Also save as favorite</string>
+    <string name="routing_favorite_name_label">Favorite name</string>
+    <string name="favorites_title">Favorites</string>
+    <string name="favorites_empty_title">No favorites yet</string>
+    <string name="favorites_empty_message">Favorites are created from route creation\'s add-waypoint confirmation — check "Also save as favorite" there.</string>
+    <string name="favorites_mock_here_button">Mock here</string>
+    <string name="favorites_mock_here_confirm_title">Teleport to %1$s?</string>
+    <string name="favorites_mock_here_confirm_message">This will move your simulated position to this favorite\'s coordinate.</string>
+    <string name="favorites_mock_here_confirm_button">Teleport</string>
+    <string name="favorites_mock_here_cancel_button">Cancel</string>
+    <string name="favorites_mock_here_blocked_offline_message">No internet connection — can\'t confirm a teleport to an area whose map couldn\'t load.</string>
+    <string name="favorites_use_as_waypoint_label">Use as waypoint</string>
+    <string name="routing_add_from_favorites_button">Add from favorites</string>
+    <string name="favorites_edit_title">Edit favorite</string>
+    <string name="favorites_edit_button">Edit</string>
+    <string name="favorites_error_invalid_name">Enter a name for this favorite.</string>
+    <string name="favorites_error_invalid_coordinates">Enter valid coordinates for this favorite.</string>
+    <string name="favorites_delete_confirm_title">Delete this favorite?</string>
+    <string name="favorites_delete_confirm_message">This can\'t be undone.</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.routeforge.simulation.presentation
+package com.routeforge.routing.presentation
 
 import com.routeforge.coredomain.NetworkConnectivityChecker
 

@@ -2,9 +2,11 @@ package com.routeforge.simulation.presentation
 
 import com.routeforge.coredomain.LastComputedRouteHolder
 import com.routeforge.coredomain.LastKnownRealLocationHolder
+import com.routeforge.coredomain.PendingTeleportTargetHolder
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
+import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.simulation.domain.JoystickStartFailure
 import com.routeforge.simulation.domain.model.ExecutionMode
 import com.routeforge.simulation.domain.model.SimulationMode
@@ -69,6 +71,7 @@ class SimulationViewModelTest {
     private val realLocationDataSource = FakeRealLocationDataSource()
     private val networkConnectivityChecker = FakeNetworkConnectivityChecker()
     private val lastKnownRealLocationHolder = LastKnownRealLocationHolder()
+    private val pendingTeleportTargetHolder = PendingTeleportTargetHolder()
 
     @BeforeEach
     fun setUp() {
@@ -97,6 +100,7 @@ class SimulationViewModelTest {
             mockLocationAuthorizationChecker = authorizationChecker,
             lastComputedRouteHolder = lastComputedRouteHolder,
             lastKnownRealLocationHolder = lastKnownRealLocationHolder,
+            pendingTeleportTargetHolder = pendingTeleportTargetHolder,
         )
 
     @Test
@@ -143,6 +147,32 @@ class SimulationViewModelTest {
         viewModel.onAction(SimulationAction.OnMapTap(latitude = 10.0, longitude = 20.0))
 
         viewModel.onAction(SimulationAction.OnConfirmTeleport)
+
+        assertTrue(controller.teleportCalls.isEmpty())
+        assertTrue(viewModel.state.value.isBlockedByAuthorization)
+        assertEquals(SimulationErrorType.NOT_AUTHORIZED, viewModel.state.value.errorType)
+    }
+
+    @Test
+    fun `a value appearing in the pending teleport target holder teleports immediately without a confirmation sheet`() {
+        val viewModel = createViewModel()
+
+        pendingTeleportTargetHolder.set(RoutePoint(latitude = 5.0, longitude = 6.0))
+
+        assertEquals(1, controller.teleportCalls.size)
+        assertEquals(5.0, controller.teleportCalls.first().latitude)
+        assertEquals(6.0, controller.teleportCalls.first().longitude)
+        assertNull(viewModel.state.value.pendingTeleportLatitude)
+        assertNull(viewModel.state.value.pendingTeleportLongitude)
+        assertNull(pendingTeleportTargetHolder.target.value)
+    }
+
+    @Test
+    fun `a holder-driven teleport while unauthorized reports an error and never calls the controller`() {
+        authorizationChecker.authorized = false
+        val viewModel = createViewModel()
+
+        pendingTeleportTargetHolder.set(RoutePoint(latitude = 5.0, longitude = 6.0))
 
         assertTrue(controller.teleportCalls.isEmpty())
         assertTrue(viewModel.state.value.isBlockedByAuthorization)

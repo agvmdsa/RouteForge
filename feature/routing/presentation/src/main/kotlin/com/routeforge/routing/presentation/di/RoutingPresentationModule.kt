@@ -11,6 +11,7 @@ import com.routeforge.routing.domain.usecase.ObserveStorageQuotaUseCase
 import com.routeforge.routing.domain.usecase.PrepareRouteOptionsUseCase
 import com.routeforge.routing.domain.usecase.RecordRegionUsageUseCase
 import com.routeforge.routing.domain.usecase.SetStorageQuotaUseCase
+import com.routeforge.routing.presentation.FavoritesViewModel
 import com.routeforge.routing.presentation.RegionCatalogViewModel
 import com.routeforge.routing.presentation.RouteRequestViewModel
 import com.routeforge.routing.presentation.SettingsViewModel
@@ -41,9 +42,20 @@ val routingPresentationModule =
                 lastKnownRealLocationHolder = get(),
                 computeRequiredRegions = get(),
                 draftWaypointsHolder = get(),
+                favoriteWaypointsRepository = get(),
+                selectedFavoriteWaypointHolder = get(),
             )
         }
         viewModelOf(::RegionCatalogViewModel)
         viewModelOf(::SettingsViewModel)
+        viewModel { (isPickerMode: Boolean) ->
+            FavoritesViewModel(
+                isPickerMode = isPickerMode,
+                favoriteWaypointsRepository = get(),
+                pendingTeleportTargetHolder = get(),
+                selectedFavoriteWaypointHolder = get(),
+                networkConnectivityChecker = get(),
+            )
+        }
     }
 

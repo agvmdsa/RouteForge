@@ -4,6 +4,7 @@ import com.routeforge.coredomain.DraftWaypointsHolder
 import com.routeforge.coredomain.LastComputedRouteHolder
 import com.routeforge.coredomain.LastKnownRealLocationHolder
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
@@ -74,6 +75,8 @@ class RouteRequestViewModelTest {
     private val jsonCodec = FakeRouteFileCodec()
     private val gpxCodec = FakeRouteFileCodec()
     private val codecs = mapOf(RouteFileFormat.JSON to jsonCodec, RouteFileFormat.GPX to gpxCodec)
+    private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
+    private val selectedFavoriteWaypointHolder = SelectedFavoriteWaypointHolder()
 
     @BeforeEach
     fun setUp() {
@@ -98,22 +101,119 @@ class RouteRequestViewModelTest {
             lastKnownRealLocationHolder = LastKnownRealLocationHolder(),
             computeRequiredRegions = ComputeRequiredRegionsUseCase(regionCatalog),
             draftWaypointsHolder = DraftWaypointsHolder(),
+            favoriteWaypointsRepository = favoriteWaypointsRepository,
+            selectedFavoriteWaypointHolder = selectedFavoriteWaypointHolder,
             backgroundDispatcher = dispatcher,
         )
 
+    private fun RouteRequestViewModel.tapAndConfirm(
+        latitude: Double,
+        longitude: Double,
+    ) {
+        onAction(RouteRequestAction.OnMapTap(latitude, longitude))
+        onAction(RouteRequestAction.OnConfirmAddWaypoint)
+    }
+
     private fun RouteRequestViewModel.tapTwoPoints() {
-        onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
-        onAction(RouteRequestAction.OnMapTap(2.0, 2.0))
+        tapAndConfirm(1.0, 1.0)
+        tapAndConfirm(2.0, 2.0)
+    }
+
+    // --- User Story 1: confirm before adding, optionally saving as a favorite ---
+
+    @Test
+    fun `tapping the map sets a pending add without adding the waypoint yet`() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
+
+        assertEquals(emptyList<RoutePoint>(), viewModel.state.value.draft.points)
+        assertEquals(1.0, viewModel.state.value.pendingAddLatitude)
+        assertEquals(1.0, viewModel.state.value.pendingAddLongitude)
+    }
+
+    @Test
+    fun `confirming without saving as a favorite adds only the waypoint`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
+
+        viewModel.onAction(RouteRequestAction.OnConfirmAddWaypoint)
+
+        assertEquals(listOf(RoutePoint(1.0, 1.0)), viewModel.state.value.draft.points)
+        assertEquals(emptyList<Any>(), favoriteWaypointsRepository.observeFavorites().value)
+        assertNull(viewModel.state.value.pendingAddLatitude)
+    }
+
+    @Test
+    fun `confirming with save-as-favorite checked and a name adds the waypoint and creates a favorite`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 2.0))
+        viewModel.onAction(RouteRequestAction.OnToggleSaveAsFavorite)
+        viewModel.onAction(RouteRequestAction.OnFavoriteNameInputChange("Home"))
+
+        viewModel.onAction(RouteRequestAction.OnConfirmAddWaypoint)
+
+        assertEquals(listOf(RoutePoint(1.0, 2.0)), viewModel.state.value.draft.points)
+        val favorites = favoriteWaypointsRepository.observeFavorites().value
+        assertEquals(1, favorites.size)
+        assertEquals("Home", favorites[0].name)
+        assertEquals(1.0, favorites[0].latitude)
+        assertEquals(2.0, favorites[0].longitude)
+    }
+
+    @Test
+    fun `confirming with save-as-favorite checked but a blank name does not proceed`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
+        viewModel.onAction(RouteRequestAction.OnToggleSaveAsFavorite)
+
+        viewModel.onAction(RouteRequestAction.OnConfirmAddWaypoint)
+
+        assertEquals(emptyList<RoutePoint>(), viewModel.state.value.draft.points)
+        assertEquals(emptyList<Any>(), favoriteWaypointsRepository.observeFavorites().value)
+        assertNotNull(viewModel.state.value.pendingAddLatitude)
+    }
+
+    @Test
+    fun `dismissing the add-waypoint confirmation adds nothing and saves nothing`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
+        viewModel.onAction(RouteRequestAction.OnToggleSaveAsFavorite)
+        viewModel.onAction(RouteRequestAction.OnFavoriteNameInputChange("Home"))
+
+        viewModel.onAction(RouteRequestAction.OnDismissAddWaypoint)
+
+        assertEquals(emptyList<RoutePoint>(), viewModel.state.value.draft.points)
+        assertEquals(emptyList<Any>(), favoriteWaypointsRepository.observeFavorites().value)
+        assertNull(viewModel.state.value.pendingAddLatitude)
+        assertNull(viewModel.state.value.pendingAddLongitude)
+        assertTrue(!viewModel.state.value.isSaveAsFavoriteChecked)
+        assertEquals("", viewModel.state.value.favoriteNameInput)
+    }
+
+    @Test
+    fun `selecting a favorite from the shared holder appends it to the draft`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
+        viewModel.onAction(RouteRequestAction.OnConfirmAddWaypoint)
+
+        selectedFavoriteWaypointHolder.set(RoutePoint(9.0, 9.0))
+
+        assertEquals(
+            listOf(RoutePoint(1.0, 1.0), RoutePoint(9.0, 9.0)),
+            viewModel.state.value.draft.points,
+        )
+        assertNull(selectedFavoriteWaypointHolder.selected.value)
     }
 
     // --- User Story 2: manual point management ---
 
     @Test
-    fun `tapping the map adds a numbered waypoint connected in order`() {
+    fun `tapping the map and confirming adds a numbered waypoint connected in order`() {
         val viewModel = createViewModel()
 
-        viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
-        viewModel.onAction(RouteRequestAction.OnMapTap(2.0, 2.0))
+        viewModel.tapAndConfirm(1.0, 1.0)
+        viewModel.tapAndConfirm(2.0, 2.0)
 
         assertEquals(
             listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)),
@@ -166,7 +266,7 @@ class RouteRequestViewModelTest {
     fun `deleting the waypoint being edited removes it and keeps the rest connected`() {
         val viewModel = createViewModel()
         viewModel.tapTwoPoints()
-        viewModel.onAction(RouteRequestAction.OnMapTap(3.0, 3.0))
+        viewModel.tapAndConfirm(3.0, 3.0)
         viewModel.onAction(RouteRequestAction.OnMarkerClick(1))
 
         viewModel.onAction(RouteRequestAction.OnDeleteEditingWaypoint)
@@ -181,8 +281,8 @@ class RouteRequestViewModelTest {
     @Test
     fun `undo reverts the most recent change and repeated undo is a no-op once history is empty`() {
         val viewModel = createViewModel()
-        viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
-        viewModel.onAction(RouteRequestAction.OnMapTap(2.0, 2.0))
+        viewModel.tapAndConfirm(1.0, 1.0)
+        viewModel.tapAndConfirm(2.0, 2.0)
 
         viewModel.onAction(RouteRequestAction.OnUndo)
         assertEquals(listOf(RoutePoint(1.0, 1.0)), viewModel.state.value.draft.points)
@@ -197,7 +297,7 @@ class RouteRequestViewModelTest {
     @Test
     fun `proceeding to play with fewer than 2 points is blocked with a clear message`() {
         val viewModel = createViewModel()
-        viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
+        viewModel.tapAndConfirm(1.0, 1.0)
 
         viewModel.onAction(RouteRequestAction.OnRequestRoute)
 

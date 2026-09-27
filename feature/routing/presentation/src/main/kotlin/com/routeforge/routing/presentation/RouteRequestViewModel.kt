@@ -3,9 +3,11 @@ package com.routeforge.routing.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeforge.coredomain.DraftWaypointsHolder
+import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.LastComputedRouteHolder
 import com.routeforge.coredomain.LastKnownRealLocationHolder
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
@@ -26,6 +28,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -41,6 +45,8 @@ class RouteRequestViewModel(
     lastKnownRealLocationHolder: LastKnownRealLocationHolder,
     private val computeRequiredRegions: ComputeRequiredRegionsUseCase,
     private val draftWaypointsHolder: DraftWaypointsHolder,
+    private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
+    private val selectedFavoriteWaypointHolder: SelectedFavoriteWaypointHolder,
     private val addWaypoint: AddWaypointUseCase = AddWaypointUseCase(),
     private val moveWaypoint: MoveWaypointUseCase = MoveWaypointUseCase(),
     private val editWaypoint: EditWaypointUseCase = EditWaypointUseCase(),
@@ -54,10 +60,20 @@ class RouteRequestViewModel(
     private val _events = Channel<RouteRequestEvent>()
     val events = _events.receiveAsFlow()
 
+    init {
+        selectedFavoriteWaypointHolder.selected
+            .onEach { point ->
+                if (point != null) {
+                    mutateDraft { addWaypoint(it, point) }
+                    selectedFavoriteWaypointHolder.clear()
+                }
+            }.launchIn(viewModelScope)
+    }
+
     fun onAction(action: RouteRequestAction) {
         when (action) {
             is RouteRequestAction.OnMapTap ->
-                mutateDraft { addWaypoint(it, RoutePoint(latitude = action.latitude, longitude = action.longitude)) }
+                _state.update { it.copy(pendingAddLatitude = action.latitude, pendingAddLongitude = action.longitude) }
             is RouteRequestAction.OnMarkerDragged ->
                 mutateDraft {
                     moveWaypoint(it, action.index, RoutePoint(latitude = action.latitude, longitude = action.longitude))
@@ -69,6 +85,11 @@ class RouteRequestViewModel(
             RouteRequestAction.OnDeleteEditingWaypoint -> deleteEditingWaypoint()
             RouteRequestAction.OnDismissEdit -> _state.update { it.copy(editingIndex = null) }
             RouteRequestAction.OnUndo -> mutateDraft { undoRouteDraft(it) }
+            RouteRequestAction.OnConfirmAddWaypoint -> confirmAddWaypoint()
+            RouteRequestAction.OnDismissAddWaypoint -> dismissAddWaypoint()
+            RouteRequestAction.OnToggleSaveAsFavorite ->
+                _state.update { it.copy(isSaveAsFavoriteChecked = !it.isSaveAsFavoriteChecked) }
+            is RouteRequestAction.OnFavoriteNameInputChange -> _state.update { it.copy(favoriteNameInput = action.value) }
             is RouteRequestAction.OnRouteFileImported -> importRoute(action.bytes, action.format)
             is RouteRequestAction.OnExportRoute -> exportRoute(action.format)
             RouteRequestAction.OnRequestRoute -> requestRoute()
@@ -76,6 +97,8 @@ class RouteRequestViewModel(
             RouteRequestAction.OnUseRoute -> useRoute()
             RouteRequestAction.OnOpenRegionCatalog ->
                 viewModelScope.launch { _events.send(RouteRequestEvent.NavigateToRegionCatalog) }
+            RouteRequestAction.OnOpenFavoritesClick ->
+                viewModelScope.launch { _events.send(RouteRequestEvent.NavigateToFavorites) }
             RouteRequestAction.OnProceedDespiteMissingRegions -> {
                 _state.update { it.copy(missingRegionsWarning = null) }
                 proceedWithRouteComputation(_state.value.draft.points)
@@ -83,6 +106,30 @@ class RouteRequestViewModel(
             RouteRequestAction.OnDismissMissingRegionsWarning -> _state.update { it.copy(missingRegionsWarning = null) }
         }
     }
+
+    private fun confirmAddWaypoint() {
+        val latitude = _state.value.pendingAddLatitude
+        val longitude = _state.value.pendingAddLongitude
+        if (latitude == null || longitude == null) return
+        if (_state.value.isSaveAsFavoriteChecked && _state.value.favoriteNameInput.isBlank()) return
+        mutateDraft { addWaypoint(it, RoutePoint(latitude = latitude, longitude = longitude)) }
+        if (_state.value.isSaveAsFavoriteChecked) {
+            favoriteWaypointsRepository.add(_state.value.favoriteNameInput, latitude, longitude)
+        }
+        dismissAddWaypoint()
+    }
+
+    private fun dismissAddWaypoint() {
+        _state.update {
+            it.copy(
+                pendingAddLatitude = null,
+                pendingAddLongitude = null,
+                isSaveAsFavoriteChecked = false,
+                favoriteNameInput = "",
+            )
+        }
+    }
+
 
     /** Any draft mutation invalidates a previously computed/chosen route (FR-004's spirit). */
     private fun mutateDraft(transform: (RouteDraft) -> RouteDraft) {

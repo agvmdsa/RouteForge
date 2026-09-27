@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.routeforge.coredomain.LastComputedRouteHolder
 import com.routeforge.coredomain.LastKnownRealLocationHolder
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
+import com.routeforge.coredomain.PendingTeleportTargetHolder
 import com.routeforge.coredomain.Result
 import com.routeforge.simulation.domain.RealLocationFailure
 import com.routeforge.simulation.domain.RealLocationUpdate
@@ -55,6 +56,7 @@ class SimulationViewModel(
     private val mockLocationAuthorizationChecker: MockLocationAuthorizationChecker,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
     private val lastKnownRealLocationHolder: LastKnownRealLocationHolder,
+    private val pendingTeleportTargetHolder: PendingTeleportTargetHolder,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SimulationState())
     val state = _state.asStateFlow()
@@ -97,6 +99,14 @@ class SimulationViewModel(
         lastKnownRealLocationHolder.location
             .onEach { location -> _state.update { it.copy(realLocation = location) } }
             .launchIn(viewModelScope)
+
+        pendingTeleportTargetHolder.target
+            .onEach { point ->
+                if (point != null) {
+                    teleportTo(point.latitude, point.longitude)
+                    pendingTeleportTargetHolder.clear()
+                }
+            }.launchIn(viewModelScope)
     }
 
     fun onAction(action: SimulationAction) {
@@ -152,6 +162,8 @@ class SimulationViewModel(
                 viewModelScope.launch { _events.send(SimulationEvent.NavigateToSetup) }
             SimulationAction.OnOpenSettingsClick ->
                 viewModelScope.launch { _events.send(SimulationEvent.NavigateToSettings) }
+            SimulationAction.OnOpenFavoritesClick ->
+                viewModelScope.launch { _events.send(SimulationEvent.NavigateToFavorites) }
             SimulationAction.OnLocationPermissionGranted ->
                 if (_state.value.mockedSession == null) startObservingRealLocation()
             SimulationAction.OnScreenResumed -> checkAuthorizationStillGranted()
@@ -179,7 +191,16 @@ class SimulationViewModel(
             )
         }
         if (latitude == null || longitude == null || isBlockedOffline) return
+        teleportTo(latitude, longitude)
+    }
 
+    /** Shared by [confirmTeleport] (map-tap path, already confirmed via TeleportConfirmationSheet)
+     *  and the [PendingTeleportTargetHolder] observer (favorite path, already confirmed on the
+     *  Favorites screen) — neither asks the user a second time. */
+    private fun teleportTo(
+        latitude: Double,
+        longitude: Double,
+    ) {
         if (!mockLocationAuthorizationChecker.isAuthorized()) {
             reportUnauthorized()
             return

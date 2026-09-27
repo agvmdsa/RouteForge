@@ -12,5 +12,6 @@ local.properties
 .specify/
 .claude/
 /specs/
+docs/superpowers/specs/
 feature/routing/data/src/main/assets/tiles/*.rd5
 /.handoffs/

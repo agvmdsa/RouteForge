@@ -19,4 +19,8 @@ data class RouteRequestState(
     val errorType: RouteRequestError? = null,
     val lastKnownLocation: RealLocation? = null,
     val missingRegionsWarning: RequiredRegionsSummary? = null,
+    val pendingAddLatitude: Double? = null,
+    val pendingAddLongitude: Double? = null,
+    val isSaveAsFavoriteChecked: Boolean = false,
+    val favoriteNameInput: String = "",
 )

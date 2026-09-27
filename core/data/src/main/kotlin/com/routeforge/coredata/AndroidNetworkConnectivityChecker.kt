@@ -1,9 +1,9 @@
-package com.routeforge.simulation.data
+package com.routeforge.coredata
 
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import com.routeforge.simulation.domain.NetworkConnectivityChecker
+import com.routeforge.coredomain.NetworkConnectivityChecker
 
 class AndroidNetworkConnectivityChecker(
     private val context: Context,

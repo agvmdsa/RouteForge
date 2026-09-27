@@ -9,17 +9,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SportsEsports
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.FloatingActionButton
@@ -40,6 +39,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
@@ -66,7 +66,7 @@ private val ScreenContentPadding = 16.dp
 private val ControlsRowSpacing = 8.dp
 private val JoystickBottomPadding = 24.dp
 private val BannerTopOffset = 72.dp
-private val SmallFabSize = 40.dp
+private val FavoriteStarColor = Color(0xFFFFC107)
 private const val MIN_SPEED_KMH = 0f
 private const val MAX_SPEED_KMH = 150f
 private val SpeedSelectorRangeKmh = MIN_SPEED_KMH..MAX_SPEED_KMH
@@ -76,6 +76,7 @@ fun SimulationRoot(
     onPlanRoute: () -> Unit,
     onOpenSetup: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenFavorites: () -> Unit,
     viewModel: SimulationViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -108,6 +109,7 @@ fun SimulationRoot(
                 SimulationEvent.NavigateToPlanRoute -> onPlanRoute()
                 SimulationEvent.NavigateToSetup -> onOpenSetup()
                 SimulationEvent.NavigateToSettings -> onOpenSettings()
+                SimulationEvent.NavigateToFavorites -> onOpenFavorites()
             }
         }
     }
@@ -204,6 +206,7 @@ fun SimulationScreen(
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         ModalNavigationDrawer(
             drawerState = drawerState,
+            gesturesEnabled = false,
             drawerContent = {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                     Sidebar(
@@ -238,7 +241,13 @@ fun SimulationScreen(
                                     .padding(top = ScreenContentPadding, start = ScreenContentPadding, end = ScreenContentPadding),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Spacer(modifier = Modifier.size(SmallFabSize))
+                            SmallFloatingActionButton(onClick = { onAction(SimulationAction.OnOpenFavoritesClick) }) {
+                                Icon(
+                                    imageVector = Icons.Filled.Star,
+                                    contentDescription = stringResource(R.string.simulation_open_favorites_button),
+                                    tint = FavoriteStarColor,
+                                )
+                            }
                             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                                 CoordinatePill(
                                     mockedSession = state.mockedSession,
