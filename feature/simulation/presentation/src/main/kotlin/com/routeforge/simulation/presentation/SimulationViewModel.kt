@@ -166,6 +166,7 @@ class SimulationViewModel(
                 viewModelScope.launch { _events.send(SimulationEvent.NavigateToFavorites) }
             SimulationAction.OnLocationPermissionGranted ->
                 if (_state.value.mockedSession == null) startObservingRealLocation()
+            SimulationAction.OnForceRealLocationClick -> forceRestartRealLocationSearch()
             SimulationAction.OnScreenResumed -> checkAuthorizationStillGranted()
         }
     }
@@ -329,7 +330,7 @@ class SimulationViewModel(
 
     private fun startObservingRealLocation() {
         if (realLocationObservationJob?.isActive == true) return
-        _state.update { it.copy(isSearchingRealLocation = true) }
+        _state.update { it.copy(isSearchingRealLocation = true, errorType = it.errorType.clearIfRealLocationRelated()) }
         realLocationTimeoutJob =
             viewModelScope.launch {
                 delay(REAL_LOCATION_TIMEOUT_MILLIS)
@@ -346,7 +347,9 @@ class SimulationViewModel(
                     when (update) {
                         is RealLocationUpdate.Fix -> {
                             lastKnownRealLocationHolder.set(update.location)
-                            _state.update { it.copy(isSearchingRealLocation = false) }
+                            _state.update {
+                                it.copy(isSearchingRealLocation = false, errorType = it.errorType.clearIfRealLocationRelated())
+                            }
                         }
                         is RealLocationUpdate.Unavailable -> {
                             _state.update {
@@ -364,9 +367,27 @@ class SimulationViewModel(
         realLocationTimeoutJob = null
     }
 
+    /** Cancels any in-flight search and starts a fresh one from scratch — the manual "force
+     *  locate me" button always restarts, even if a search is already in progress. */
+    private fun forceRestartRealLocationSearch() {
+        stopObservingRealLocation()
+        startObservingRealLocation()
+    }
+
     private fun RealLocationFailure.toSimulationErrorType(): SimulationErrorType =
         when (this) {
             RealLocationFailure.ProviderDisabled -> SimulationErrorType.REAL_LOCATION_PROVIDER_DISABLED
             RealLocationFailure.PermissionDenied -> SimulationErrorType.REAL_LOCATION_PERMISSION_DENIED
+        }
+
+    /** Clears a real-location-related error once a search (re)starts or resolves — leaves any
+     *  unrelated error (e.g. NOT_AUTHORIZED) untouched. */
+    private fun SimulationErrorType?.clearIfRealLocationRelated(): SimulationErrorType? =
+        when (this) {
+            SimulationErrorType.REAL_LOCATION_PROVIDER_DISABLED,
+            SimulationErrorType.REAL_LOCATION_PERMISSION_DENIED,
+            SimulationErrorType.REAL_LOCATION_TIMED_OUT,
+            -> null
+            else -> this
         }
 }

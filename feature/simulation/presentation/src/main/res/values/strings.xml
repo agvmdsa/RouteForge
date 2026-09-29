@@ -56,5 +56,6 @@
     <string name="simulation_cancel_route_confirm_message">This will stop playback (if running) and clear the loaded route. You\'ll need to plan it again to play it.</string>
     <string name="simulation_cancel_route_confirm_button">Cancel route</string>
     <string name="simulation_cancel_route_dismiss_button">Keep route</string>
+    <string name="simulation_force_real_location_button">Locate me</string>
 </resources>
 

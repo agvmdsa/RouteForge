@@ -18,21 +18,28 @@ import kotlinx.coroutines.flow.callbackFlow
 
 private const val LOCATION_UPDATE_INTERVAL_MILLIS = 5_000L
 
+/** GPS alone needs a clear sky view and can never lock indoors — NETWORK_PROVIDER (Wi-Fi/cell
+ *  based) is raced alongside it so a fix is still possible indoors or without a SIM. */
+private val realLocationProviders = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
+
 class AndroidRealLocationDataSource(
     private val context: Context,
 ) : RealLocationDataSource {
     override fun observeLocation(): Flow<RealLocationUpdate> =
         callbackFlow {
             val locationManager = context.getSystemService(LocationManager::class.java)
-            if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            val enabledProviders = realLocationProviders.filter { locationManager.isProviderEnabled(it) }
+            if (enabledProviders.isEmpty()) {
                 trySend(RealLocationUpdate.Unavailable(RealLocationFailure.ProviderDisabled))
                 close()
                 return@callbackFlow
             }
 
-            locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.let { lastKnownLocation ->
-                if (!LocationCompat.isMock(lastKnownLocation)) {
-                    trySend(RealLocationUpdate.Fix(RealLocation(lastKnownLocation.latitude, lastKnownLocation.longitude)))
+            enabledProviders.forEach { provider ->
+                locationManager.getLastKnownLocation(provider)?.let { lastKnownLocation ->
+                    if (!LocationCompat.isMock(lastKnownLocation)) {
+                        trySend(RealLocationUpdate.Fix(RealLocation(lastKnownLocation.latitude, lastKnownLocation.longitude)))
+                    }
                 }
             }
 
@@ -43,15 +50,23 @@ class AndroidRealLocationDataSource(
                     }
                 }
 
-            try {
-                LocationManagerCompat.requestLocationUpdates(
-                    locationManager,
-                    LocationManager.GPS_PROVIDER,
-                    LocationRequestCompat.Builder(LOCATION_UPDATE_INTERVAL_MILLIS).build(),
-                    ContextCompat.getMainExecutor(context),
-                    listener,
-                )
-            } catch (_: SecurityException) {
+            val registeredAnyProvider =
+                enabledProviders.fold(false) { registeredSoFar, provider ->
+                    try {
+                        LocationManagerCompat.requestLocationUpdates(
+                            locationManager,
+                            provider,
+                            LocationRequestCompat.Builder(LOCATION_UPDATE_INTERVAL_MILLIS).build(),
+                            ContextCompat.getMainExecutor(context),
+                            listener,
+                        )
+                        true
+                    } catch (_: SecurityException) {
+                        registeredSoFar
+                    }
+                }
+
+            if (!registeredAnyProvider) {
                 trySend(RealLocationUpdate.Unavailable(RealLocationFailure.PermissionDenied))
                 close()
                 return@callbackFlow

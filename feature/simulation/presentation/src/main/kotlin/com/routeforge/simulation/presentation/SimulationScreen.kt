@@ -206,7 +206,7 @@ fun SimulationScreen(
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         ModalNavigationDrawer(
             drawerState = drawerState,
-            gesturesEnabled = false,
+            gesturesEnabled = drawerState.isOpen,
             drawerContent = {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                     Sidebar(
@@ -348,13 +348,24 @@ fun SimulationScreen(
                                     Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_route_button))
                                 }
                                 PlaybackButton(state = state, onAction = onAction)
+                                ForceRealLocationButton(
+                                    isSearching = state.isSearchingRealLocation,
+                                    onClick = { onAction(SimulationAction.OnForceRealLocationClick) },
+                                )
                             }
                         } else {
-                            FloatingActionButton(
-                                onClick = { onAction(SimulationAction.OnPlanRouteClick) },
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
                                 modifier = Modifier.align(Alignment.BottomEnd).padding(ScreenContentPadding),
                             ) {
-                                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.simulation_plan_route_button))
+                                FloatingActionButton(onClick = { onAction(SimulationAction.OnPlanRouteClick) }) {
+                                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.simulation_plan_route_button))
+                                }
+                                ForceRealLocationButton(
+                                    isSearching = state.isSearchingRealLocation,
+                                    onClick = { onAction(SimulationAction.OnForceRealLocationClick) },
+                                )
                             }
                         }
                     }
