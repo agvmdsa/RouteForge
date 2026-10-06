@@ -164,6 +164,8 @@ class SimulationViewModel(
                 viewModelScope.launch { _events.send(SimulationEvent.NavigateToSettings) }
             SimulationAction.OnOpenFavoritesClick ->
                 viewModelScope.launch { _events.send(SimulationEvent.NavigateToFavorites) }
+            SimulationAction.OnOpenSavedRoutesClick ->
+                viewModelScope.launch { _events.send(SimulationEvent.NavigateToSavedRoutes) }
             SimulationAction.OnLocationPermissionGranted ->
                 if (_state.value.mockedSession == null) startObservingRealLocation()
             SimulationAction.OnForceRealLocationClick -> forceRestartRealLocationSearch()

@@ -2,8 +2,10 @@ package com.routeforge.coredata.di
 
 import com.routeforge.coredata.AndroidNetworkConnectivityChecker
 import com.routeforge.coredata.PlatformMockLocationAuthorizationChecker
+import com.routeforge.coredata.SharedPreferencesFavoriteRoutesRepository
 import com.routeforge.coredata.SharedPreferencesFavoriteWaypointsRepository
 import com.routeforge.coredomain.DraftWaypointsHolder
+import com.routeforge.coredomain.FavoriteRoutesRepository
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.LastComputedRouteHolder
 import com.routeforge.coredomain.LastKnownRealLocationHolder
@@ -25,5 +27,6 @@ val coreDataModule =
         single { PendingTeleportTargetHolder() }
         single { SelectedFavoriteWaypointHolder() }
         single { SharedPreferencesFavoriteWaypointsRepository(androidContext()) }.bind<FavoriteWaypointsRepository>()
+        single { SharedPreferencesFavoriteRoutesRepository(androidContext()) }.bind<FavoriteRoutesRepository>()
         single { AndroidNetworkConnectivityChecker(androidContext()) }.bind<NetworkConnectivityChecker>()
     }

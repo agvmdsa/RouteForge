@@ -164,6 +164,29 @@ internal fun MissingRegionsWarningSheet(
 }
 
 @Composable
+internal fun SaveRouteSheet(
+    nameInput: String,
+    onNameChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ConfirmationBottomSheet(title = stringResource(R.string.routing_save_route_title), onDismiss = onDismiss) {
+        OutlinedTextField(
+            value = nameInput,
+            onValueChange = onNameChange,
+            label = { Text(stringResource(R.string.routing_route_name_label)) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+            Button(onClick = onConfirm, enabled = nameInput.isNotBlank()) {
+                Text(stringResource(R.string.routing_save_route_confirm_button))
+            }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.routing_add_waypoint_cancel_button)) }
+        }
+    }
+}
+
+@Composable
 internal fun AddWaypointConfirmationSheet(
     latitude: Double,
     longitude: Double,

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PlayArrow
@@ -206,6 +207,9 @@ fun RouteRequestScreen(
                             Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.routing_proceed_button))
                         }
                     }
+                    FloatingActionButton(onClick = { onAction(RouteRequestAction.OnSaveRouteClick) }) {
+                        Icon(Icons.Filled.Bookmark, contentDescription = stringResource(R.string.routing_save_route_button))
+                    }
                 }
                 FloatingActionButton(onClick = { onAction(RouteRequestAction.OnOpenRegionCatalog) }) {
                     Icon(Icons.Filled.Map, contentDescription = stringResource(R.string.routing_manage_regions_button))
@@ -249,6 +253,15 @@ fun RouteRequestScreen(
             onGoToDownloads = { onAction(RouteRequestAction.OnOpenRegionCatalog) },
             onContinueAnyway = { onAction(RouteRequestAction.OnProceedDespiteMissingRegions) },
             onDismiss = { onAction(RouteRequestAction.OnDismissMissingRegionsWarning) },
+        )
+    }
+
+    if (state.isSaveRouteSheetOpen) {
+        SaveRouteSheet(
+            nameInput = state.routeNameInput,
+            onNameChange = { onAction(RouteRequestAction.OnRouteNameInputChange(it)) },
+            onConfirm = { onAction(RouteRequestAction.OnConfirmSaveRoute) },
+            onDismiss = { onAction(RouteRequestAction.OnDismissSaveRoute) },
         )
     }
 

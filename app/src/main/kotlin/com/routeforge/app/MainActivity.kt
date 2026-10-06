@@ -12,6 +12,7 @@ import com.routeforge.mocklocationsetup.presentation.MockLocationSetupRoute
 import com.routeforge.mocklocationsetup.presentation.mockLocationSetupGraph
 import com.routeforge.routing.presentation.FavoritesRoute
 import com.routeforge.routing.presentation.RouteRequestRoute
+import com.routeforge.routing.presentation.SavedRoutesRoute
 import com.routeforge.routing.presentation.SettingsRoute
 import com.routeforge.routing.presentation.routingGraph
 import com.routeforge.simulation.presentation.SimulationRoute
@@ -47,6 +48,7 @@ class MainActivity : ComponentActivity() {
                         onOpenSetup = { navController.navigate(MockLocationSetupRoute) },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                         onOpenFavorites = { navController.navigate(FavoritesRoute(isPickerMode = false)) },
+                        onOpenSavedRoutes = { navController.navigate(SavedRoutesRoute) },
                     )
                     routingGraph(
                         navController = navController,

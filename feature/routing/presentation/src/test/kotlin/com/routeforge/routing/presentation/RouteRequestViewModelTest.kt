@@ -10,7 +10,6 @@ import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.FreeRoamRouteBuilder
 import com.routeforge.routing.domain.RouteFileCodec
-import com.routeforge.routing.domain.RoutingEngine
 import com.routeforge.routing.domain.model.Region
 import com.routeforge.routing.domain.model.RegionStatus
 import com.routeforge.routing.domain.model.RouteDraft
@@ -37,23 +36,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-private class FakeRoutingEngine : RoutingEngine {
-    var snappableLatitudes: Set<Double> = emptySet()
-    var computePathResult: Route? = null
-
-    override fun snap(
-        point: RoutePoint,
-        availableRegions: List<Region>,
-    ): RoutePoint =
-        if (point.latitude in snappableLatitudes) {
-            point.copy(snappedLatitude = point.latitude, snappedLongitude = point.longitude)
-        } else {
-            point
-        }
-
-    override fun computePath(points: List<RoutePoint>): Route? = computePathResult
-}
-
 private class FakeRouteFileCodec(
     var parseResult: Result<RouteDraft, RouteFileFailure> = Result.Success(RouteDraft()),
 ) : RouteFileCodec {
@@ -76,6 +58,7 @@ class RouteRequestViewModelTest {
     private val gpxCodec = FakeRouteFileCodec()
     private val codecs = mapOf(RouteFileFormat.JSON to jsonCodec, RouteFileFormat.GPX to gpxCodec)
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
+    private val favoriteRoutesRepository = FakeFavoriteRoutesRepository()
     private val selectedFavoriteWaypointHolder = SelectedFavoriteWaypointHolder()
 
     @BeforeEach
@@ -102,6 +85,7 @@ class RouteRequestViewModelTest {
             computeRequiredRegions = ComputeRequiredRegionsUseCase(regionCatalog),
             draftWaypointsHolder = DraftWaypointsHolder(),
             favoriteWaypointsRepository = favoriteWaypointsRepository,
+            favoriteRoutesRepository = favoriteRoutesRepository,
             selectedFavoriteWaypointHolder = selectedFavoriteWaypointHolder,
             backgroundDispatcher = dispatcher,
         )
@@ -204,6 +188,59 @@ class RouteRequestViewModelTest {
             viewModel.state.value.draft.points,
         )
         assertNull(selectedFavoriteWaypointHolder.selected.value)
+    }
+
+    // --- Favorite Routes: save a planned route (spec 005-favorite-routes, US1) ---
+
+    @Test
+    fun `save-route click opens the sheet`() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(RouteRequestAction.OnSaveRouteClick)
+
+        assertTrue(viewModel.state.value.isSaveRouteSheetOpen)
+    }
+
+    @Test
+    fun `confirming save-route with a blank name does not save and keeps the sheet open`() {
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        viewModel.onAction(RouteRequestAction.OnSaveRouteClick)
+
+        viewModel.onAction(RouteRequestAction.OnConfirmSaveRoute)
+
+        assertEquals(emptyList<Any>(), favoriteRoutesRepository.observeFavoriteRoutes().value)
+        assertTrue(viewModel.state.value.isSaveRouteSheetOpen)
+    }
+
+    @Test
+    fun `confirming save-route with a name saves the draft's current points in order and closes the sheet`() {
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        viewModel.onAction(RouteRequestAction.OnSaveRouteClick)
+        viewModel.onAction(RouteRequestAction.OnRouteNameInputChange("Morning loop"))
+
+        viewModel.onAction(RouteRequestAction.OnConfirmSaveRoute)
+
+        val savedRoutes = favoriteRoutesRepository.observeFavoriteRoutes().value
+        assertEquals(1, savedRoutes.size)
+        assertEquals("Morning loop", savedRoutes[0].name)
+        assertEquals(listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)), savedRoutes[0].points)
+        assertTrue(!viewModel.state.value.isSaveRouteSheetOpen)
+    }
+
+    @Test
+    fun `dismissing save-route saves nothing and resets the name input`() {
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        viewModel.onAction(RouteRequestAction.OnSaveRouteClick)
+        viewModel.onAction(RouteRequestAction.OnRouteNameInputChange("Morning loop"))
+
+        viewModel.onAction(RouteRequestAction.OnDismissSaveRoute)
+
+        assertEquals(emptyList<Any>(), favoriteRoutesRepository.observeFavoriteRoutes().value)
+        assertTrue(!viewModel.state.value.isSaveRouteSheetOpen)
+        assertEquals("", viewModel.state.value.routeNameInput)
     }
 
     // --- User Story 2: manual point management ---

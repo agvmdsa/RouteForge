@@ -3,6 +3,7 @@ package com.routeforge.routing.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeforge.coredomain.DraftWaypointsHolder
+import com.routeforge.coredomain.FavoriteRoutesRepository
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.LastComputedRouteHolder
 import com.routeforge.coredomain.LastKnownRealLocationHolder
@@ -14,6 +15,7 @@ import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.model.RouteDraft
 import com.routeforge.routing.domain.model.RouteFileFailure
 import com.routeforge.routing.domain.model.RouteFileFormat
+import com.routeforge.routing.domain.model.autoResolved
 import com.routeforge.routing.domain.usecase.AddWaypointUseCase
 import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.usecase.DeleteWaypointUseCase
@@ -46,6 +48,7 @@ class RouteRequestViewModel(
     private val computeRequiredRegions: ComputeRequiredRegionsUseCase,
     private val draftWaypointsHolder: DraftWaypointsHolder,
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
+    private val favoriteRoutesRepository: FavoriteRoutesRepository,
     private val selectedFavoriteWaypointHolder: SelectedFavoriteWaypointHolder,
     private val addWaypoint: AddWaypointUseCase = AddWaypointUseCase(),
     private val moveWaypoint: MoveWaypointUseCase = MoveWaypointUseCase(),
@@ -104,7 +107,23 @@ class RouteRequestViewModel(
                 proceedWithRouteComputation(_state.value.draft.points)
             }
             RouteRequestAction.OnDismissMissingRegionsWarning -> _state.update { it.copy(missingRegionsWarning = null) }
+            RouteRequestAction.OnSaveRouteClick -> _state.update { it.copy(isSaveRouteSheetOpen = true) }
+            is RouteRequestAction.OnRouteNameInputChange -> _state.update { it.copy(routeNameInput = action.value) }
+            RouteRequestAction.OnConfirmSaveRoute -> confirmSaveRoute()
+            RouteRequestAction.OnDismissSaveRoute -> dismissSaveRoute()
         }
+    }
+
+    private fun confirmSaveRoute() {
+        val points = _state.value.draft.points
+        val name = _state.value.routeNameInput
+        if (points.size < MIN_WAYPOINTS_TO_PLAY || name.isBlank()) return
+        favoriteRoutesRepository.add(name, points)
+        dismissSaveRoute()
+    }
+
+    private fun dismissSaveRoute() {
+        _state.update { it.copy(isSaveRouteSheetOpen = false, routeNameInput = "") }
     }
 
     private fun confirmAddWaypoint() {
@@ -226,9 +245,10 @@ class RouteRequestViewModel(
         }
         viewModelScope.launch {
             val options = withContext(backgroundDispatcher) { prepareRouteOptions(points) }
-            if (options.guided == null) {
+            val autoResolved = options.autoResolved
+            if (autoResolved != null) {
                 // FR-003: Guided isn't computable — skip straight to Free-roam, no choice shown.
-                finalizeRoute(options.freeRoam, RoutePlaybackMode.FREE_ROAM)
+                finalizeRoute(autoResolved.first, autoResolved.second)
             } else {
                 // FR-002: both modes are viable — let the user choose.
                 _state.update { it.copy(isComputing = false, routeOptions = options) }

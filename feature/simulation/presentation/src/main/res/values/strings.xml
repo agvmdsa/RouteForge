@@ -20,6 +20,7 @@
     <string name="simulation_open_settings_button">Settings</string>
     <string name="simulation_open_sidebar_button">Menu</string>
     <string name="simulation_open_favorites_button">Favorites</string>
+    <string name="simulation_open_saved_routes_button">Saved routes</string>
     <string name="simulation_loaded_route_label">Loaded route: %1$d m</string>
     <string name="simulation_start_button">Start simulation</string>
     <string name="simulation_pause_button">Pause</string>

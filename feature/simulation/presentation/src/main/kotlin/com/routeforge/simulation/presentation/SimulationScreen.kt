@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ListAlt
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
@@ -77,6 +78,7 @@ fun SimulationRoot(
     onOpenSetup: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenFavorites: () -> Unit,
+    onOpenSavedRoutes: () -> Unit,
     viewModel: SimulationViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -110,6 +112,7 @@ fun SimulationRoot(
                 SimulationEvent.NavigateToSetup -> onOpenSetup()
                 SimulationEvent.NavigateToSettings -> onOpenSettings()
                 SimulationEvent.NavigateToFavorites -> onOpenFavorites()
+                SimulationEvent.NavigateToSavedRoutes -> onOpenSavedRoutes()
             }
         }
     }
@@ -214,6 +217,12 @@ fun SimulationScreen(
                             listOf(
                                 SidebarDestination(Icons.Filled.Settings, R.string.simulation_open_settings_button) {
                                     onAction(SimulationAction.OnOpenSettingsClick)
+                                },
+                                SidebarDestination(
+                                    Icons.AutoMirrored.Filled.ListAlt,
+                                    R.string.simulation_open_saved_routes_button,
+                                ) {
+                                    onAction(SimulationAction.OnOpenSavedRoutesClick)
                                 },
                             ),
                         onDismiss = { drawerScope.launch { drawerState.close() } },

@@ -70,6 +70,8 @@ sealed interface SimulationAction {
 
     data object OnOpenFavoritesClick : SimulationAction
 
+    data object OnOpenSavedRoutesClick : SimulationAction
+
     data object OnOpenSettingsClick : SimulationAction
 
     data object OnLocationPermissionGranted : SimulationAction

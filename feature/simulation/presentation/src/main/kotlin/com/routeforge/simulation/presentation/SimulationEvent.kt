@@ -8,4 +8,6 @@ sealed interface SimulationEvent {
     data object NavigateToSettings : SimulationEvent
 
     data object NavigateToFavorites : SimulationEvent
+
+    data object NavigateToSavedRoutes : SimulationEvent
 }

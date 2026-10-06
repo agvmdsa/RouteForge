@@ -14,6 +14,7 @@ import com.routeforge.routing.domain.usecase.SetStorageQuotaUseCase
 import com.routeforge.routing.presentation.FavoritesViewModel
 import com.routeforge.routing.presentation.RegionCatalogViewModel
 import com.routeforge.routing.presentation.RouteRequestViewModel
+import com.routeforge.routing.presentation.SavedRoutesViewModel
 import com.routeforge.routing.presentation.SettingsViewModel
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModel
@@ -43,11 +44,20 @@ val routingPresentationModule =
                 computeRequiredRegions = get(),
                 draftWaypointsHolder = get(),
                 favoriteWaypointsRepository = get(),
+                favoriteRoutesRepository = get(),
                 selectedFavoriteWaypointHolder = get(),
             )
         }
         viewModelOf(::RegionCatalogViewModel)
         viewModelOf(::SettingsViewModel)
+        viewModel {
+            SavedRoutesViewModel(
+                favoriteRoutesRepository = get(),
+                lastComputedRouteHolder = get(),
+                computeRequiredRegions = get(),
+                prepareRouteOptions = get(),
+            )
+        }
         viewModel { (isPickerMode: Boolean) ->
             FavoritesViewModel(
                 isPickerMode = isPickerMode,

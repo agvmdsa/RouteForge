@@ -8,6 +8,7 @@ fun NavGraphBuilder.simulationGraph(
     onOpenSetup: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenFavorites: () -> Unit,
+    onOpenSavedRoutes: () -> Unit,
 ) {
     composable<SimulationRoute> {
         SimulationRoot(
@@ -15,6 +16,7 @@ fun NavGraphBuilder.simulationGraph(
             onOpenSetup = onOpenSetup,
             onOpenSettings = onOpenSettings,
             onOpenFavorites = onOpenFavorites,
+            onOpenSavedRoutes = onOpenSavedRoutes,
         )
     }
 }

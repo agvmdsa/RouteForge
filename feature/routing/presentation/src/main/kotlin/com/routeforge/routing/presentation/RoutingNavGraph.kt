@@ -27,4 +27,10 @@ fun NavGraphBuilder.routingGraph(
         val route = backStackEntry.toRoute<FavoritesRoute>()
         FavoritesRoot(isPickerMode = route.isPickerMode, onDone = { navController.popBackStack() })
     }
+    composable<SavedRoutesRoute> {
+        SavedRoutesRoot(
+            onDone = { navController.popBackStack() },
+            onOpenRegionCatalog = { navController.navigate(RegionCatalogRoute) },
+        )
+    }
 }

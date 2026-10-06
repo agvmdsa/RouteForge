@@ -23,4 +23,6 @@ data class RouteRequestState(
     val pendingAddLongitude: Double? = null,
     val isSaveAsFavoriteChecked: Boolean = false,
     val favoriteNameInput: String = "",
+    val isSaveRouteSheetOpen: Boolean = false,
+    val routeNameInput: String = "",
 )
