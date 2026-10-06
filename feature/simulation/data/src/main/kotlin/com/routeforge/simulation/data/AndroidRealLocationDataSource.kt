@@ -36,10 +36,13 @@ class AndroidRealLocationDataSource(
             }
 
             enabledProviders.forEach { provider ->
-                locationManager.getLastKnownLocation(provider)?.let { lastKnownLocation ->
-                    if (!LocationCompat.isMock(lastKnownLocation)) {
-                        trySend(RealLocationUpdate.Fix(RealLocation(lastKnownLocation.latitude, lastKnownLocation.longitude)))
+                try {
+                    locationManager.getLastKnownLocation(provider)?.let { lastKnownLocation ->
+                        if (!LocationCompat.isMock(lastKnownLocation)) {
+                            trySend(RealLocationUpdate.Fix(RealLocation(lastKnownLocation.latitude, lastKnownLocation.longitude)))
+                        }
                     }
+                } catch (_: SecurityException) {
                 }
             }
 
