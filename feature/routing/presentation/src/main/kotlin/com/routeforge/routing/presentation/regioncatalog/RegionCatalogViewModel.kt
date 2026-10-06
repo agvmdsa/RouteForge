@@ -2,22 +2,24 @@ package com.routeforge.routing.presentation.regioncatalog
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.routing.domain.RegionDownloadController
+import com.routeforge.routing.domain.RegionDownloadEvent
 import com.routeforge.routing.domain.model.RegionStatus
 import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
-import com.routeforge.routing.domain.usecase.DownloadRegionUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class RegionCatalogViewModel(
     private val observeRegionCatalog: ObserveRegionCatalogUseCase,
-    private val downloadRegion: DownloadRegionUseCase,
+    private val regionDownloadController: RegionDownloadController,
     private val computeRequiredRegions: ComputeRequiredRegionsUseCase,
     private val draftWaypointsHolder: DraftWaypointsHolder,
 ) : ViewModel() {
@@ -27,8 +29,28 @@ class RegionCatalogViewModel(
     private val _events = Channel<RegionCatalogEvent>()
     val events = _events.receiveAsFlow()
 
+    /** [regionDownloadController] intentionally outlives this ViewModel — it owns its own
+     *  CoroutineScope (started in feature:routing:data's DI module), so a download keeps running
+     *  if this screen is left or the app is minimized (spec 006 FR-003/FR-004). This ViewModel
+     *  only ever mirrors its state; it never owns the download itself. */
     init {
         refresh()
+
+        regionDownloadController.state
+            .onEach { downloadState ->
+                _state.update {
+                    it.copy(downloadingRegionId = downloadState?.region?.id, downloadProgress = downloadState?.progress)
+                }
+                if (downloadState == null) refresh()
+            }.launchIn(viewModelScope)
+
+        regionDownloadController.events
+            .onEach { event ->
+                when (event) {
+                    is RegionDownloadEvent.Failed ->
+                        _events.send(RegionCatalogEvent.DownloadFailed("Download failed. Check your connection and try again."))
+                }
+            }.launchIn(viewModelScope)
     }
 
     fun onAction(action: RegionCatalogAction) {
@@ -57,23 +79,8 @@ class RegionCatalogViewModel(
         _state.update { it.copy(regions = regions, neededRegionIds = neededRegionIds) }
     }
 
-    /** No-op if a download is already running — [downloadingRegionId] only ever tracks one region
-     *  at a time, and without this guard, repeated taps (the button isn't disabled fast enough to
-     *  catch every tap) launch concurrent downloads that each buffer a whole segment file in
-     *  memory, which can exhaust the heap. */
     private fun startDownload(regionId: String) {
-        if (_state.value.downloadingRegionId != null) return
-        _state.update { it.copy(downloadingRegionId = regionId, downloadProgress = 0f) }
-        viewModelScope.launch {
-            val result =
-                downloadRegion(regionId) { fraction ->
-                    _state.update { it.copy(downloadProgress = fraction) }
-                }
-            if (result is Result.Error) {
-                _events.send(RegionCatalogEvent.DownloadFailed("Download failed. Check your connection and try again."))
-            }
-            _state.update { it.copy(downloadingRegionId = null, downloadProgress = 0f) }
-            refresh()
-        }
+        val region = _state.value.regions.firstOrNull { it.id == regionId } ?: return
+        regionDownloadController.start(region)
     }
 }

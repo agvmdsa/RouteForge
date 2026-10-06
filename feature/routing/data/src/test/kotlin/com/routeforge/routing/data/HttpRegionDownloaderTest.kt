@@ -54,13 +54,29 @@ class HttpRegionDownloaderTest {
             }
         val regionCatalog = BundledRegionCatalog(segmentDir, profileDir, ::emptyAssetOpener)
         val downloader = HttpRegionDownloader(HttpClient(mockEngine), regionCatalog)
-        val progressValues = mutableListOf<Float>()
+        val progressValues = mutableListOf<Float?>()
 
         val result = downloader.download(testRegion) { progressValues.add(it) }
 
         assertEquals(Result.Success(Unit), result)
         assertArrayEquals(tileBytes, File(segmentDir, "tile.rd5").readBytes())
         assertEquals(1f, progressValues.last())
+    }
+
+    @Test
+    fun `download reports null progress instead of a stale fraction when the server omits Content-Length`(
+        @TempDir segmentDir: File,
+        @TempDir profileDir: File,
+    ) = runTest {
+        val tileBytes = byteArrayOf(1, 2, 3, 4, 5)
+        val mockEngine = MockEngine { respond(content = tileBytes, status = HttpStatusCode.OK) }
+        val regionCatalog = BundledRegionCatalog(segmentDir, profileDir, ::emptyAssetOpener)
+        val downloader = HttpRegionDownloader(HttpClient(mockEngine), regionCatalog)
+        val progressValues = mutableListOf<Float?>()
+
+        downloader.download(testRegion) { progressValues.add(it) }
+
+        assertEquals(null, progressValues.first())
     }
 
     @Test

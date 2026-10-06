@@ -14,7 +14,7 @@ class DownloadRegionUseCase(
 ) {
     suspend operator fun invoke(
         regionId: String,
-        onProgress: (Float) -> Unit,
+        onProgress: (Float?) -> Unit,
     ): EmptyResult<DataError.Network> {
         val region =
             regionCatalog.regionById(regionId)

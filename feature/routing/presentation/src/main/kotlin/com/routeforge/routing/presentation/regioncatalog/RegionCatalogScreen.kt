@@ -88,7 +88,8 @@ fun RegionCatalogScreen(
                         RegionCard(
                             region = region,
                             isNeeded = region.id in state.neededRegionIds,
-                            downloadProgress = if (state.downloadingRegionId == region.id) state.downloadProgress else null,
+                            isDownloading = state.downloadingRegionId == region.id,
+                            downloadProgress = state.downloadProgress,
                             isDownloadButtonEnabled = state.downloadingRegionId == null,
                             onDownloadClick = { onAction(RegionCatalogAction.OnDownloadRegion(region.id)) },
                         )
@@ -149,6 +150,7 @@ private fun EmptyRegionsContent(modifier: Modifier = Modifier) {
 private fun RegionCard(
     region: Region,
     isNeeded: Boolean,
+    isDownloading: Boolean,
     downloadProgress: Float?,
     isDownloadButtonEnabled: Boolean,
     onDownloadClick: () -> Unit,
@@ -191,13 +193,20 @@ private fun RegionCard(
                     }
                 }
             }
-            if (downloadProgress != null) {
+            if (isDownloading) {
                 Spacer(modifier = Modifier.height(12.dp))
-                LinearProgressIndicator(
-                    progress = { downloadProgress },
-                    modifier = Modifier.fillMaxWidth(),
-                    strokeCap = StrokeCap.Round,
-                )
+                if (downloadProgress != null) {
+                    LinearProgressIndicator(
+                        progress = { downloadProgress },
+                        modifier = Modifier.fillMaxWidth(),
+                        strokeCap = StrokeCap.Round,
+                    )
+                } else {
+                    LinearProgressIndicator(
+                        modifier = Modifier.fillMaxWidth(),
+                        strokeCap = StrokeCap.Round,
+                    )
+                }
             }
         }
     }

@@ -6,5 +6,5 @@ data class RegionCatalogState(
     val regions: List<Region> = emptyList(),
     val neededRegionIds: Set<String> = emptySet(),
     val downloadingRegionId: String? = null,
-    val downloadProgress: Float = 0f,
+    val downloadProgress: Float? = null,
 )

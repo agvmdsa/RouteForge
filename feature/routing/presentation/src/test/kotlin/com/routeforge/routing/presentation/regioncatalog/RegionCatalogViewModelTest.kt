@@ -1,23 +1,15 @@
 package com.routeforge.routing.presentation.regioncatalog
 
-import com.routeforge.coredomain.DataError
-import com.routeforge.coredomain.EmptyResult
-import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.RoutePoint
-import com.routeforge.routing.domain.RegionDownloader
+import com.routeforge.routing.domain.RegionDownloadEvent
 import com.routeforge.routing.domain.model.Region
+import com.routeforge.routing.domain.model.RegionDownloadState
 import com.routeforge.routing.domain.model.RegionStatus
 import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
-import com.routeforge.routing.domain.usecase.DownloadRegionUseCase
-import com.routeforge.routing.domain.usecase.EnforceStorageQuotaUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
-import com.routeforge.routing.domain.usecase.RecordRegionUsageUseCase
 import com.routeforge.routing.presentation.FakeRegionCatalog
-import com.routeforge.routing.presentation.FakeRegionUsageTracker
-import com.routeforge.routing.presentation.FakeStorageQuotaStore
-import kotlinx.coroutines.CompletableDeferred
+import com.routeforge.routing.presentation.FakeRegionDownloadController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -57,39 +49,10 @@ private val otherRegion =
         status = RegionStatus.DOWNLOADED,
     )
 
-private class FakeRegionDownloader(
-    var result: EmptyResult<DataError.Network> = Result.Success(Unit),
-) : RegionDownloader {
-    override suspend fun download(
-        region: Region,
-        onProgress: (fraction: Float) -> Unit,
-    ): EmptyResult<DataError.Network> {
-        onProgress(0.5f)
-        onProgress(1f)
-        return result
-    }
-}
-
-private class SuspendingRegionDownloader : RegionDownloader {
-    var callCount = 0
-        private set
-    private val gate = CompletableDeferred<Unit>()
-
-    override suspend fun download(
-        region: Region,
-        onProgress: (fraction: Float) -> Unit,
-    ): EmptyResult<DataError.Network> {
-        callCount++
-        gate.await()
-        return Result.Success(Unit)
-    }
-
-    fun finish() = gate.complete(Unit)
-}
-
 class RegionCatalogViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val draftWaypointsHolder = DraftWaypointsHolder()
+    private val controller = FakeRegionDownloadController()
 
     @BeforeEach
     fun setUp() {
@@ -101,26 +64,10 @@ class RegionCatalogViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel(
-        catalog: FakeRegionCatalog,
-        downloader: RegionDownloader = FakeRegionDownloader(),
-    ): RegionCatalogViewModel =
+    private fun createViewModel(catalog: FakeRegionCatalog): RegionCatalogViewModel =
         RegionCatalogViewModel(
             observeRegionCatalog = ObserveRegionCatalogUseCase(catalog),
-            downloadRegion =
-                DownloadRegionUseCase(
-                    regionDownloader = downloader,
-                    regionCatalog = catalog,
-                    recordRegionUsage = RecordRegionUsageUseCase(FakeRegionUsageTracker()),
-                    enforceStorageQuota =
-                        EnforceStorageQuotaUseCase(
-                            storageQuotaStore = FakeStorageQuotaStore(),
-                            regionCatalog = catalog,
-                            regionUsageTracker = FakeRegionUsageTracker(),
-                            draftWaypointsHolder = draftWaypointsHolder,
-                            lastComputedRouteHolder = LastComputedRouteHolder(),
-                        ),
-                ),
+            regionDownloadController = controller,
             computeRequiredRegions = ComputeRequiredRegionsUseCase(catalog),
             draftWaypointsHolder = draftWaypointsHolder,
         )
@@ -153,40 +100,63 @@ class RegionCatalogViewModelTest {
     }
 
     @Test
-    fun `downloading a region reports progress then clears the downloading id`() {
+    fun `starting a download delegates to the controller with the resolved region`() {
         val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion))
-        val downloader = FakeRegionDownloader()
-        val viewModel = createViewModel(catalog, downloader)
+        val viewModel = createViewModel(catalog)
 
         viewModel.onAction(RegionCatalogAction.OnDownloadRegion(downloadableRegion.id))
 
-        assertNull(viewModel.state.value.downloadingRegionId)
-        assertEquals(0f, viewModel.state.value.downloadProgress)
+        assertEquals(listOf(downloadableRegion), controller.startCalls)
     }
 
     @Test
-    fun `tapping download again while one is already in flight is ignored`() {
+    fun `a second start while one is already active is a no-op, via the controller's own guard`() {
         val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion, otherRegion))
-        val downloader = SuspendingRegionDownloader()
-        val viewModel = createViewModel(catalog, downloader)
+        val viewModel = createViewModel(catalog)
 
-        viewModel.onAction(RegionCatalogAction.OnDownloadRegion(downloadableRegion.id))
         viewModel.onAction(RegionCatalogAction.OnDownloadRegion(downloadableRegion.id))
         viewModel.onAction(RegionCatalogAction.OnDownloadRegion(otherRegion.id))
 
-        assertEquals(1, downloader.callCount)
-        downloader.finish()
+        assertEquals(listOf(downloadableRegion), controller.startCalls)
     }
 
     @Test
-    fun `a failed download emits a download failed event`() =
+    fun `downloadingRegionId and downloadProgress mirror the controller's state, including the indeterminate case`() {
+        val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion))
+        val viewModel = createViewModel(catalog)
+
+        controller.emit(RegionDownloadState(downloadableRegion, progress = null))
+
+        assertEquals(downloadableRegion.id, viewModel.state.value.downloadingRegionId)
+        assertNull(viewModel.state.value.downloadProgress)
+
+        controller.emit(RegionDownloadState(downloadableRegion, progress = 0.5f))
+
+        assertEquals(0.5f, viewModel.state.value.downloadProgress)
+    }
+
+    @Test
+    fun `the controller's state going back to null clears downloadingRegionId and refreshes`() {
+        val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion))
+        val viewModel = createViewModel(catalog)
+        controller.emit(RegionDownloadState(downloadableRegion, progress = 0.5f))
+
+        catalog.regions = listOf(downloadableRegion.copy(status = RegionStatus.DOWNLOADED))
+        controller.emit(null)
+
+        assertNull(viewModel.state.value.downloadingRegionId)
+        assertNull(viewModel.state.value.downloadProgress)
+        assertEquals(RegionStatus.DOWNLOADED, viewModel.state.value.regions.first { it.id == downloadableRegion.id }.status)
+    }
+
+    @Test
+    fun `a failed download event surfaces as a download failed event`() =
         runTest(dispatcher) {
             val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion))
-            val downloader = FakeRegionDownloader(result = Result.Error(DataError.Network.NO_INTERNET))
-            val viewModel = createViewModel(catalog, downloader)
+            val viewModel = createViewModel(catalog)
 
             val eventDeferred = async { viewModel.events.first() }
-            viewModel.onAction(RegionCatalogAction.OnDownloadRegion(downloadableRegion.id))
+            controller.emitEvent(RegionDownloadEvent.Failed(downloadableRegion.id))
 
             assertEquals(
                 RegionCatalogEvent.DownloadFailed("Download failed. Check your connection and try again."),
