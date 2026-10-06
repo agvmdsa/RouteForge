@@ -15,6 +15,10 @@
     <string name="simulation_cancel_mock_confirm_message">RouteForge will stop reporting the simulated location and switch back to your real location.</string>
     <string name="simulation_cancel_mock_confirm_button">Cancel simulation</string>
     <string name="simulation_cancel_mock_dismiss_button">Keep simulating</string>
+    <string name="simulation_favorite_teleport_cancel_route_title">Cancel route and teleport?</string>
+    <string name="simulation_favorite_teleport_cancel_route_message">This will cancel the loaded (or running) route and teleport you to this favorite instead.</string>
+    <string name="simulation_favorite_teleport_cancel_route_confirm">Cancel route and teleport</string>
+    <string name="simulation_favorite_teleport_cancel_route_dismiss">Keep route</string>
     <string name="simulation_teleport_blocked_offline_message">No internet connection — can\'t confirm a teleport to an area whose map couldn\'t load.</string>
     <string name="simulation_go_to_setup_button">Go to setup</string>
     <string name="simulation_open_settings_button">Settings</string>

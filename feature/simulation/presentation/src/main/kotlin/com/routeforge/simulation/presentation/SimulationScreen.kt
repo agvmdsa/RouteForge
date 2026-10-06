@@ -62,6 +62,7 @@ import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.presentation.components.CancelMockConfirmationSheet
 import com.routeforge.simulation.presentation.components.CancelRouteConfirmationSheet
 import com.routeforge.simulation.presentation.components.CoordinatePill
+import com.routeforge.simulation.presentation.components.FavoriteTeleportCancelRouteSheet
 import com.routeforge.simulation.presentation.components.ForceRealLocationButton
 import com.routeforge.simulation.presentation.components.Joystick
 import com.routeforge.simulation.presentation.components.JoystickInterruptSheet
@@ -406,6 +407,13 @@ fun SimulationScreen(
         CancelMockConfirmationSheet(
             onConfirm = { onAction(SimulationAction.OnConfirmCancelMock) },
             onDismiss = { onAction(SimulationAction.OnDismissCancelMock) },
+        )
+    }
+
+    if (state.pendingFavoriteTeleportTarget != null) {
+        FavoriteTeleportCancelRouteSheet(
+            onConfirm = { onAction(SimulationAction.OnConfirmFavoriteTeleportCancelRoute) },
+            onDismiss = { onAction(SimulationAction.OnDismissFavoriteTeleportCancelRoute) },
         )
     }
 

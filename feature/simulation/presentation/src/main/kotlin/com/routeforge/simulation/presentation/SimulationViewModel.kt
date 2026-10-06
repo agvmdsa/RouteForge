@@ -7,6 +7,7 @@ import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
+import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.simulation.domain.RealLocationFailure
 import com.routeforge.simulation.domain.RealLocationUpdate
 import com.routeforge.simulation.domain.model.ExecutionMode
@@ -103,7 +104,11 @@ class SimulationViewModel(
         pendingTeleportTargetHolder.target
             .onEach { point ->
                 if (point != null) {
-                    teleportTo(point.latitude, point.longitude)
+                    if (_state.value.loadedRoute != null) {
+                        _state.update { it.copy(pendingFavoriteTeleportTarget = point) }
+                    } else {
+                        teleportTo(point.latitude, point.longitude)
+                    }
                     pendingTeleportTargetHolder.clear()
                 }
             }.launchIn(viewModelScope)
@@ -170,6 +175,9 @@ class SimulationViewModel(
                 if (_state.value.mockedSession == null) startObservingRealLocation()
             SimulationAction.OnForceRealLocationClick -> forceRestartRealLocationSearch()
             SimulationAction.OnScreenResumed -> checkAuthorizationStillGranted()
+            SimulationAction.OnConfirmFavoriteTeleportCancelRoute -> confirmFavoriteTeleportCancelRoute()
+            SimulationAction.OnDismissFavoriteTeleportCancelRoute ->
+                _state.update { it.copy(pendingFavoriteTeleportTarget = null) }
         }
     }
 
@@ -197,9 +205,21 @@ class SimulationViewModel(
         teleportTo(latitude, longitude)
     }
 
-    /** Shared by [confirmTeleport] (map-tap path, already confirmed via TeleportConfirmationSheet)
-     *  and the [PendingTeleportTargetHolder] observer (favorite path, already confirmed on the
-     *  Favorites screen) — neither asks the user a second time. */
+    /** The favorite-teleport path defers to this confirmation only when a route is loaded or
+     *  running — teleporting replaces the mocked session, so proceeding here cancels it. With no
+     *  route loaded, [teleportTo] already runs directly from the holder observer in [init]. */
+    private fun confirmFavoriteTeleportCancelRoute() {
+        val target = _state.value.pendingFavoriteTeleportTarget ?: return
+        _state.update { it.copy(pendingFavoriteTeleportTarget = null) }
+        lastComputedRouteHolder.clear()
+        teleportTo(target.latitude, target.longitude)
+    }
+
+    /** Shared by [confirmTeleport] (map-tap path, already confirmed via TeleportConfirmationSheet),
+     *  the [PendingTeleportTargetHolder] observer (favorite path with no route loaded — already
+     *  confirmed on the Favorites screen, no second ask here), and
+     *  [confirmFavoriteTeleportCancelRoute] (favorite path with a route loaded — that extra
+     *  confirmation is specifically about cancelling the route, not a repeat of Favorites' own). */
     private fun teleportTo(
         latitude: Double,
         longitude: Double,

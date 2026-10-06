@@ -80,3 +80,17 @@ internal fun CancelRouteConfirmationSheet(
         }
     }
 }
+
+@Composable
+internal fun FavoriteTeleportCancelRouteSheet(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ConfirmationBottomSheet(title = stringResource(R.string.simulation_favorite_teleport_cancel_route_title), onDismiss = onDismiss) {
+        Text(stringResource(R.string.simulation_favorite_teleport_cancel_route_message))
+        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+            Button(onClick = onConfirm) { Text(stringResource(R.string.simulation_favorite_teleport_cancel_route_confirm)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.simulation_favorite_teleport_cancel_route_dismiss)) }
+        }
+    }
+}

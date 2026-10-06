@@ -180,6 +180,47 @@ class SimulationViewModelTest {
     }
 
     @Test
+    fun `a favorite teleport while a route is loaded asks for confirmation instead of teleporting immediately`() {
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+
+        pendingTeleportTargetHolder.set(RoutePoint(latitude = 5.0, longitude = 6.0))
+
+        assertTrue(controller.teleportCalls.isEmpty())
+        assertEquals(RoutePoint(latitude = 5.0, longitude = 6.0), viewModel.state.value.pendingFavoriteTeleportTarget)
+        assertNotNull(viewModel.state.value.loadedRoute)
+        assertNull(pendingTeleportTargetHolder.target.value)
+    }
+
+    @Test
+    fun `confirming a favorite teleport cancels the loaded route and teleports`() {
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+        pendingTeleportTargetHolder.set(RoutePoint(latitude = 5.0, longitude = 6.0))
+
+        viewModel.onAction(SimulationAction.OnConfirmFavoriteTeleportCancelRoute)
+
+        assertEquals(1, controller.teleportCalls.size)
+        assertEquals(5.0, controller.teleportCalls.first().latitude)
+        assertEquals(6.0, controller.teleportCalls.first().longitude)
+        assertNull(viewModel.state.value.loadedRoute)
+        assertNull(viewModel.state.value.pendingFavoriteTeleportTarget)
+    }
+
+    @Test
+    fun `dismissing a favorite teleport confirmation keeps the route loaded and teleports nowhere`() {
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+        pendingTeleportTargetHolder.set(RoutePoint(latitude = 5.0, longitude = 6.0))
+
+        viewModel.onAction(SimulationAction.OnDismissFavoriteTeleportCancelRoute)
+
+        assertTrue(controller.teleportCalls.isEmpty())
+        assertNotNull(viewModel.state.value.loadedRoute)
+        assertNull(viewModel.state.value.pendingFavoriteTeleportTarget)
+    }
+
+    @Test
     fun `tapping play with nothing running opens the start route dialog without starting anything`() {
         lastComputedRouteHolder.set(sampleRoute)
         val viewModel = createViewModel()

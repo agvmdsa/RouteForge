@@ -83,4 +83,8 @@ sealed interface SimulationAction {
     /** Fired when the screen resumes (app foregrounded, or returning from Settings) — re-checks
      *  mock-location authorization so a revocation is caught even without the user acting on it. */
     data object OnScreenResumed : SimulationAction
+
+    data object OnConfirmFavoriteTeleportCancelRoute : SimulationAction
+
+    data object OnDismissFavoriteTeleportCancelRoute : SimulationAction
 }

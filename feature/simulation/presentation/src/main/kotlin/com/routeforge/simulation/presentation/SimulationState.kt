@@ -2,6 +2,7 @@ package com.routeforge.simulation.presentation
 
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
+import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.simulation.domain.model.SimulationSession
 
 enum class SimulationErrorType {
@@ -35,4 +36,5 @@ data class SimulationState(
     val isJoystickInterruptPending: Boolean = false,
     val errorType: SimulationErrorType? = null,
     val isBlockedByAuthorization: Boolean = false,
+    val pendingFavoriteTeleportTarget: RoutePoint? = null,
 )
