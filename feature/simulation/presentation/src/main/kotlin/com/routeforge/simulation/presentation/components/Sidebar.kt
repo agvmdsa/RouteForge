@@ -1,4 +1,4 @@
-package com.routeforge.simulation.presentation
+package com.routeforge.simulation.presentation.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Icon

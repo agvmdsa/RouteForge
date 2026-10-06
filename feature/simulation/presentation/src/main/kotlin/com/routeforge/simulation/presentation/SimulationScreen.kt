@@ -59,6 +59,17 @@ import com.routeforge.designsystem.speed.SpeedSelectorFab
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.simulation.domain.RouteProgressCalculator
 import com.routeforge.simulation.domain.model.SimulationMode
+import com.routeforge.simulation.presentation.components.CancelMockConfirmationSheet
+import com.routeforge.simulation.presentation.components.CancelRouteConfirmationSheet
+import com.routeforge.simulation.presentation.components.CoordinatePill
+import com.routeforge.simulation.presentation.components.ForceRealLocationButton
+import com.routeforge.simulation.presentation.components.Joystick
+import com.routeforge.simulation.presentation.components.JoystickInterruptSheet
+import com.routeforge.simulation.presentation.components.PlaybackButton
+import com.routeforge.simulation.presentation.components.Sidebar
+import com.routeforge.simulation.presentation.components.SidebarDestination
+import com.routeforge.simulation.presentation.components.StartRouteDialog
+import com.routeforge.simulation.presentation.components.TeleportConfirmationSheet
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel

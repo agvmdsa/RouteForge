@@ -1,4 +1,4 @@
-package com.routeforge.simulation.presentation
+package com.routeforge.simulation.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,6 +24,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.routeforge.simulation.presentation.ExecutionModeSelection
+import com.routeforge.simulation.presentation.R
+import com.routeforge.simulation.presentation.SimulationAction
+import com.routeforge.simulation.presentation.SimulationErrorType
+import com.routeforge.simulation.presentation.SimulationState
 
 private val ControlsRowSpacing = 8.dp
 private val StartDialogOptionSpacing = 12.dp

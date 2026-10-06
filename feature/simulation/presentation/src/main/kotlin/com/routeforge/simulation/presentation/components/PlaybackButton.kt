@@ -1,4 +1,4 @@
-package com.routeforge.simulation.presentation
+package com.routeforge.simulation.presentation.components
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -12,6 +12,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.domain.model.SimulationStatus
+import com.routeforge.simulation.presentation.R
+import com.routeforge.simulation.presentation.SimulationAction
+import com.routeforge.simulation.presentation.SimulationState
 
 private val BigButtonDiameter = 72.dp
 

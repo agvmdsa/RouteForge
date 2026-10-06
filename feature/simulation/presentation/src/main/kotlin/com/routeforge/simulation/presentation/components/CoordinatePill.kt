@@ -1,4 +1,4 @@
-package com.routeforge.simulation.presentation
+package com.routeforge.simulation.presentation.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
@@ -15,6 +15,7 @@ import androidx.compose.ui.text.AnnotatedString
 import com.routeforge.designsystem.components.StatusPill
 import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.domain.model.SimulationSession
+import com.routeforge.simulation.presentation.R
 
 @Composable
 internal fun CoordinatePill(
