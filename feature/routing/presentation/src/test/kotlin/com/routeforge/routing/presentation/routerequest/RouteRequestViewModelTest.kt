@@ -415,6 +415,36 @@ class RouteRequestViewModelTest {
         assertNotNull(viewModel.state.value.route)
     }
 
+    @Test
+    fun `opening the region catalog from the missing regions warning clears the warning and navigates`() =
+        runTest(dispatcher) {
+            regionCatalog.regions =
+                listOf(
+                    Region(
+                        id = "north-zone",
+                        displayName = "North Zone",
+                        minLatitude = 0.0,
+                        minLongitude = 0.0,
+                        maxLatitude = 5.0,
+                        maxLongitude = 5.0,
+                        tileIds = listOf("north.rd5"),
+                        approximateSizeBytes = 1_000L,
+                        status = RegionStatus.NOT_DOWNLOADED,
+                        missingTileCount = 1,
+                    ),
+                )
+            val viewModel = createViewModel()
+            viewModel.tapTwoPoints()
+            viewModel.onAction(RouteRequestAction.OnRequestRoute)
+            assertNotNull(viewModel.state.value.missingRegionsWarning)
+
+            val eventDeferred = async { viewModel.events.first() }
+            viewModel.onAction(RouteRequestAction.OnOpenRegionCatalog)
+
+            assertNull(viewModel.state.value.missingRegionsWarning)
+            assertEquals(RouteRequestEvent.NavigateToRegionCatalog, eventDeferred.await())
+        }
+
     // --- User Story 1: mode gate ---
 
     @Test

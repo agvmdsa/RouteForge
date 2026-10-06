@@ -96,6 +96,34 @@ class SavedRoutesViewModelTest {
     }
 
     @Test
+    fun `opening the region catalog from the missing regions warning clears the warning and navigates`() =
+        runTest(dispatcher) {
+            regionCatalog.regions =
+                listOf(
+                    Region(
+                        id = "north-zone",
+                        displayName = "North Zone",
+                        minLatitude = 0.0,
+                        minLongitude = 0.0,
+                        maxLatitude = 5.0,
+                        maxLongitude = 5.0,
+                        tileIds = listOf("north.rd5"),
+                        approximateSizeBytes = 1_000L,
+                        status = RegionStatus.NOT_DOWNLOADED,
+                        missingTileCount = 1,
+                    ),
+                )
+            val viewModel = createViewModel()
+            viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
+            assertNotNull(viewModel.state.value.missingRegionsWarning)
+
+            viewModel.onAction(SavedRoutesAction.OnOpenRegionCatalog)
+
+            assertNull(viewModel.state.value.missingRegionsWarning)
+            assertEquals(SavedRoutesEvent.NavigateToRegionCatalog, viewModel.events.first())
+        }
+
+    @Test
     fun `proceeding despite missing regions resolves the route`() =
         runTest(dispatcher) {
             regionCatalog.regions =

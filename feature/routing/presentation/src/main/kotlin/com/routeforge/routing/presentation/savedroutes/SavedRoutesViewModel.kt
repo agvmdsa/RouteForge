@@ -53,8 +53,10 @@ class SavedRoutesViewModel(
             SavedRoutesAction.OnDismissDelete -> _state.update { it.copy(pendingDeleteId = null) }
             is SavedRoutesAction.OnUseClick -> onUseClick(action.id)
             is SavedRoutesAction.OnChooseMode -> onChooseMode(action.mode)
-            SavedRoutesAction.OnOpenRegionCatalog ->
+            SavedRoutesAction.OnOpenRegionCatalog -> {
+                _state.update { it.copy(missingRegionsWarning = null, resolvingRouteId = null) }
                 viewModelScope.launch { _events.send(SavedRoutesEvent.NavigateToRegionCatalog) }
+            }
             SavedRoutesAction.OnProceedDespiteMissingRegions -> proceedDespiteMissingRegions()
             SavedRoutesAction.OnDismissMissingRegionsWarning ->
                 _state.update { it.copy(missingRegionsWarning = null, resolvingRouteId = null) }

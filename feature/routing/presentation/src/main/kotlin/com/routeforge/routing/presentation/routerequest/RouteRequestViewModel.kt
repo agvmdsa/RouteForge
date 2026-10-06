@@ -99,8 +99,10 @@ class RouteRequestViewModel(
             RouteRequestAction.OnRequestRoute -> requestRoute()
             is RouteRequestAction.OnChooseMode -> chooseMode(action.mode)
             RouteRequestAction.OnUseRoute -> useRoute()
-            RouteRequestAction.OnOpenRegionCatalog ->
+            RouteRequestAction.OnOpenRegionCatalog -> {
+                _state.update { it.copy(missingRegionsWarning = null) }
                 viewModelScope.launch { _events.send(RouteRequestEvent.NavigateToRegionCatalog) }
+            }
             RouteRequestAction.OnOpenFavoritesClick ->
                 viewModelScope.launch { _events.send(RouteRequestEvent.NavigateToFavorites) }
             RouteRequestAction.OnProceedDespiteMissingRegions -> {
