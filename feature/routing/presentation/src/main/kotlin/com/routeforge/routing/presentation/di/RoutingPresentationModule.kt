@@ -11,11 +11,11 @@ import com.routeforge.routing.domain.usecase.ObserveStorageQuotaUseCase
 import com.routeforge.routing.domain.usecase.PrepareRouteOptionsUseCase
 import com.routeforge.routing.domain.usecase.RecordRegionUsageUseCase
 import com.routeforge.routing.domain.usecase.SetStorageQuotaUseCase
-import com.routeforge.routing.presentation.FavoritesViewModel
-import com.routeforge.routing.presentation.RegionCatalogViewModel
-import com.routeforge.routing.presentation.RouteRequestViewModel
-import com.routeforge.routing.presentation.SavedRoutesViewModel
-import com.routeforge.routing.presentation.SettingsViewModel
+import com.routeforge.routing.presentation.favorites.FavoritesViewModel
+import com.routeforge.routing.presentation.regioncatalog.RegionCatalogViewModel
+import com.routeforge.routing.presentation.routerequest.RouteRequestViewModel
+import com.routeforge.routing.presentation.savedroutes.SavedRoutesViewModel
+import com.routeforge.routing.presentation.settings.SettingsViewModel
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
