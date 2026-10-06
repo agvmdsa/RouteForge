@@ -17,6 +17,7 @@ import com.routeforge.routing.domain.usecase.RecordRegionUsageUseCase
 import com.routeforge.routing.presentation.FakeRegionCatalog
 import com.routeforge.routing.presentation.FakeRegionUsageTracker
 import com.routeforge.routing.presentation.FakeStorageQuotaStore
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -67,6 +68,23 @@ private class FakeRegionDownloader(
         onProgress(1f)
         return result
     }
+}
+
+private class SuspendingRegionDownloader : RegionDownloader {
+    var callCount = 0
+        private set
+    private val gate = CompletableDeferred<Unit>()
+
+    override suspend fun download(
+        region: Region,
+        onProgress: (fraction: Float) -> Unit,
+    ): EmptyResult<DataError.Network> {
+        callCount++
+        gate.await()
+        return Result.Success(Unit)
+    }
+
+    fun finish() = gate.complete(Unit)
 }
 
 class RegionCatalogViewModelTest {
@@ -144,6 +162,20 @@ class RegionCatalogViewModelTest {
 
         assertNull(viewModel.state.value.downloadingRegionId)
         assertEquals(0f, viewModel.state.value.downloadProgress)
+    }
+
+    @Test
+    fun `tapping download again while one is already in flight is ignored`() {
+        val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion, otherRegion))
+        val downloader = SuspendingRegionDownloader()
+        val viewModel = createViewModel(catalog, downloader)
+
+        viewModel.onAction(RegionCatalogAction.OnDownloadRegion(downloadableRegion.id))
+        viewModel.onAction(RegionCatalogAction.OnDownloadRegion(downloadableRegion.id))
+        viewModel.onAction(RegionCatalogAction.OnDownloadRegion(otherRegion.id))
+
+        assertEquals(1, downloader.callCount)
+        downloader.finish()
     }
 
     @Test

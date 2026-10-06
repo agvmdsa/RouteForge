@@ -57,7 +57,12 @@ class RegionCatalogViewModel(
         _state.update { it.copy(regions = regions, neededRegionIds = neededRegionIds) }
     }
 
+    /** No-op if a download is already running — [downloadingRegionId] only ever tracks one region
+     *  at a time, and without this guard, repeated taps (the button isn't disabled fast enough to
+     *  catch every tap) launch concurrent downloads that each buffer a whole segment file in
+     *  memory, which can exhaust the heap. */
     private fun startDownload(regionId: String) {
+        if (_state.value.downloadingRegionId != null) return
         _state.update { it.copy(downloadingRegionId = regionId, downloadProgress = 0f) }
         viewModelScope.launch {
             val result =

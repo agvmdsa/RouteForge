@@ -89,6 +89,7 @@ fun RegionCatalogScreen(
                             region = region,
                             isNeeded = region.id in state.neededRegionIds,
                             downloadProgress = if (state.downloadingRegionId == region.id) state.downloadProgress else null,
+                            isDownloadButtonEnabled = state.downloadingRegionId == null,
                             onDownloadClick = { onAction(RegionCatalogAction.OnDownloadRegion(region.id)) },
                         )
                     }
@@ -149,6 +150,7 @@ private fun RegionCard(
     region: Region,
     isNeeded: Boolean,
     downloadProgress: Float?,
+    isDownloadButtonEnabled: Boolean,
     onDownloadClick: () -> Unit,
 ) {
     Surface(shape = CardShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
@@ -184,7 +186,9 @@ private fun RegionCard(
                     }
                 }
                 if (region.status == RegionStatus.NOT_DOWNLOADED || region.status == RegionStatus.PARTIALLY_DOWNLOADED) {
-                    Button(onClick = onDownloadClick) { Text(stringResource(R.string.region_catalog_download_button)) }
+                    Button(onClick = onDownloadClick, enabled = isDownloadButtonEnabled) {
+                        Text(stringResource(R.string.region_catalog_download_button))
+                    }
                 }
             }
             if (downloadProgress != null) {
