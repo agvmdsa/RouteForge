@@ -368,10 +368,6 @@ fun SimulationScreen(
                                     Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_route_button))
                                 }
                                 PlaybackButton(state = state, onAction = onAction)
-                                ForceRealLocationButton(
-                                    isSearching = state.isSearchingRealLocation,
-                                    onClick = { onAction(SimulationAction.OnForceRealLocationClick) },
-                                )
                             }
                         } else {
                             Column(
