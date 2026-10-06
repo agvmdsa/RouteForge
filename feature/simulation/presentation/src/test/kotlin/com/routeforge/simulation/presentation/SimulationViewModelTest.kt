@@ -1,9 +1,9 @@
 package com.routeforge.simulation.presentation
 
-import com.routeforge.coredomain.LastComputedRouteHolder
-import com.routeforge.coredomain.LastKnownRealLocationHolder
-import com.routeforge.coredomain.PendingTeleportTargetHolder
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint

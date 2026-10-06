@@ -1,4 +1,4 @@
-package com.routeforge.coredomain
+package com.routeforge.coredomain.holder
 
 import com.routeforge.coredomain.model.RoutePoint
 import kotlinx.coroutines.flow.MutableStateFlow

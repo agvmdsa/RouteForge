@@ -1,9 +1,9 @@
 package com.routeforge.routing.domain.usecase
 
 import com.routeforge.coredomain.DataError
-import com.routeforge.coredomain.DraftWaypointsHolder
-import com.routeforge.coredomain.LastComputedRouteHolder
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.routing.domain.FakeRegionCatalog
 import com.routeforge.routing.domain.FakeRegionDownloader
 import com.routeforge.routing.domain.FakeRegionUsageTracker

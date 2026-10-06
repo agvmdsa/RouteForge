@@ -1,7 +1,7 @@
 package com.routeforge.simulation.data
 
-import com.routeforge.coredomain.LastKnownRealLocationHolder
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
 import com.routeforge.simulation.domain.ExecutionModeFailure

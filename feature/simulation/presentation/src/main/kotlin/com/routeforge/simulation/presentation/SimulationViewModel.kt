@@ -2,11 +2,11 @@ package com.routeforge.simulation.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.routeforge.coredomain.LastComputedRouteHolder
-import com.routeforge.coredomain.LastKnownRealLocationHolder
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
-import com.routeforge.coredomain.PendingTeleportTargetHolder
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.simulation.domain.RealLocationFailure
 import com.routeforge.simulation.domain.RealLocationUpdate
 import com.routeforge.simulation.domain.model.ExecutionMode

@@ -3,9 +3,9 @@ package com.routeforge.simulation.data
 import android.content.Context
 import android.content.Intent
 import com.routeforge.coredomain.GeoMath
-import com.routeforge.coredomain.LastKnownRealLocationHolder
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.model.Route
 import com.routeforge.simulation.domain.ExecutionModeFailure
 import com.routeforge.simulation.domain.JoystickStartFailure
