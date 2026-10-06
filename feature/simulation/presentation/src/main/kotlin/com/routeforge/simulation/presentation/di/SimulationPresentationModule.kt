@@ -12,6 +12,7 @@ import com.routeforge.simulation.domain.usecase.SetSpeedUseCase
 import com.routeforge.simulation.domain.usecase.StartRouteSimulationUseCase
 import com.routeforge.simulation.domain.usecase.StopSimulationUseCase
 import com.routeforge.simulation.domain.usecase.TeleportUseCase
+import com.routeforge.simulation.domain.usecase.UpdateActiveRouteUseCase
 import com.routeforge.simulation.domain.usecase.UpdateJoystickDirectionUseCase
 import com.routeforge.simulation.presentation.SimulationViewModel
 import org.koin.core.module.dsl.factoryOf
@@ -33,6 +34,7 @@ val simulationPresentationModule =
         factoryOf(::RequestJoystickInterruptUseCase)
         factoryOf(::ConfirmJoystickInterruptUseCase)
         factoryOf(::UpdateJoystickDirectionUseCase)
+        factoryOf(::UpdateActiveRouteUseCase)
         viewModelOf(::SimulationViewModel)
     }
 

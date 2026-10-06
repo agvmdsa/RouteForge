@@ -164,6 +164,36 @@ class SavedRoutesViewModelTest {
         }
 
     @Test
+    fun `choosing a mode when both are viable stores the other mode's path as the alternate`() =
+        runTest(dispatcher) {
+            routingEngine.snappableLatitudes = setOf(1.0, 2.0)
+            routingEngine.computePathResult =
+                Route(points = samplePoints, geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 100.0)
+            val viewModel = createViewModel()
+            viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
+            val freeRoam = viewModel.state.value.routeOptions?.freeRoam
+
+            viewModel.onAction(SavedRoutesAction.OnChooseMode(RoutePlaybackMode.GUIDED))
+
+            val resolved = lastComputedRouteHolder.route.value
+            assertEquals(freeRoam?.geometry, resolved?.alternateGeometry)
+            assertEquals(freeRoam?.distanceMeters, resolved?.alternateDistanceMeters)
+        }
+
+    @Test
+    fun `resolving where only Free-roam is viable leaves no alternate to switch to`() =
+        runTest(dispatcher) {
+            val viewModel = createViewModel()
+
+            viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
+
+            val resolved = lastComputedRouteHolder.route.value
+            assertEquals(RoutePlaybackMode.FREE_ROAM, resolved?.mode)
+            assertNull(resolved?.alternateGeometry)
+            assertNull(resolved?.alternateDistanceMeters)
+        }
+
+    @Test
     fun `editing a route seeds the name input`() {
         val viewModel = createViewModel()
 

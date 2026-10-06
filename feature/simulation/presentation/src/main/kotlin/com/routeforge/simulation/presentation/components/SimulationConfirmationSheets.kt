@@ -9,6 +9,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.simulation.presentation.R
 
@@ -91,6 +92,26 @@ internal fun FavoriteTeleportCancelRouteSheet(
         Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
             Button(onClick = onConfirm) { Text(stringResource(R.string.simulation_favorite_teleport_cancel_route_confirm)) }
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.simulation_favorite_teleport_cancel_route_dismiss)) }
+        }
+    }
+}
+
+@Composable
+internal fun SwitchRouteModeSheet(
+    targetMode: RoutePlaybackMode,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val title =
+        when (targetMode) {
+            RoutePlaybackMode.GUIDED -> stringResource(R.string.simulation_switch_mode_to_guided_title)
+            RoutePlaybackMode.FREE_ROAM -> stringResource(R.string.simulation_switch_mode_to_free_roam_title)
+        }
+    ConfirmationBottomSheet(title = title, onDismiss = onDismiss) {
+        Text(stringResource(R.string.simulation_switch_mode_message))
+        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+            Button(onClick = onConfirm) { Text(stringResource(R.string.simulation_switch_mode_confirm)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.simulation_switch_mode_dismiss)) }
         }
     }
 }

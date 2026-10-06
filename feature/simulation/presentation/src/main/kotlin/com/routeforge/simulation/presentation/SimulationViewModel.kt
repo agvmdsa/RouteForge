@@ -7,6 +7,7 @@ import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
+import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.simulation.domain.RealLocationFailure
 import com.routeforge.simulation.domain.RealLocationUpdate
@@ -26,6 +27,7 @@ import com.routeforge.simulation.domain.usecase.SetSpeedUseCase
 import com.routeforge.simulation.domain.usecase.StartRouteSimulationUseCase
 import com.routeforge.simulation.domain.usecase.StopSimulationUseCase
 import com.routeforge.simulation.domain.usecase.TeleportUseCase
+import com.routeforge.simulation.domain.usecase.UpdateActiveRouteUseCase
 import com.routeforge.simulation.domain.usecase.UpdateJoystickDirectionUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -54,6 +56,7 @@ class SimulationViewModel(
     private val requestJoystickInterruptUseCase: RequestJoystickInterruptUseCase,
     private val confirmJoystickInterruptUseCase: ConfirmJoystickInterruptUseCase,
     private val updateJoystickDirectionUseCase: UpdateJoystickDirectionUseCase,
+    private val updateActiveRouteUseCase: UpdateActiveRouteUseCase,
     private val mockLocationAuthorizationChecker: MockLocationAuthorizationChecker,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
     private val lastKnownRealLocationHolder: LastKnownRealLocationHolder,
@@ -178,6 +181,9 @@ class SimulationViewModel(
             SimulationAction.OnConfirmFavoriteTeleportCancelRoute -> confirmFavoriteTeleportCancelRoute()
             SimulationAction.OnDismissFavoriteTeleportCancelRoute ->
                 _state.update { it.copy(pendingFavoriteTeleportTarget = null) }
+            SimulationAction.OnSwitchRouteModeClick -> onSwitchRouteModeClick()
+            SimulationAction.OnConfirmSwitchRouteMode -> confirmSwitchRouteMode()
+            SimulationAction.OnDismissSwitchRouteMode -> _state.update { it.copy(pendingRouteModeSwitch = null) }
         }
     }
 
@@ -213,6 +219,38 @@ class SimulationViewModel(
         _state.update { it.copy(pendingFavoriteTeleportTarget = null) }
         lastComputedRouteHolder.clear()
         teleportTo(target.latitude, target.longitude)
+    }
+
+    /** Only proposes switching to whichever mode isn't currently active — there are just the two,
+     *  so this is a toggle, not a picker. No-op if the loaded route never had both modes
+     *  computed (nothing to switch to). */
+    private fun onSwitchRouteModeClick() {
+        val route = _state.value.loadedRoute ?: return
+        if (route.alternateGeometry == null || route.alternateDistanceMeters == null) return
+        val targetMode = if (route.mode == RoutePlaybackMode.GUIDED) RoutePlaybackMode.FREE_ROAM else RoutePlaybackMode.GUIDED
+        _state.update { it.copy(pendingRouteModeSwitch = targetMode) }
+    }
+
+    /** Swaps geometry/mode with their "alternate" counterparts (so switching back and forth keeps
+     *  working) and pushes the result both to [lastComputedRouteHolder] (so the loaded-route UI
+     *  updates whether or not playback has started yet) and, if a route is actively playing, to
+     *  the controller's live session via [updateActiveRouteUseCase] — a no-op there otherwise. */
+    private fun confirmSwitchRouteMode() {
+        val targetMode = _state.value.pendingRouteModeSwitch ?: return
+        _state.update { it.copy(pendingRouteModeSwitch = null) }
+        val route = _state.value.loadedRoute ?: return
+        val alternateGeometry = route.alternateGeometry ?: return
+        val alternateDistance = route.alternateDistanceMeters ?: return
+        val swapped =
+            route.copy(
+                mode = targetMode,
+                geometry = alternateGeometry,
+                distanceMeters = alternateDistance,
+                alternateGeometry = route.geometry,
+                alternateDistanceMeters = route.distanceMeters,
+            )
+        lastComputedRouteHolder.set(swapped)
+        updateActiveRouteUseCase(swapped)
     }
 
     /** Shared by [confirmTeleport] (map-tap path, already confirmed via TeleportConfirmationSheet),

@@ -15,6 +15,7 @@ import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.model.RouteDraft
 import com.routeforge.routing.domain.model.RouteFileFailure
 import com.routeforge.routing.domain.model.RouteFileFormat
+import com.routeforge.routing.domain.model.RouteOptions
 import com.routeforge.routing.domain.model.autoResolved
 import com.routeforge.routing.domain.usecase.AddWaypointUseCase
 import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
@@ -248,7 +249,7 @@ class RouteRequestViewModel(
             val autoResolved = options.autoResolved
             if (autoResolved != null) {
                 // FR-003: Guided isn't computable — skip straight to Free-roam, no choice shown.
-                finalizeRoute(autoResolved.first, autoResolved.second)
+                finalizeRoute(autoResolved.first, autoResolved.second, options)
             } else {
                 // FR-002: both modes are viable — let the user choose.
                 _state.update { it.copy(isComputing = false, routeOptions = options) }
@@ -263,15 +264,23 @@ class RouteRequestViewModel(
                 RoutePlaybackMode.GUIDED -> options.guided ?: return
                 RoutePlaybackMode.FREE_ROAM -> options.freeRoam
             }
-        finalizeRoute(chosen, mode)
+        finalizeRoute(chosen, mode, options)
     }
 
     private fun finalizeRoute(
         route: Route,
         mode: RoutePlaybackMode,
+        options: RouteOptions,
     ) {
-        _state.update { it.copy(isComputing = false, routeOptions = null, chosenMode = mode, route = route) }
-        lastComputedRouteHolder.set(route)
+        val withAlternate =
+            when (mode) {
+                RoutePlaybackMode.GUIDED ->
+                    route.copy(alternateGeometry = options.freeRoam.geometry, alternateDistanceMeters = options.freeRoam.distanceMeters)
+                RoutePlaybackMode.FREE_ROAM ->
+                    route.copy(alternateGeometry = options.guided?.geometry, alternateDistanceMeters = options.guided?.distanceMeters)
+            }
+        _state.update { it.copy(isComputing = false, routeOptions = null, chosenMode = mode, route = withAlternate) }
+        lastComputedRouteHolder.set(withAlternate)
     }
 
     /** The user explicitly confirms they're done previewing/exporting and wants to play this route. */

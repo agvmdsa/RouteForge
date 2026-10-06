@@ -7,6 +7,7 @@ import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.FavoriteRoute
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
+import com.routeforge.routing.domain.model.RouteOptions
 import com.routeforge.routing.domain.model.autoResolved
 import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.usecase.PrepareRouteOptionsUseCase
@@ -108,7 +109,7 @@ class SavedRoutesViewModel(
             val options = withContext(backgroundDispatcher) { prepareRouteOptions(route.points) }
             val autoResolved = options.autoResolved
             if (autoResolved != null) {
-                resolve(autoResolved.first, autoResolved.second)
+                resolve(autoResolved.first, autoResolved.second, options)
             } else {
                 _state.update { it.copy(isComputingId = null, routeOptions = options) }
             }
@@ -122,14 +123,22 @@ class SavedRoutesViewModel(
                 RoutePlaybackMode.GUIDED -> options.guided ?: return
                 RoutePlaybackMode.FREE_ROAM -> options.freeRoam
             }
-        resolve(chosen, mode)
+        resolve(chosen, mode, options)
     }
 
     private fun resolve(
         route: Route,
         mode: RoutePlaybackMode,
+        options: RouteOptions,
     ) {
-        lastComputedRouteHolder.set(route.copy(mode = mode))
+        val withAlternate =
+            when (mode) {
+                RoutePlaybackMode.GUIDED ->
+                    route.copy(alternateGeometry = options.freeRoam.geometry, alternateDistanceMeters = options.freeRoam.distanceMeters)
+                RoutePlaybackMode.FREE_ROAM ->
+                    route.copy(alternateGeometry = options.guided?.geometry, alternateDistanceMeters = options.guided?.distanceMeters)
+            }
+        lastComputedRouteHolder.set(withAlternate.copy(mode = mode))
         _state.update { it.copy(isComputingId = null, routeOptions = null, resolvingRouteId = null) }
         viewModelScope.launch { _events.send(SavedRoutesEvent.NavigateBack) }
     }

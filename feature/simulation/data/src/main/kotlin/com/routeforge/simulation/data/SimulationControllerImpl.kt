@@ -158,6 +158,12 @@ class SimulationControllerImpl(
         }
     }
 
+    override fun updateActiveRoute(route: Route) {
+        _mockedSession.update { current ->
+            if (current?.mode == SimulationMode.ROUTE) current.copy(route = route) else current
+        }
+    }
+
     private fun startSession(mockedSession: SimulationSession) {
         tickJob?.cancel()
         _mockedSession.value = mockedSession

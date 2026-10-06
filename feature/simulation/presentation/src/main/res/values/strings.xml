@@ -19,6 +19,12 @@
     <string name="simulation_favorite_teleport_cancel_route_message">This will cancel the loaded (or running) route and teleport you to this favorite instead.</string>
     <string name="simulation_favorite_teleport_cancel_route_confirm">Cancel route and teleport</string>
     <string name="simulation_favorite_teleport_cancel_route_dismiss">Keep route</string>
+    <string name="simulation_switch_route_mode_button">Switch route mode</string>
+    <string name="simulation_switch_mode_to_guided_title">Switch to Guided?</string>
+    <string name="simulation_switch_mode_to_free_roam_title">Switch to Free-roam?</string>
+    <string name="simulation_switch_mode_message">This recalculates the path for the rest of the route. Your progress carries over by distance traveled, not exact position, so where you are on the map may shift slightly.</string>
+    <string name="simulation_switch_mode_confirm">Switch mode</string>
+    <string name="simulation_switch_mode_dismiss">Cancel</string>
     <string name="simulation_teleport_blocked_offline_message">No internet connection — can\'t confirm a teleport to an area whose map couldn\'t load.</string>
     <string name="simulation_go_to_setup_button">Go to setup</string>
     <string name="simulation_open_settings_button">Settings</string>

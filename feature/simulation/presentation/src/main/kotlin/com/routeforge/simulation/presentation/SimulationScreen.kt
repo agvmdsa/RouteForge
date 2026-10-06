@@ -18,8 +18,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Signpost
 import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.FloatingActionButton
@@ -50,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapMarker
@@ -70,6 +73,7 @@ import com.routeforge.simulation.presentation.components.PlaybackButton
 import com.routeforge.simulation.presentation.components.Sidebar
 import com.routeforge.simulation.presentation.components.SidebarDestination
 import com.routeforge.simulation.presentation.components.StartRouteDialog
+import com.routeforge.simulation.presentation.components.SwitchRouteModeSheet
 import com.routeforge.simulation.presentation.components.TeleportConfirmationSheet
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
@@ -360,6 +364,7 @@ fun SimulationScreen(
                         }
 
                         if (state.loadedRoute != null) {
+                            val activeRoute = state.loadedRoute
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
@@ -369,6 +374,19 @@ fun SimulationScreen(
                                     Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_route_button))
                                 }
                                 PlaybackButton(state = state, onAction = onAction)
+                                if (activeRoute.alternateGeometry != null) {
+                                    FloatingActionButton(onClick = { onAction(SimulationAction.OnSwitchRouteModeClick) }) {
+                                        Icon(
+                                            imageVector =
+                                                if (activeRoute.mode == RoutePlaybackMode.GUIDED) {
+                                                    Icons.Filled.Signpost
+                                                } else {
+                                                    Icons.Filled.Straighten
+                                                },
+                                            contentDescription = stringResource(R.string.simulation_switch_route_mode_button),
+                                        )
+                                    }
+                                }
                             }
                         } else {
                             Column(
@@ -414,6 +432,15 @@ fun SimulationScreen(
         FavoriteTeleportCancelRouteSheet(
             onConfirm = { onAction(SimulationAction.OnConfirmFavoriteTeleportCancelRoute) },
             onDismiss = { onAction(SimulationAction.OnDismissFavoriteTeleportCancelRoute) },
+        )
+    }
+
+    val pendingRouteModeSwitch = state.pendingRouteModeSwitch
+    if (pendingRouteModeSwitch != null) {
+        SwitchRouteModeSheet(
+            targetMode = pendingRouteModeSwitch,
+            onConfirm = { onAction(SimulationAction.OnConfirmSwitchRouteMode) },
+            onDismiss = { onAction(SimulationAction.OnDismissSwitchRouteMode) },
         )
     }
 

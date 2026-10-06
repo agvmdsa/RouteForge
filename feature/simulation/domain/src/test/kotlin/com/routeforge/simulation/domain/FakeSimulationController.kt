@@ -37,6 +37,7 @@ class FakeSimulationController : SimulationController {
     var startJoystickCallCount = 0
         private set
     val updateJoystickDirectionCalls = mutableListOf<Float>()
+    val updateActiveRouteCalls = mutableListOf<Route>()
 
     fun emit(mockedSession: SimulationSession?) {
         _mockedSession.value = mockedSession
@@ -86,5 +87,9 @@ class FakeSimulationController : SimulationController {
 
     override fun updateJoystickDirection(bearingDegrees: Float) {
         updateJoystickDirectionCalls.add(bearingDegrees)
+    }
+
+    override fun updateActiveRoute(route: Route) {
+        updateActiveRouteCalls.add(route)
     }
 }

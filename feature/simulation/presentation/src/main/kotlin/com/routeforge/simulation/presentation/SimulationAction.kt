@@ -87,4 +87,10 @@ sealed interface SimulationAction {
     data object OnConfirmFavoriteTeleportCancelRoute : SimulationAction
 
     data object OnDismissFavoriteTeleportCancelRoute : SimulationAction
+
+    data object OnSwitchRouteModeClick : SimulationAction
+
+    data object OnConfirmSwitchRouteMode : SimulationAction
+
+    data object OnDismissSwitchRouteMode : SimulationAction
 }

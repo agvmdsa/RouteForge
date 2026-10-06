@@ -76,6 +76,33 @@ class SimulationControllerImplTest {
     }
 
     @Test
+    fun `updateActiveRoute swaps the active route's geometry while preserving distance traveled`() {
+        val controller = createController()
+        controller.startRoute(longRoute, speedSetting = SpeedSetting.Manual(10f))
+        controller.tick(elapsedSeconds = 1.0)
+
+        val alternateRoute = longRoute.copy(geometry = listOf(0.0 to 0.0, 0.0 to 10.0))
+        controller.updateActiveRoute(alternateRoute)
+        controller.tick(elapsedSeconds = 1.0)
+
+        val mockedSession = controller.mockedSession.value
+        assertEquals(alternateRoute, mockedSession?.route)
+        assertEquals(20.0, mockedSession?.distanceTraveledMeters)
+    }
+
+    @Test
+    fun `updateActiveRoute does nothing when no route session is active`() {
+        val controller = createController()
+        controller.teleport(latitude = 1.0, longitude = 2.0)
+
+        controller.updateActiveRoute(longRoute)
+
+        val mockedSession = controller.mockedSession.value
+        assertEquals(SimulationMode.STATIONARY, mockedSession?.mode)
+        assertNull(mockedSession?.route)
+    }
+
+    @Test
     fun `a route reaching its end completes and keeps reporting the final point rather than stopping or looping`() {
         val controller = createController()
 

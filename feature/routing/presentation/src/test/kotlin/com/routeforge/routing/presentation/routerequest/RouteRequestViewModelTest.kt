@@ -481,6 +481,40 @@ class RouteRequestViewModelTest {
     }
 
     @Test
+    fun `choosing a mode when both are viable stores the other mode's path as the alternate`() {
+        routingEngine.snappableLatitudes = setOf(1.0, 2.0)
+        routingEngine.computePathResult =
+            Route(
+                points = listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)),
+                geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
+                distanceMeters = 100.0,
+            )
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        viewModel.onAction(RouteRequestAction.OnRequestRoute)
+        val freeRoam = viewModel.state.value.routeOptions?.freeRoam
+
+        viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.GUIDED))
+
+        val state = viewModel.state.value
+        assertEquals(freeRoam?.geometry, state.route?.alternateGeometry)
+        assertEquals(freeRoam?.distanceMeters, state.route?.alternateDistanceMeters)
+    }
+
+    @Test
+    fun `auto-resolving to free-roam because guided isn't viable leaves no alternate to switch to`() {
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+
+        viewModel.onAction(RouteRequestAction.OnRequestRoute)
+
+        val state = viewModel.state.value
+        assertEquals(RoutePlaybackMode.FREE_ROAM, state.chosenMode)
+        assertNull(state.route?.alternateGeometry)
+        assertNull(state.route?.alternateDistanceMeters)
+    }
+
+    @Test
     fun `an unroutable point skips straight to free-roam with no error shown`() {
         val viewModel = createViewModel()
         viewModel.tapTwoPoints()

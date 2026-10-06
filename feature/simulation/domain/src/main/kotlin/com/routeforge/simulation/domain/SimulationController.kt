@@ -42,4 +42,11 @@ interface SimulationController {
     /** Releasing the joystick is expressed as [pause] (stop moving, stay in place); dragging
      *  again is [resume] + a fresh [updateJoystickDirection] call. */
     fun updateJoystickDirection(bearingDegrees: Float)
+
+    /** Swaps the currently-playing ROUTE session's geometry for [route] in place — the tick loop
+     *  keeps projecting the session's existing [SimulationSession.distanceTraveledMeters] onto
+     *  whatever [Route.geometry] it finds next, so playback continues uninterrupted on the new
+     *  path. A no-op if no ROUTE-mode session is active (switching a merely-loaded-but-not-yet-
+     *  started route only needs the loaded-route state updated, not the controller). */
+    fun updateActiveRoute(route: Route)
 }

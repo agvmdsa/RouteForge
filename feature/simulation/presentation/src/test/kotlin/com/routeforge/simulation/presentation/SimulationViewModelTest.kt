@@ -6,6 +6,7 @@ import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
+import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.simulation.domain.JoystickStartFailure
 import com.routeforge.simulation.domain.model.ExecutionMode
@@ -24,6 +25,7 @@ import com.routeforge.simulation.domain.usecase.SetSpeedUseCase
 import com.routeforge.simulation.domain.usecase.StartRouteSimulationUseCase
 import com.routeforge.simulation.domain.usecase.StopSimulationUseCase
 import com.routeforge.simulation.domain.usecase.TeleportUseCase
+import com.routeforge.simulation.domain.usecase.UpdateActiveRouteUseCase
 import com.routeforge.simulation.domain.usecase.UpdateJoystickDirectionUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -47,6 +49,13 @@ private val sampleRoute =
         points = emptyList(),
         geometry = listOf(0.0 to 0.0, 1.0 to 1.0),
         distanceMeters = 100.0,
+    )
+
+private val routeWithAlternate =
+    sampleRoute.copy(
+        mode = RoutePlaybackMode.GUIDED,
+        alternateGeometry = listOf(2.0 to 2.0, 3.0 to 3.0),
+        alternateDistanceMeters = 50.0,
     )
 
 private fun stationarySession(
@@ -97,6 +106,7 @@ class SimulationViewModelTest {
             requestJoystickInterruptUseCase = RequestJoystickInterruptUseCase(controller),
             confirmJoystickInterruptUseCase = ConfirmJoystickInterruptUseCase(controller),
             updateJoystickDirectionUseCase = UpdateJoystickDirectionUseCase(controller),
+            updateActiveRouteUseCase = UpdateActiveRouteUseCase(controller),
             mockLocationAuthorizationChecker = authorizationChecker,
             lastComputedRouteHolder = lastComputedRouteHolder,
             lastKnownRealLocationHolder = lastKnownRealLocationHolder,
@@ -218,6 +228,81 @@ class SimulationViewModelTest {
         assertTrue(controller.teleportCalls.isEmpty())
         assertNotNull(viewModel.state.value.loadedRoute)
         assertNull(viewModel.state.value.pendingFavoriteTeleportTarget)
+    }
+
+    // --- Route mode switching (Guided <-> Free-roam) ---
+
+    @Test
+    fun `clicking switch mode with no alternate available does nothing`() {
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(SimulationAction.OnSwitchRouteModeClick)
+
+        assertNull(viewModel.state.value.pendingRouteModeSwitch)
+    }
+
+    @Test
+    fun `clicking switch mode on a guided route with an alternate proposes switching to free-roam`() {
+        lastComputedRouteHolder.set(routeWithAlternate)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(SimulationAction.OnSwitchRouteModeClick)
+
+        assertEquals(RoutePlaybackMode.FREE_ROAM, viewModel.state.value.pendingRouteModeSwitch)
+    }
+
+    @Test
+    fun `clicking switch mode on a free-roam route with an alternate proposes switching to guided`() {
+        lastComputedRouteHolder.set(routeWithAlternate.copy(mode = RoutePlaybackMode.FREE_ROAM))
+        val viewModel = createViewModel()
+
+        viewModel.onAction(SimulationAction.OnSwitchRouteModeClick)
+
+        assertEquals(RoutePlaybackMode.GUIDED, viewModel.state.value.pendingRouteModeSwitch)
+    }
+
+    @Test
+    fun `confirming the switch swaps geometry and distance reciprocally and updates the loaded route`() {
+        lastComputedRouteHolder.set(routeWithAlternate)
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnSwitchRouteModeClick)
+
+        viewModel.onAction(SimulationAction.OnConfirmSwitchRouteMode)
+
+        val route = viewModel.state.value.loadedRoute
+        assertEquals(RoutePlaybackMode.FREE_ROAM, route?.mode)
+        assertEquals(routeWithAlternate.alternateGeometry, route?.geometry)
+        assertEquals(routeWithAlternate.alternateDistanceMeters, route?.distanceMeters)
+        assertEquals(routeWithAlternate.geometry, route?.alternateGeometry)
+        assertEquals(routeWithAlternate.distanceMeters, route?.alternateDistanceMeters)
+        assertNull(viewModel.state.value.pendingRouteModeSwitch)
+    }
+
+    @Test
+    fun `confirming the switch while a route session is active also updates the controller's live session`() {
+        lastComputedRouteHolder.set(routeWithAlternate)
+        val viewModel = createViewModel()
+        controller.emit(stationarySession().copy(mode = SimulationMode.ROUTE, route = routeWithAlternate))
+        viewModel.onAction(SimulationAction.OnSwitchRouteModeClick)
+
+        viewModel.onAction(SimulationAction.OnConfirmSwitchRouteMode)
+
+        assertEquals(1, controller.updateActiveRouteCalls.size)
+        assertEquals(RoutePlaybackMode.FREE_ROAM, controller.updateActiveRouteCalls.first().mode)
+    }
+
+    @Test
+    fun `dismissing the switch leaves the loaded route unchanged`() {
+        lastComputedRouteHolder.set(routeWithAlternate)
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnSwitchRouteModeClick)
+
+        viewModel.onAction(SimulationAction.OnDismissSwitchRouteMode)
+
+        assertNull(viewModel.state.value.pendingRouteModeSwitch)
+        assertEquals(routeWithAlternate, viewModel.state.value.loadedRoute)
+        assertTrue(controller.updateActiveRouteCalls.isEmpty())
     }
 
     @Test
