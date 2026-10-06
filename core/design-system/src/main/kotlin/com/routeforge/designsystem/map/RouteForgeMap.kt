@@ -243,7 +243,10 @@ fun RouteForgeMap(
                         setFlat(true)
                         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                     }
-                    rotation = marker.rotationDegrees
+                    // osmdroid negates rotation for flat markers internally (Marker.java:
+                    // rotationOnScreen = -mBearing), so negate here to keep rotationDegrees'
+                    // documented clockwise-from-north contract true on screen.
+                    rotation = -marker.rotationDegrees
                     marker.onClick?.let { onClick ->
                         setOnMarkerClickListener { _, _ ->
                             onClick()

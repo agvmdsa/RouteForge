@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -14,13 +14,15 @@ import androidx.compose.ui.unit.dp
 private val SpinnerSize = 20.dp
 
 /** A Google Maps-style "locate me" button — always tappable, forcing a fresh real-location
- *  search regardless of whether one is already running, showing a spinner while it's in progress. */
+ *  search regardless of whether one is already running, showing a spinner while it's in progress.
+ *  Full-size [FloatingActionButton] to match the other controls in the same column (joystick
+ *  toggle, plan/cancel route). */
 @Composable
 internal fun ForceRealLocationButton(
     isSearching: Boolean,
     onClick: () -> Unit,
 ) {
-    SmallFloatingActionButton(onClick = onClick) {
+    FloatingActionButton(onClick = onClick) {
         if (isSearching) {
             CircularProgressIndicator(modifier = Modifier.size(SpinnerSize))
         } else {

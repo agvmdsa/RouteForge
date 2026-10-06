@@ -71,7 +71,7 @@ internal fun Joystick(
                 Modifier
                     .offset { IntOffset(knobOffset.x.roundToInt(), knobOffset.y.roundToInt()) }
                     .size(KnobDiameter)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
         )
     }
 }
