@@ -20,6 +20,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -163,4 +164,55 @@ class RegionCatalogViewModelTest {
                 eventDeferred.await(),
             )
         }
+
+    @Test
+    fun `clicking cancel sets pendingCancelDownload without calling controller cancel`() {
+        val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion))
+        val viewModel = createViewModel(catalog)
+        controller.emit(RegionDownloadState(downloadableRegion, progress = 0.5f))
+
+        viewModel.onAction(RegionCatalogAction.OnCancelDownloadClick)
+
+        assertTrue(viewModel.state.value.pendingCancelDownload)
+        assertEquals(0, controller.cancelCallCount)
+    }
+
+    @Test
+    fun `confirming cancel calls controller cancel and clears the pending flag`() {
+        val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion))
+        val viewModel = createViewModel(catalog)
+        controller.emit(RegionDownloadState(downloadableRegion, progress = 0.5f))
+        viewModel.onAction(RegionCatalogAction.OnCancelDownloadClick)
+
+        viewModel.onAction(RegionCatalogAction.OnConfirmCancelDownload)
+
+        assertEquals(1, controller.cancelCallCount)
+        assertTrue(!viewModel.state.value.pendingCancelDownload)
+    }
+
+    @Test
+    fun `dismissing cancel clears the pending flag without cancelling`() {
+        val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion))
+        val viewModel = createViewModel(catalog)
+        controller.emit(RegionDownloadState(downloadableRegion, progress = 0.5f))
+        viewModel.onAction(RegionCatalogAction.OnCancelDownloadClick)
+
+        viewModel.onAction(RegionCatalogAction.OnDismissCancelDownload)
+
+        assertEquals(0, controller.cancelCallCount)
+        assertTrue(!viewModel.state.value.pendingCancelDownload)
+    }
+
+    @Test
+    fun `confirming cancel twice in a row has no effect beyond the first call`() {
+        val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion))
+        val viewModel = createViewModel(catalog)
+        controller.emit(RegionDownloadState(downloadableRegion, progress = 0.5f))
+        viewModel.onAction(RegionCatalogAction.OnCancelDownloadClick)
+
+        viewModel.onAction(RegionCatalogAction.OnConfirmCancelDownload)
+        viewModel.onAction(RegionCatalogAction.OnConfirmCancelDownload)
+
+        assertEquals(1, controller.cancelCallCount)
+    }
 }

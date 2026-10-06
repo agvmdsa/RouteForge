@@ -57,6 +57,12 @@ class RegionCatalogViewModel(
         when (action) {
             RegionCatalogAction.OnRefresh -> refresh()
             is RegionCatalogAction.OnDownloadRegion -> startDownload(action.regionId)
+            RegionCatalogAction.OnCancelDownloadClick -> _state.update { it.copy(pendingCancelDownload = true) }
+            RegionCatalogAction.OnConfirmCancelDownload -> {
+                regionDownloadController.cancel()
+                _state.update { it.copy(pendingCancelDownload = false) }
+            }
+            RegionCatalogAction.OnDismissCancelDownload -> _state.update { it.copy(pendingCancelDownload = false) }
         }
     }
 

@@ -36,6 +36,11 @@
     <string name="region_catalog_attribution">© OpenStreetMap contributors</string>
     <string name="region_catalog_empty_title">No map data needed right now</string>
     <string name="region_catalog_empty_message">Regions show up here once your route needs them, or once you\'ve downloaded them for offline use.</string>
+    <string name="region_catalog_cancel_download_button">Cancel download</string>
+    <string name="region_catalog_cancel_download_confirm_title">Cancel this download?</string>
+    <string name="region_catalog_cancel_download_confirm_message">Everything downloaded so far for this region will be discarded. You can start downloading it again from scratch at any time.</string>
+    <string name="region_catalog_cancel_download_confirm_button">Cancel download</string>
+    <string name="region_catalog_cancel_download_dismiss_button">Keep downloading</string>
     <string name="settings_title">Settings</string>
     <string name="settings_storage_section_title">Offline map storage</string>
     <string name="settings_quota_500mb">500 MB</string>

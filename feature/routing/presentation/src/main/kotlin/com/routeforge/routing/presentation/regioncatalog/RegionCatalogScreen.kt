@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.IconBadge
 import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.theme.RouteForgeTheme
@@ -55,6 +57,7 @@ private val CardSpacing = 12.dp
 private val CardShape = RoundedCornerShape(24.dp)
 private val CardPadding = 20.dp
 private val EmptyStateIconBadgeSize = 72.dp
+private val ControlsRowSpacing = 8.dp
 
 @Composable
 fun RegionCatalogRoot(viewModel: RegionCatalogViewModel = koinViewModel()) {
@@ -92,6 +95,7 @@ fun RegionCatalogScreen(
                             downloadProgress = state.downloadProgress,
                             isDownloadButtonEnabled = state.downloadingRegionId == null,
                             onDownloadClick = { onAction(RegionCatalogAction.OnDownloadRegion(region.id)) },
+                            onCancelDownloadClick = { onAction(RegionCatalogAction.OnCancelDownloadClick) },
                         )
                     }
                 }
@@ -117,6 +121,27 @@ fun RegionCatalogScreen(
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                 modifier = Modifier.fillMaxWidth().padding(ScreenContentPadding),
             )
+        }
+    }
+
+    if (state.pendingCancelDownload) {
+        CancelDownloadConfirmationSheet(
+            onConfirm = { onAction(RegionCatalogAction.OnConfirmCancelDownload) },
+            onDismiss = { onAction(RegionCatalogAction.OnDismissCancelDownload) },
+        )
+    }
+}
+
+@Composable
+private fun CancelDownloadConfirmationSheet(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ConfirmationBottomSheet(title = stringResource(R.string.region_catalog_cancel_download_confirm_title), onDismiss = onDismiss) {
+        Text(stringResource(R.string.region_catalog_cancel_download_confirm_message))
+        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+            Button(onClick = onConfirm) { Text(stringResource(R.string.region_catalog_cancel_download_confirm_button)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.region_catalog_cancel_download_dismiss_button)) }
         }
     }
 }
@@ -154,6 +179,7 @@ private fun RegionCard(
     downloadProgress: Float?,
     isDownloadButtonEnabled: Boolean,
     onDownloadClick: () -> Unit,
+    onCancelDownloadClick: () -> Unit,
 ) {
     Surface(shape = CardShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(CardPadding)) {
@@ -206,6 +232,9 @@ private fun RegionCard(
                         modifier = Modifier.fillMaxWidth(),
                         strokeCap = StrokeCap.Round,
                     )
+                }
+                TextButton(onClick = onCancelDownloadClick) {
+                    Text(stringResource(R.string.region_catalog_cancel_download_button))
                 }
             }
         }

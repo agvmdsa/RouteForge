@@ -34,6 +34,7 @@ class FakeRegionDownloadController : RegionDownloadController {
     }
 
     override fun cancel() {
+        if (_state.value == null) return
         cancelCallCount++
         _state.value = null
     }
