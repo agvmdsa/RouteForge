@@ -1,8 +1,10 @@
 package com.routeforge.routing.presentation.di
 
 import com.routeforge.routing.domain.FreeRoamRouteBuilder
+import com.routeforge.routing.domain.usecase.ComputeRegionUsageUseCase
 import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.usecase.ComputeRouteUseCase
+import com.routeforge.routing.domain.usecase.DeleteRegionUseCase
 import com.routeforge.routing.domain.usecase.DownloadRegionUseCase
 import com.routeforge.routing.domain.usecase.EnforceStorageQuotaUseCase
 import com.routeforge.routing.domain.usecase.GetStorageUsageSummaryUseCase
@@ -34,6 +36,8 @@ val routingPresentationModule =
         factoryOf(::RecordRegionUsageUseCase)
         factoryOf(::EnforceStorageQuotaUseCase)
         factoryOf(::GetStorageUsageSummaryUseCase)
+        factoryOf(::DeleteRegionUseCase)
+        factoryOf(::ComputeRegionUsageUseCase)
         viewModel {
             RouteRequestViewModel(
                 prepareRouteOptions = get(),

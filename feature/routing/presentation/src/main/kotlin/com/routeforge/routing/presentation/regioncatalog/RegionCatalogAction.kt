@@ -12,4 +12,12 @@ sealed interface RegionCatalogAction {
     data object OnConfirmCancelDownload : RegionCatalogAction
 
     data object OnDismissCancelDownload : RegionCatalogAction
+
+    data class OnDeleteRegionClick(
+        val regionId: String,
+    ) : RegionCatalogAction
+
+    data object OnConfirmDeleteRegion : RegionCatalogAction
+
+    data object OnDismissDeleteRegion : RegionCatalogAction
 }

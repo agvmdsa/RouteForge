@@ -6,7 +6,9 @@ import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.routing.domain.RegionDownloadController
 import com.routeforge.routing.domain.RegionDownloadEvent
 import com.routeforge.routing.domain.model.RegionStatus
+import com.routeforge.routing.domain.usecase.ComputeRegionUsageUseCase
 import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
+import com.routeforge.routing.domain.usecase.DeleteRegionUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +24,8 @@ class RegionCatalogViewModel(
     private val regionDownloadController: RegionDownloadController,
     private val computeRequiredRegions: ComputeRequiredRegionsUseCase,
     private val draftWaypointsHolder: DraftWaypointsHolder,
+    private val deleteRegion: DeleteRegionUseCase,
+    private val computeRegionUsage: ComputeRegionUsageUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(RegionCatalogState())
     val state = _state.asStateFlow()
@@ -63,6 +67,10 @@ class RegionCatalogViewModel(
                 _state.update { it.copy(pendingCancelDownload = false) }
             }
             RegionCatalogAction.OnDismissCancelDownload -> _state.update { it.copy(pendingCancelDownload = false) }
+            is RegionCatalogAction.OnDeleteRegionClick -> onDeleteRegionClick(action.regionId)
+            RegionCatalogAction.OnConfirmDeleteRegion -> confirmDeleteRegion()
+            RegionCatalogAction.OnDismissDeleteRegion ->
+                _state.update { it.copy(pendingDeleteRegion = null, deleteRegionUsage = null) }
         }
     }
 
@@ -88,5 +96,23 @@ class RegionCatalogViewModel(
     private fun startDownload(regionId: String) {
         val region = _state.value.regions.firstOrNull { it.id == regionId } ?: return
         regionDownloadController.start(region)
+    }
+
+    /** No-op for the currently-downloading region — only cancelling applies there (spec 006
+     *  FR-011); delete is only ever offered for DOWNLOADED/PARTIALLY_DOWNLOADED cards in the UI,
+     *  but this guard keeps the ViewModel correct even if that ever changes. */
+    private fun onDeleteRegionClick(regionId: String) {
+        if (regionId == _state.value.downloadingRegionId) return
+        val region = _state.value.regions.firstOrNull { it.id == regionId } ?: return
+        _state.update { it.copy(pendingDeleteRegion = region, deleteRegionUsage = computeRegionUsage(region)) }
+    }
+
+    /** Deletes regardless of [RegionCatalogState.deleteRegionUsage] — the usage warning is
+     *  informational only and never blocks deletion (spec 006 FR-009). */
+    private fun confirmDeleteRegion() {
+        val region = _state.value.pendingDeleteRegion ?: return
+        deleteRegion(region)
+        _state.update { it.copy(pendingDeleteRegion = null, deleteRegionUsage = null) }
+        refresh()
     }
 }

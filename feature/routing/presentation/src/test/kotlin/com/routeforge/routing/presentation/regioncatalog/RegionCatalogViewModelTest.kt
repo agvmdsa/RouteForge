@@ -1,15 +1,20 @@
 package com.routeforge.routing.presentation.regioncatalog
 
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.RegionDownloadEvent
 import com.routeforge.routing.domain.model.Region
 import com.routeforge.routing.domain.model.RegionDownloadState
 import com.routeforge.routing.domain.model.RegionStatus
+import com.routeforge.routing.domain.usecase.ComputeRegionUsageUseCase
 import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
+import com.routeforge.routing.domain.usecase.DeleteRegionUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
+import com.routeforge.routing.presentation.FakeFavoriteRoutesRepository
 import com.routeforge.routing.presentation.FakeRegionCatalog
 import com.routeforge.routing.presentation.FakeRegionDownloadController
+import com.routeforge.routing.presentation.FakeRegionUsageTracker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -53,7 +58,10 @@ private val otherRegion =
 class RegionCatalogViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val draftWaypointsHolder = DraftWaypointsHolder()
+    private val lastComputedRouteHolder = LastComputedRouteHolder()
     private val controller = FakeRegionDownloadController()
+    private val regionUsageTracker = FakeRegionUsageTracker()
+    private val favoriteRoutesRepository = FakeFavoriteRoutesRepository()
 
     @BeforeEach
     fun setUp() {
@@ -71,6 +79,14 @@ class RegionCatalogViewModelTest {
             regionDownloadController = controller,
             computeRequiredRegions = ComputeRequiredRegionsUseCase(catalog),
             draftWaypointsHolder = draftWaypointsHolder,
+            deleteRegion = DeleteRegionUseCase(catalog, regionUsageTracker),
+            computeRegionUsage =
+                ComputeRegionUsageUseCase(
+                    computeRequiredRegions = ComputeRequiredRegionsUseCase(catalog),
+                    draftWaypointsHolder = draftWaypointsHolder,
+                    lastComputedRouteHolder = lastComputedRouteHolder,
+                    favoriteRoutesRepository = favoriteRoutesRepository,
+                ),
         )
 
     @Test
@@ -214,5 +230,62 @@ class RegionCatalogViewModelTest {
         viewModel.onAction(RegionCatalogAction.OnConfirmCancelDownload)
 
         assertEquals(1, controller.cancelCallCount)
+    }
+
+    @Test
+    fun `deleting a region nothing depends on shows no warning and deletes on confirm`() {
+        val catalog = FakeRegionCatalog(regions = listOf(otherRegion))
+        val viewModel = createViewModel(catalog)
+
+        viewModel.onAction(RegionCatalogAction.OnDeleteRegionClick(otherRegion.id))
+
+        assertEquals(otherRegion, viewModel.state.value.pendingDeleteRegion)
+        assertTrue(viewModel.state.value.deleteRegionUsage?.isInUse != true)
+
+        viewModel.onAction(RegionCatalogAction.OnConfirmDeleteRegion)
+
+        assertNull(viewModel.state.value.pendingDeleteRegion)
+        assertTrue(catalog.regions.none { it.id == otherRegion.id })
+    }
+
+    @Test
+    fun `deleting a region needed by the draft, active route, or a saved route warns but still deletes on confirm`() {
+        val catalog = FakeRegionCatalog(regions = listOf(otherRegion))
+        draftWaypointsHolder.set(listOf(RoutePoint(latitude = otherRegion.minLatitude, longitude = otherRegion.minLongitude)))
+        val viewModel = createViewModel(catalog)
+
+        viewModel.onAction(RegionCatalogAction.OnDeleteRegionClick(otherRegion.id))
+
+        assertEquals(true, viewModel.state.value.deleteRegionUsage?.isInUse)
+        assertEquals(true, viewModel.state.value.deleteRegionUsage?.neededByDraft)
+
+        viewModel.onAction(RegionCatalogAction.OnConfirmDeleteRegion)
+
+        assertNull(viewModel.state.value.pendingDeleteRegion)
+        assertTrue(catalog.regions.none { it.id == otherRegion.id })
+    }
+
+    @Test
+    fun `dismissing delete clears the pending state without deleting`() {
+        val catalog = FakeRegionCatalog(regions = listOf(otherRegion))
+        val viewModel = createViewModel(catalog)
+        viewModel.onAction(RegionCatalogAction.OnDeleteRegionClick(otherRegion.id))
+
+        viewModel.onAction(RegionCatalogAction.OnDismissDeleteRegion)
+
+        assertNull(viewModel.state.value.pendingDeleteRegion)
+        assertNull(viewModel.state.value.deleteRegionUsage)
+        assertTrue(catalog.regions.any { it.id == otherRegion.id })
+    }
+
+    @Test
+    fun `OnDeleteRegionClick is a no-op for the currently-downloading region`() {
+        val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion))
+        val viewModel = createViewModel(catalog)
+        controller.emit(RegionDownloadState(downloadableRegion, progress = 0.5f))
+
+        viewModel.onAction(RegionCatalogAction.OnDeleteRegionClick(downloadableRegion.id))
+
+        assertNull(viewModel.state.value.pendingDeleteRegion)
     }
 }

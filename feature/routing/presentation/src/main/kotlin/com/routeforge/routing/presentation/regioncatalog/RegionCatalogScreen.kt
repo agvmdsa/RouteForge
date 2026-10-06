@@ -49,6 +49,7 @@ import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.routing.domain.model.Region
 import com.routeforge.routing.domain.model.RegionStatus
+import com.routeforge.routing.domain.model.RegionUsage
 import com.routeforge.routing.presentation.R
 import org.koin.androidx.compose.koinViewModel
 
@@ -96,6 +97,7 @@ fun RegionCatalogScreen(
                             isDownloadButtonEnabled = state.downloadingRegionId == null,
                             onDownloadClick = { onAction(RegionCatalogAction.OnDownloadRegion(region.id)) },
                             onCancelDownloadClick = { onAction(RegionCatalogAction.OnCancelDownloadClick) },
+                            onDeleteClick = { onAction(RegionCatalogAction.OnDeleteRegionClick(region.id)) },
                         )
                     }
                 }
@@ -130,6 +132,15 @@ fun RegionCatalogScreen(
             onDismiss = { onAction(RegionCatalogAction.OnDismissCancelDownload) },
         )
     }
+
+    val pendingDeleteRegion = state.pendingDeleteRegion
+    if (pendingDeleteRegion != null) {
+        DeleteRegionConfirmationSheet(
+            usage = state.deleteRegionUsage,
+            onConfirm = { onAction(RegionCatalogAction.OnConfirmDeleteRegion) },
+            onDismiss = { onAction(RegionCatalogAction.OnDismissDeleteRegion) },
+        )
+    }
 }
 
 @Composable
@@ -142,6 +153,33 @@ private fun CancelDownloadConfirmationSheet(
         Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
             Button(onClick = onConfirm) { Text(stringResource(R.string.region_catalog_cancel_download_confirm_button)) }
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.region_catalog_cancel_download_dismiss_button)) }
+        }
+    }
+}
+
+@Composable
+private fun DeleteRegionConfirmationSheet(
+    usage: RegionUsage?,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ConfirmationBottomSheet(title = stringResource(R.string.region_catalog_delete_confirm_title), onDismiss = onDismiss) {
+        Text(stringResource(R.string.region_catalog_delete_confirm_message))
+        if (usage != null && usage.isInUse) {
+            val usedBy =
+                buildList {
+                    if (usage.neededByDraft) add(stringResource(R.string.region_catalog_delete_warning_item_draft))
+                    if (usage.neededByActiveRoute) add(stringResource(R.string.region_catalog_delete_warning_item_active_route))
+                    addAll(usage.neededBySavedRouteNames)
+                }
+            Text(
+                text = stringResource(R.string.region_catalog_delete_warning_message, usedBy.joinToString(", ")),
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+            Button(onClick = onConfirm) { Text(stringResource(R.string.region_catalog_delete_confirm_button)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.region_catalog_delete_dismiss_button)) }
         }
     }
 }
@@ -180,6 +218,7 @@ private fun RegionCard(
     isDownloadButtonEnabled: Boolean,
     onDownloadClick: () -> Unit,
     onCancelDownloadClick: () -> Unit,
+    onDeleteClick: () -> Unit,
 ) {
     Surface(shape = CardShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(CardPadding)) {
@@ -213,9 +252,16 @@ private fun RegionCard(
                         )
                     }
                 }
-                if (region.status == RegionStatus.NOT_DOWNLOADED || region.status == RegionStatus.PARTIALLY_DOWNLOADED) {
-                    Button(onClick = onDownloadClick, enabled = isDownloadButtonEnabled) {
-                        Text(stringResource(R.string.region_catalog_download_button))
+                Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+                    if (region.status == RegionStatus.NOT_DOWNLOADED || region.status == RegionStatus.PARTIALLY_DOWNLOADED) {
+                        Button(onClick = onDownloadClick, enabled = isDownloadButtonEnabled) {
+                            Text(stringResource(R.string.region_catalog_download_button))
+                        }
+                    }
+                    if (region.status == RegionStatus.DOWNLOADED || region.status == RegionStatus.PARTIALLY_DOWNLOADED) {
+                        TextButton(onClick = onDeleteClick) {
+                            Text(stringResource(R.string.region_catalog_delete_button))
+                        }
                     }
                 }
             }

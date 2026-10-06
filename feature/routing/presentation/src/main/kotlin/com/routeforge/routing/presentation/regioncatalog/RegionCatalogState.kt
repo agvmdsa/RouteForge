@@ -1,6 +1,7 @@
 package com.routeforge.routing.presentation.regioncatalog
 
 import com.routeforge.routing.domain.model.Region
+import com.routeforge.routing.domain.model.RegionUsage
 
 data class RegionCatalogState(
     val regions: List<Region> = emptyList(),
@@ -8,4 +9,6 @@ data class RegionCatalogState(
     val downloadingRegionId: String? = null,
     val downloadProgress: Float? = null,
     val pendingCancelDownload: Boolean = false,
+    val pendingDeleteRegion: Region? = null,
+    val deleteRegionUsage: RegionUsage? = null,
 )
