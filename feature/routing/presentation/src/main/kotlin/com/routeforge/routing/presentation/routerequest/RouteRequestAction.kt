@@ -79,4 +79,8 @@ sealed interface RouteRequestAction {
     data object OnProceedDespiteMissingRegions : RouteRequestAction
 
     data object OnDismissMissingRegionsWarning : RouteRequestAction
+
+    data object OnConfirmGoToSimulate : RouteRequestAction
+
+    data object OnDismissGoToSimulateConfirmation : RouteRequestAction
 }

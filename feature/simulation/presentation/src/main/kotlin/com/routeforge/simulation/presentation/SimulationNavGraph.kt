@@ -3,20 +3,8 @@ package com.routeforge.simulation.presentation
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
 
-fun NavGraphBuilder.simulationGraph(
-    onPlanRoute: () -> Unit,
-    onOpenSetup: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onOpenFavorites: () -> Unit,
-    onOpenSavedRoutes: () -> Unit,
-) {
+fun NavGraphBuilder.simulationGraph(onOpenSetup: () -> Unit) {
     composable<SimulationRoute> {
-        SimulationRoot(
-            onPlanRoute = onPlanRoute,
-            onOpenSetup = onOpenSetup,
-            onOpenSettings = onOpenSettings,
-            onOpenFavorites = onOpenFavorites,
-            onOpenSavedRoutes = onOpenSavedRoutes,
-        )
+        SimulationRoot(onOpenSetup = onOpenSetup)
     }
 }

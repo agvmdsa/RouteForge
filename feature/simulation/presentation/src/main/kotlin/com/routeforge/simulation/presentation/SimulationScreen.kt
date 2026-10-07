@@ -8,46 +8,31 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ListAlt
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Signpost
 import androidx.compose.material.icons.filled.SportsEsports
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.Button
-import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -66,35 +51,25 @@ import com.routeforge.simulation.presentation.components.CancelMockConfirmationS
 import com.routeforge.simulation.presentation.components.CancelRouteConfirmationSheet
 import com.routeforge.simulation.presentation.components.CoordinatePill
 import com.routeforge.simulation.presentation.components.FavoriteTeleportCancelRouteSheet
-import com.routeforge.simulation.presentation.components.ForceRealLocationButton
 import com.routeforge.simulation.presentation.components.Joystick
 import com.routeforge.simulation.presentation.components.JoystickInterruptSheet
 import com.routeforge.simulation.presentation.components.PlaybackButton
-import com.routeforge.simulation.presentation.components.Sidebar
-import com.routeforge.simulation.presentation.components.SidebarDestination
 import com.routeforge.simulation.presentation.components.StartRouteDialog
 import com.routeforge.simulation.presentation.components.SwitchRouteModeSheet
 import com.routeforge.simulation.presentation.components.TeleportConfirmationSheet
 import kotlin.math.roundToInt
-import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 private val ScreenContentPadding = 16.dp
 private val ControlsRowSpacing = 8.dp
-private val JoystickBottomPadding = 24.dp
 private val BannerTopOffset = 72.dp
-private val FavoriteStarColor = Color(0xFFFFC107)
 private const val MIN_SPEED_KMH = 0f
 private const val MAX_SPEED_KMH = 150f
 private val SpeedSelectorRangeKmh = MIN_SPEED_KMH..MAX_SPEED_KMH
 
 @Composable
 fun SimulationRoot(
-    onPlanRoute: () -> Unit,
     onOpenSetup: () -> Unit,
-    onOpenSettings: () -> Unit,
-    onOpenFavorites: () -> Unit,
-    onOpenSavedRoutes: () -> Unit,
     viewModel: SimulationViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -124,11 +99,7 @@ fun SimulationRoot(
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
-                SimulationEvent.NavigateToPlanRoute -> onPlanRoute()
                 SimulationEvent.NavigateToSetup -> onOpenSetup()
-                SimulationEvent.NavigateToSettings -> onOpenSettings()
-                SimulationEvent.NavigateToFavorites -> onOpenFavorites()
-                SimulationEvent.NavigateToSavedRoutes -> onOpenSavedRoutes()
             }
         }
     }
@@ -148,8 +119,6 @@ fun SimulationScreen(
     var previousSessionWasNull by remember { mutableStateOf(true) }
     var previousRealWasNull by remember { mutableStateOf(true) }
     var cameraTarget by remember { mutableStateOf<Pair<Double, Double>?>(null) }
-    val drawerState = rememberDrawerState(DrawerValue.Closed)
-    val drawerScope = rememberCoroutineScope()
 
     LaunchedEffect(state.mockedSession) {
         val session = state.mockedSession
@@ -222,186 +191,132 @@ fun SimulationScreen(
             }
         }
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        ModalNavigationDrawer(
-            drawerState = drawerState,
-            gesturesEnabled = drawerState.isOpen,
-            drawerContent = {
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    Sidebar(
-                        destinations =
-                            listOf(
-                                SidebarDestination(Icons.Filled.Settings, R.string.simulation_open_settings_button) {
-                                    onAction(SimulationAction.OnOpenSettingsClick)
-                                },
-                                SidebarDestination(
-                                    Icons.AutoMirrored.Filled.ListAlt,
-                                    R.string.simulation_open_saved_routes_button,
-                                ) {
-                                    onAction(SimulationAction.OnOpenSavedRoutesClick)
-                                },
-                            ),
-                        onDismiss = { drawerScope.launch { drawerState.close() } },
+    Scaffold { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            RouteForgeMap(
+                markers = markers,
+                polylinePoints = state.loadedRoute?.geometry.orEmpty(),
+                traveledPolylinePoints = traveledPolylinePoints,
+                cameraTarget = cameraTarget,
+                onMapTap = { latitude, longitude -> onAction(SimulationAction.OnMapTap(latitude, longitude)) },
+                modifier = Modifier.fillMaxSize(),
+            )
+
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .fillMaxWidth()
+                        .padding(top = ScreenContentPadding, start = ScreenContentPadding, end = ScreenContentPadding),
+                contentAlignment = Alignment.Center,
+            ) {
+                CoordinatePill(
+                    mockedSession = state.mockedSession,
+                    isSearchingRealLocation = state.isSearchingRealLocation,
+                    hasKnownRealLocation = state.realLocation != null,
+                    onCancelMockClick = { onAction(SimulationAction.OnCancelMockClick) },
+                )
+            }
+
+            if (state.isBlockedByAuthorization) {
+                TopBanner(
+                    contentPadding = ScreenContentPadding,
+                    modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset, start = ScreenContentPadding, end = ScreenContentPadding),
+                ) {
+                    Text(stringResource(R.string.simulation_error_not_authorized))
+                    Button(onClick = { onAction(SimulationAction.OnOpenSetupClick) }) {
+                        Text(stringResource(R.string.simulation_go_to_setup_button))
+                    }
+                }
+            } else {
+                state.errorType?.let { errorType ->
+                    TopBanner(
+                        modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset, start = ScreenContentPadding, end = ScreenContentPadding),
+                    ) {
+                        Text(text = errorType.toMessage())
+                    }
+                }
+            }
+
+            var isJoystickSpeedDialogOpen by remember { mutableStateOf(false) }
+            var isPlaybackSpeedDialogOpen by remember { mutableStateOf(false) }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
+                modifier = Modifier.align(Alignment.BottomStart).padding(ScreenContentPadding),
+            ) {
+                if (state.loadedRoute != null) {
+                    // A route and the joystick are mutually exclusive (engaging one clears the
+                    // other), so only the controls relevant to what's actually loaded are shown.
+                    SpeedSelectorFab(
+                        onClick = { isPlaybackSpeedDialogOpen = true },
+                        contentDescription = stringResource(R.string.simulation_playback_speed_button),
+                    )
+                } else {
+                    if (state.isJoystickVisible) {
+                        SpeedSelectorFab(
+                            onClick = { isJoystickSpeedDialogOpen = true },
+                            contentDescription = stringResource(R.string.simulation_joystick_speed_button),
+                        )
+                    }
+                    FloatingActionButton(onClick = { onAction(SimulationAction.OnToggleJoystick) }) {
+                        Icon(Icons.Filled.SportsEsports, contentDescription = stringResource(R.string.simulation_joystick_label))
+                    }
+                }
+            }
+            if (isPlaybackSpeedDialogOpen) {
+                SpeedSelectorDialog(
+                    title = stringResource(R.string.simulation_playback_speed_dialog_title),
+                    speedLabel = stringResource(R.string.simulation_speed_value_label, state.playbackSpeedKmh.roundToInt()),
+                    confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
+                    speedKmh = state.playbackSpeedKmh,
+                    onSpeedChange = { kmh -> onAction(SimulationAction.OnPlaybackSpeedChange(kmh)) },
+                    onDismiss = { isPlaybackSpeedDialogOpen = false },
+                    speedRangeKmh = SpeedSelectorRangeKmh,
+                )
+            }
+
+            if (state.isJoystickVisible) {
+                Joystick(
+                    onDrag = { bearing -> onAction(SimulationAction.OnJoystickDrag(bearing)) },
+                    onReleased = { onAction(SimulationAction.OnJoystickReleased) },
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = ScreenContentPadding),
+                )
+                if (isJoystickSpeedDialogOpen) {
+                    SpeedSelectorDialog(
+                        title = stringResource(R.string.simulation_joystick_speed_dialog_title),
+                        speedLabel = stringResource(R.string.simulation_speed_value_label, state.joystickSpeedKmh.roundToInt()),
+                        confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
+                        speedKmh = state.joystickSpeedKmh,
+                        onSpeedChange = { kmh -> onAction(SimulationAction.OnJoystickSpeedChange(kmh)) },
+                        onDismiss = { isJoystickSpeedDialogOpen = false },
+                        speedRangeKmh = SpeedSelectorRangeKmh,
                     )
                 }
-            },
-        ) {
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                Scaffold { paddingValues ->
-                    Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                        RouteForgeMap(
-                            markers = markers,
-                            polylinePoints = state.loadedRoute?.geometry.orEmpty(),
-                            traveledPolylinePoints = traveledPolylinePoints,
-                            cameraTarget = cameraTarget,
-                            onMapTap = { latitude, longitude -> onAction(SimulationAction.OnMapTap(latitude, longitude)) },
-                            modifier = Modifier.fillMaxSize(),
-                        )
+            }
 
-                        Row(
-                            modifier =
-                                Modifier
-                                    .align(Alignment.TopCenter)
-                                    .fillMaxWidth()
-                                    .padding(top = ScreenContentPadding, start = ScreenContentPadding, end = ScreenContentPadding),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            SmallFloatingActionButton(onClick = { onAction(SimulationAction.OnOpenFavoritesClick) }) {
-                                Icon(
-                                    imageVector = Icons.Filled.Star,
-                                    contentDescription = stringResource(R.string.simulation_open_favorites_button),
-                                    tint = FavoriteStarColor,
-                                )
-                            }
-                            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                                CoordinatePill(
-                                    mockedSession = state.mockedSession,
-                                    isSearchingRealLocation = state.isSearchingRealLocation,
-                                    hasKnownRealLocation = state.realLocation != null,
-                                    onCancelMockClick = { onAction(SimulationAction.OnCancelMockClick) },
-                                )
-                            }
-                            SmallFloatingActionButton(onClick = { drawerScope.launch { drawerState.open() } }) {
-                                Icon(imageVector = Icons.Filled.Menu, contentDescription = stringResource(R.string.simulation_open_sidebar_button))
-                            }
-                        }
-
-                        if (state.isBlockedByAuthorization) {
-                            TopBanner(
-                                contentPadding = ScreenContentPadding,
-                                modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset, start = ScreenContentPadding, end = ScreenContentPadding),
-                            ) {
-                                Text(stringResource(R.string.simulation_error_not_authorized))
-                                Button(onClick = { onAction(SimulationAction.OnOpenSetupClick) }) {
-                                    Text(stringResource(R.string.simulation_go_to_setup_button))
-                                }
-                            }
-                        } else {
-                            state.errorType?.let { errorType ->
-                                TopBanner(
-                                    modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset, start = ScreenContentPadding, end = ScreenContentPadding),
-                                ) {
-                                    Text(text = errorType.toMessage())
-                                }
-                            }
-                        }
-
-                        var isJoystickSpeedDialogOpen by remember { mutableStateOf(false) }
-                        var isPlaybackSpeedDialogOpen by remember { mutableStateOf(false) }
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
-                            modifier = Modifier.align(Alignment.BottomStart).padding(ScreenContentPadding),
-                        ) {
-                            if (state.loadedRoute != null) {
-                                // A route and the joystick are mutually exclusive (engaging one clears the
-                                // other), so only the controls relevant to what's actually loaded are shown.
-                                SpeedSelectorFab(
-                                    onClick = { isPlaybackSpeedDialogOpen = true },
-                                    contentDescription = stringResource(R.string.simulation_playback_speed_button),
-                                )
-                            } else {
-                                if (state.isJoystickVisible) {
-                                    SpeedSelectorFab(
-                                        onClick = { isJoystickSpeedDialogOpen = true },
-                                        contentDescription = stringResource(R.string.simulation_joystick_speed_button),
-                                    )
-                                }
-                                FloatingActionButton(onClick = { onAction(SimulationAction.OnToggleJoystick) }) {
-                                    Icon(Icons.Filled.SportsEsports, contentDescription = stringResource(R.string.simulation_joystick_label))
-                                }
-                            }
-                        }
-                        if (isPlaybackSpeedDialogOpen) {
-                            SpeedSelectorDialog(
-                                title = stringResource(R.string.simulation_playback_speed_dialog_title),
-                                speedLabel = stringResource(R.string.simulation_speed_value_label, state.playbackSpeedKmh.roundToInt()),
-                                confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
-                                speedKmh = state.playbackSpeedKmh,
-                                onSpeedChange = { kmh -> onAction(SimulationAction.OnPlaybackSpeedChange(kmh)) },
-                                onDismiss = { isPlaybackSpeedDialogOpen = false },
-                                speedRangeKmh = SpeedSelectorRangeKmh,
+            if (state.loadedRoute != null) {
+                val activeRoute = state.loadedRoute
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(ScreenContentPadding),
+                ) {
+                    FloatingActionButton(onClick = { onAction(SimulationAction.OnCancelRouteClick) }) {
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_route_button))
+                    }
+                    PlaybackButton(state = state, onAction = onAction)
+                    if (activeRoute.alternateGeometry != null) {
+                        FloatingActionButton(onClick = { onAction(SimulationAction.OnSwitchRouteModeClick) }) {
+                            Icon(
+                                imageVector =
+                                    if (activeRoute.mode == RoutePlaybackMode.GUIDED) {
+                                        Icons.Filled.Signpost
+                                    } else {
+                                        Icons.Filled.Straighten
+                                    },
+                                contentDescription = stringResource(R.string.simulation_switch_route_mode_button),
                             )
-                        }
-
-                        if (state.isJoystickVisible) {
-                            Joystick(
-                                onDrag = { bearing -> onAction(SimulationAction.OnJoystickDrag(bearing)) },
-                                onReleased = { onAction(SimulationAction.OnJoystickReleased) },
-                                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = JoystickBottomPadding),
-                            )
-                            if (isJoystickSpeedDialogOpen) {
-                                SpeedSelectorDialog(
-                                    title = stringResource(R.string.simulation_joystick_speed_dialog_title),
-                                    speedLabel = stringResource(R.string.simulation_speed_value_label, state.joystickSpeedKmh.roundToInt()),
-                                    confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
-                                    speedKmh = state.joystickSpeedKmh,
-                                    onSpeedChange = { kmh -> onAction(SimulationAction.OnJoystickSpeedChange(kmh)) },
-                                    onDismiss = { isJoystickSpeedDialogOpen = false },
-                                    speedRangeKmh = SpeedSelectorRangeKmh,
-                                )
-                            }
-                        }
-
-                        if (state.loadedRoute != null) {
-                            val activeRoute = state.loadedRoute
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
-                                modifier = Modifier.align(Alignment.BottomEnd).padding(ScreenContentPadding),
-                            ) {
-                                FloatingActionButton(onClick = { onAction(SimulationAction.OnCancelRouteClick) }) {
-                                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_route_button))
-                                }
-                                PlaybackButton(state = state, onAction = onAction)
-                                if (activeRoute.alternateGeometry != null) {
-                                    FloatingActionButton(onClick = { onAction(SimulationAction.OnSwitchRouteModeClick) }) {
-                                        Icon(
-                                            imageVector =
-                                                if (activeRoute.mode == RoutePlaybackMode.GUIDED) {
-                                                    Icons.Filled.Signpost
-                                                } else {
-                                                    Icons.Filled.Straighten
-                                                },
-                                            contentDescription = stringResource(R.string.simulation_switch_route_mode_button),
-                                        )
-                                    }
-                                }
-                            }
-                        } else {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
-                                modifier = Modifier.align(Alignment.BottomEnd).padding(ScreenContentPadding),
-                            ) {
-                                FloatingActionButton(onClick = { onAction(SimulationAction.OnPlanRouteClick) }) {
-                                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.simulation_plan_route_button))
-                                }
-                                ForceRealLocationButton(
-                                    isSearching = state.isSearchingRealLocation,
-                                    onClick = { onAction(SimulationAction.OnForceRealLocationClick) },
-                                )
-                            }
                         }
                     }
                 }

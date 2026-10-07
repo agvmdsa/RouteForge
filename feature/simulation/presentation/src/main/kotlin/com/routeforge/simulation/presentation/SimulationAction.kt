@@ -64,21 +64,9 @@ sealed interface SimulationAction {
 
     data object OnDismissCancelMock : SimulationAction
 
-    data object OnPlanRouteClick : SimulationAction
-
     data object OnOpenSetupClick : SimulationAction
 
-    data object OnOpenFavoritesClick : SimulationAction
-
-    data object OnOpenSavedRoutesClick : SimulationAction
-
-    data object OnOpenSettingsClick : SimulationAction
-
     data object OnLocationPermissionGranted : SimulationAction
-
-    /** Manual "force locate me" button — always cancels any in-flight search and starts fresh,
-     *  regardless of whether one is already running. */
-    data object OnForceRealLocationClick : SimulationAction
 
     /** Fired when the screen resumes (app foregrounded, or returning from Settings) — re-checks
      *  mock-location authorization so a revocation is caught even without the user acting on it. */

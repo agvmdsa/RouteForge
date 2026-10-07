@@ -2,6 +2,7 @@ plugins {
     id("routeforge.android.application")
     id("routeforge.compose")
     id("routeforge.koin")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -13,6 +14,8 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.compose.material.icons.extended)
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
     implementation(project(":core:design-system"))

@@ -164,19 +164,10 @@ class SimulationViewModel(
                 stopSimulationUseCase()
             }
             SimulationAction.OnDismissCancelMock -> _state.update { it.copy(isPendingCancelMock = false) }
-            SimulationAction.OnPlanRouteClick ->
-                viewModelScope.launch { _events.send(SimulationEvent.NavigateToPlanRoute) }
             SimulationAction.OnOpenSetupClick ->
                 viewModelScope.launch { _events.send(SimulationEvent.NavigateToSetup) }
-            SimulationAction.OnOpenSettingsClick ->
-                viewModelScope.launch { _events.send(SimulationEvent.NavigateToSettings) }
-            SimulationAction.OnOpenFavoritesClick ->
-                viewModelScope.launch { _events.send(SimulationEvent.NavigateToFavorites) }
-            SimulationAction.OnOpenSavedRoutesClick ->
-                viewModelScope.launch { _events.send(SimulationEvent.NavigateToSavedRoutes) }
             SimulationAction.OnLocationPermissionGranted ->
                 if (_state.value.mockedSession == null) startObservingRealLocation()
-            SimulationAction.OnForceRealLocationClick -> forceRestartRealLocationSearch()
             SimulationAction.OnScreenResumed -> checkAuthorizationStillGranted()
             SimulationAction.OnConfirmFavoriteTeleportCancelRoute -> confirmFavoriteTeleportCancelRoute()
             SimulationAction.OnDismissFavoriteTeleportCancelRoute ->
@@ -425,13 +416,6 @@ class SimulationViewModel(
         realLocationObservationJob = null
         realLocationTimeoutJob?.cancel()
         realLocationTimeoutJob = null
-    }
-
-    /** Cancels any in-flight search and starts a fresh one from scratch — the manual "force
-     *  locate me" button always restarts, even if a search is already in progress. */
-    private fun forceRestartRealLocationSearch() {
-        stopObservingRealLocation()
-        startObservingRealLocation()
     }
 
     private fun RealLocationFailure.toSimulationErrorType(): SimulationErrorType =

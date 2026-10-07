@@ -590,39 +590,6 @@ class SimulationViewModelTest {
     }
 
     @Test
-    fun `the force locate button always restarts the search, resetting the timeout`() {
-        val viewModel = createViewModel()
-        assertTrue(viewModel.state.value.isSearchingRealLocation)
-
-        dispatcher.scheduler.advanceTimeBy(20_000L)
-        dispatcher.scheduler.runCurrent()
-        viewModel.onAction(SimulationAction.OnForceRealLocationClick)
-
-        dispatcher.scheduler.advanceTimeBy(20_000L)
-        dispatcher.scheduler.runCurrent()
-        assertTrue(viewModel.state.value.isSearchingRealLocation)
-        assertNull(viewModel.state.value.errorType)
-
-        dispatcher.scheduler.advanceTimeBy(10_001L)
-        dispatcher.scheduler.runCurrent()
-        assertTrue(!viewModel.state.value.isSearchingRealLocation)
-        assertEquals(SimulationErrorType.REAL_LOCATION_TIMED_OUT, viewModel.state.value.errorType)
-    }
-
-    @Test
-    fun `the force locate button clears a lingering real location error as soon as the search restarts`() {
-        val viewModel = createViewModel()
-        dispatcher.scheduler.advanceTimeBy(30_001L)
-        dispatcher.scheduler.runCurrent()
-        assertEquals(SimulationErrorType.REAL_LOCATION_TIMED_OUT, viewModel.state.value.errorType)
-
-        viewModel.onAction(SimulationAction.OnForceRealLocationClick)
-
-        assertNull(viewModel.state.value.errorType)
-        assertTrue(viewModel.state.value.isSearchingRealLocation)
-    }
-
-    @Test
     fun `a fix arriving after a timeout clears the lingering real location error`() {
         val viewModel = createViewModel()
         dispatcher.scheduler.advanceTimeBy(30_001L)
@@ -635,14 +602,11 @@ class SimulationViewModelTest {
     }
 
     @Test
-    fun `an unrelated error is not cleared when the real location search restarts or resolves`() {
+    fun `an unrelated error is not cleared when the real location search resolves`() {
         authorizationChecker.authorized = false
         val viewModel = createViewModel()
         viewModel.onAction(SimulationAction.OnMapTap(latitude = 10.0, longitude = 20.0))
         viewModel.onAction(SimulationAction.OnConfirmTeleport)
-        assertEquals(SimulationErrorType.NOT_AUTHORIZED, viewModel.state.value.errorType)
-
-        viewModel.onAction(SimulationAction.OnForceRealLocationClick)
         assertEquals(SimulationErrorType.NOT_AUTHORIZED, viewModel.state.value.errorType)
 
         realLocationDataSource.location = RealLocation(latitude = 1.0, longitude = 2.0)

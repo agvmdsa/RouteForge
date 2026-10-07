@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">RouteForge</string>
+    <string name="tab_simulate_label">Simulate</string>
+    <string name="tab_plan_route_label">Plan Route</string>
+    <string name="tab_saved_label">Saved</string>
+    <string name="tab_settings_label">Settings</string>
 </resources>

@@ -35,7 +35,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.routeforge.coredomain.model.Route
 import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapMarker
@@ -52,7 +51,7 @@ private const val GPX_MIME_TYPE = "application/gpx+xml"
 
 @Composable
 fun RouteRequestRoot(
-    onRouteComputed: (Route) -> Unit,
+    onGoToSimulate: () -> Unit,
     onOpenRegionCatalog: () -> Unit,
     onOpenFavorites: () -> Unit,
     viewModel: RouteRequestViewModel = koinViewModel(),
@@ -83,7 +82,7 @@ fun RouteRequestRoot(
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
-                is RouteRequestEvent.RouteComputed -> onRouteComputed(event.route)
+                RouteRequestEvent.GoToSimulate -> onGoToSimulate()
                 RouteRequestEvent.NavigateToRegionCatalog -> onOpenRegionCatalog()
                 RouteRequestEvent.NavigateToFavorites -> onOpenFavorites()
                 is RouteRequestEvent.ExportReady -> {
@@ -230,10 +229,20 @@ fun RouteRequestScreen(
                 route = route,
                 chosenMode = state.chosenMode,
                 onExport = { format -> onAction(RouteRequestAction.OnExportRoute(format)) },
-                onUseRoute = { onAction(RouteRequestAction.OnUseRoute) },
+                onUseRoute = {
+                    isDismissed = true
+                    onAction(RouteRequestAction.OnUseRoute)
+                },
                 onDismiss = { isDismissed = true },
             )
         }
+    }
+
+    if (state.pendingGoToSimulateConfirmation) {
+        GoToSimulateConfirmationSheet(
+            onConfirm = { onAction(RouteRequestAction.OnConfirmGoToSimulate) },
+            onDismiss = { onAction(RouteRequestAction.OnDismissGoToSimulateConfirmation) },
+        )
     }
 
     if (state.editingIndex != null) {

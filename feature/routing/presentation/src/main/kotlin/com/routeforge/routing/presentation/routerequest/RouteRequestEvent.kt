@@ -1,12 +1,9 @@
 package com.routeforge.routing.presentation.routerequest
 
-import com.routeforge.coredomain.model.Route
 import com.routeforge.routing.domain.model.RouteFileFormat
 
 sealed interface RouteRequestEvent {
-    data class RouteComputed(
-        val route: Route,
-    ) : RouteRequestEvent
+    data object GoToSimulate : RouteRequestEvent
 
     class ExportReady(
         val bytes: ByteArray,

@@ -25,4 +25,5 @@ data class RouteRequestState(
     val favoriteNameInput: String = "",
     val isSaveRouteSheetOpen: Boolean = false,
     val routeNameInput: String = "",
+    val pendingGoToSimulateConfirmation: Boolean = false,
 )

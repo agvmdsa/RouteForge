@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload
@@ -88,8 +89,23 @@ internal fun RouteReadySheet(
                 }
             }
             Button(onClick = onUseRoute, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Filled.Check, contentDescription = null)
                 Text(stringResource(R.string.routing_use_route_button))
             }
+        }
+    }
+}
+
+@Composable
+internal fun GoToSimulateConfirmationSheet(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ConfirmationBottomSheet(title = stringResource(R.string.routing_go_to_simulate_confirm_title), onDismiss = onDismiss) {
+        Text(stringResource(R.string.routing_go_to_simulate_confirm_message))
+        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+            Button(onClick = onConfirm) { Text(stringResource(R.string.routing_go_to_simulate_confirm_button)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.routing_go_to_simulate_dismiss_button)) }
         }
     }
 }

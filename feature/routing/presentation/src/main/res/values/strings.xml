@@ -21,6 +21,10 @@
     <string name="routing_error_import_coordinate_out_of_range">That file has a coordinate outside the valid range.</string>
     <string name="routing_error_import_malformed">That file could not be read as a route.</string>
     <string name="routing_use_route_button">Use this route</string>
+    <string name="routing_go_to_simulate_confirm_title">Go to the map?</string>
+    <string name="routing_go_to_simulate_confirm_message">You can load this route on the Simulate tab now, or stay here and keep planning.</string>
+    <string name="routing_go_to_simulate_confirm_button">Go to the map with the route loaded</string>
+    <string name="routing_go_to_simulate_dismiss_button">Stay on Plan Route</string>
     <string name="routing_points_count_label">%1$d points</string>
     <string name="routing_missing_regions_title">Missing map data for Guided</string>
     <string name="routing_missing_regions_message">Guided routing needs about %1$d MB more map data for: %2$s</string>
@@ -97,4 +101,6 @@
     <string name="favorites_error_invalid_coordinates">Enter valid coordinates for this favorite.</string>
     <string name="favorites_delete_confirm_title">Delete this favorite?</string>
     <string name="favorites_delete_confirm_message">This can\'t be undone.</string>
+    <string name="saved_section_routes_label">Routes</string>
+    <string name="saved_section_favorites_label">Favorites</string>
 </resources>

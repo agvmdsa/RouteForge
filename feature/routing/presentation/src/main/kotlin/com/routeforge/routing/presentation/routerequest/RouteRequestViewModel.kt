@@ -114,6 +114,9 @@ class RouteRequestViewModel(
             is RouteRequestAction.OnRouteNameInputChange -> _state.update { it.copy(routeNameInput = action.value) }
             RouteRequestAction.OnConfirmSaveRoute -> confirmSaveRoute()
             RouteRequestAction.OnDismissSaveRoute -> dismissSaveRoute()
+            RouteRequestAction.OnConfirmGoToSimulate -> confirmGoToSimulate()
+            RouteRequestAction.OnDismissGoToSimulateConfirmation ->
+                _state.update { it.copy(pendingGoToSimulateConfirmation = false) }
         }
     }
 
@@ -285,10 +288,20 @@ class RouteRequestViewModel(
         lastComputedRouteHolder.set(withAlternate)
     }
 
-    /** The user explicitly confirms they're done previewing/exporting and wants to play this route. */
+    /** The user explicitly confirms they're done previewing/exporting and wants to play this
+     *  route — opens the go-to-Simulate confirmation rather than navigating automatically
+     *  (FR-008). The route is already in [lastComputedRouteHolder] from [finalizeRoute]. */
     private fun useRoute() {
-        val route = _state.value.route ?: return
-        viewModelScope.launch { _events.send(RouteRequestEvent.RouteComputed(route)) }
+        _state.value.route ?: return
+        _state.update { it.copy(pendingGoToSimulateConfirmation = true) }
+    }
+
+    /** FR-009: only the explicit "go to the map" choice switches tabs; dismissing any other way
+     *  (FR-010) is handled by [RouteRequestAction.OnDismissGoToSimulateConfirmation] and never
+     *  reaches here. */
+    private fun confirmGoToSimulate() {
+        _state.update { it.copy(pendingGoToSimulateConfirmation = false) }
+        viewModelScope.launch { _events.send(RouteRequestEvent.GoToSimulate) }
     }
 }
 

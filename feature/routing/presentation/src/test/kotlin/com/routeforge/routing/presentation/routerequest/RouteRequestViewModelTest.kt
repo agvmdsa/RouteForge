@@ -35,6 +35,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -649,7 +650,7 @@ class RouteRequestViewModelTest {
     }
 
     @Test
-    fun `OnUseRoute sends the RouteComputed event only after a mode has been chosen`() =
+    fun `OnUseRoute opens the go-to-Simulate confirmation instead of navigating immediately`() =
         runTest(dispatcher) {
             routingEngine.snappableLatitudes = setOf(1.0, 2.0)
             routingEngine.computePathResult =
@@ -659,9 +660,61 @@ class RouteRequestViewModelTest {
             viewModel.onAction(RouteRequestAction.OnRequestRoute)
             viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
 
-            val eventDeferred = async { viewModel.events.first() }
             viewModel.onAction(RouteRequestAction.OnUseRoute)
 
-            assertEquals(viewModel.state.value.route, (eventDeferred.await() as RouteRequestEvent.RouteComputed).route)
+            assertTrue(viewModel.state.value.pendingGoToSimulateConfirmation)
+        }
+
+    @Test
+    fun `OnConfirmGoToSimulate sends GoToSimulate and clears the confirmation`() =
+        runTest(dispatcher) {
+            routingEngine.snappableLatitudes = setOf(1.0, 2.0)
+            routingEngine.computePathResult =
+                Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
+            val viewModel = createViewModel()
+            viewModel.tapTwoPoints()
+            viewModel.onAction(RouteRequestAction.OnRequestRoute)
+            viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
+            viewModel.onAction(RouteRequestAction.OnUseRoute)
+
+            val eventDeferred = async { viewModel.events.first() }
+            viewModel.onAction(RouteRequestAction.OnConfirmGoToSimulate)
+
+            assertEquals(RouteRequestEvent.GoToSimulate, eventDeferred.await())
+            assertFalse(viewModel.state.value.pendingGoToSimulateConfirmation)
+        }
+
+    @Test
+    fun `OnDismissGoToSimulateConfirmation clears the confirmation without navigating`() =
+        runTest(dispatcher) {
+            routingEngine.snappableLatitudes = setOf(1.0, 2.0)
+            routingEngine.computePathResult =
+                Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
+            val viewModel = createViewModel()
+            viewModel.tapTwoPoints()
+            viewModel.onAction(RouteRequestAction.OnRequestRoute)
+            viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
+            viewModel.onAction(RouteRequestAction.OnUseRoute)
+
+            viewModel.onAction(RouteRequestAction.OnDismissGoToSimulateConfirmation)
+
+            assertFalse(viewModel.state.value.pendingGoToSimulateConfirmation)
+            assertNotNull(viewModel.state.value.route)
+        }
+
+    @Test
+    fun `dismissing the go-to-Simulate confirmation keeps the route available for a later manual switch`() =
+        runTest(dispatcher) {
+            routingEngine.snappableLatitudes = setOf(1.0, 2.0)
+            routingEngine.computePathResult =
+                Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
+            val viewModel = createViewModel()
+            viewModel.tapTwoPoints()
+            viewModel.onAction(RouteRequestAction.OnRequestRoute)
+            viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
+            viewModel.onAction(RouteRequestAction.OnUseRoute)
+            viewModel.onAction(RouteRequestAction.OnDismissGoToSimulateConfirmation)
+
+            assertNotNull(lastComputedRouteHolder.route.value)
         }
 }
