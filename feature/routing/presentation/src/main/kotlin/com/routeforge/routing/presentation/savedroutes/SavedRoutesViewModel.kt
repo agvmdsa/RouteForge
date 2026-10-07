@@ -7,9 +7,11 @@ import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.FavoriteRoute
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
+import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.domain.model.RouteOptions
 import com.routeforge.routing.domain.model.autoResolved
 import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
+import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.PrepareRouteOptionsUseCase
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +30,7 @@ class SavedRoutesViewModel(
     private val lastComputedRouteHolder: LastComputedRouteHolder,
     private val computeRequiredRegions: ComputeRequiredRegionsUseCase,
     private val prepareRouteOptions: PrepareRouteOptionsUseCase,
+    private val exportRouteFile: ExportRouteFileUseCase,
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SavedRoutesState())
@@ -53,13 +56,18 @@ class SavedRoutesViewModel(
             SavedRoutesAction.OnDismissDelete -> _state.update { it.copy(pendingDeleteId = null) }
             is SavedRoutesAction.OnUseClick -> onUseClick(action.id)
             is SavedRoutesAction.OnChooseMode -> onChooseMode(action.mode)
+            SavedRoutesAction.OnDismissModeChoice ->
+                _state.update { it.copy(routeOptions = null, resolvingRouteId = null, pendingExportFormat = null) }
             SavedRoutesAction.OnOpenRegionCatalog -> {
-                _state.update { it.copy(missingRegionsWarning = null, resolvingRouteId = null) }
+                _state.update { it.copy(missingRegionsWarning = null, resolvingRouteId = null, pendingExportFormat = null) }
                 viewModelScope.launch { _events.send(SavedRoutesEvent.NavigateToRegionCatalog) }
             }
             SavedRoutesAction.OnProceedDespiteMissingRegions -> proceedDespiteMissingRegions()
             SavedRoutesAction.OnDismissMissingRegionsWarning ->
-                _state.update { it.copy(missingRegionsWarning = null, resolvingRouteId = null) }
+                _state.update { it.copy(missingRegionsWarning = null, resolvingRouteId = null, pendingExportFormat = null) }
+            is SavedRoutesAction.OnExportClick -> _state.update { it.copy(pendingExportRouteId = action.id) }
+            is SavedRoutesAction.OnChooseExportFormat -> onChooseExportFormat(action.format)
+            SavedRoutesAction.OnDismissExportFormat -> _state.update { it.copy(pendingExportRouteId = null) }
         }
     }
 
@@ -128,6 +136,22 @@ class SavedRoutesViewModel(
         resolve(chosen, mode, options)
     }
 
+    /** Shares the exact same region-check + mode-resolution pipeline as [onUseClick] — exporting
+     *  still needs a fully computed [Route] with geometry, same prerequisite as playing it.
+     *  [resolve] branches on [SavedRoutesState.pendingExportFormat] to decide whether the result
+     *  gets exported or handed off to Simulate. */
+    private fun onChooseExportFormat(format: RouteFileFormat) {
+        val id = _state.value.pendingExportRouteId ?: return
+        val route = _state.value.routes.firstOrNull { it.id == id } ?: return
+        _state.update { it.copy(pendingExportRouteId = null, pendingExportFormat = format) }
+        val requiredRegions = computeRequiredRegions(route.points)
+        if (!requiredRegions.isFullyDownloaded) {
+            _state.update { it.copy(missingRegionsWarning = requiredRegions, resolvingRouteId = id) }
+            return
+        }
+        prepareOptionsFor(route)
+    }
+
     private fun resolve(
         route: Route,
         mode: RoutePlaybackMode,
@@ -140,8 +164,17 @@ class SavedRoutesViewModel(
                 RoutePlaybackMode.FREE_ROAM ->
                     route.copy(alternateGeometry = options.guided?.geometry, alternateDistanceMeters = options.guided?.distanceMeters)
             }
-        lastComputedRouteHolder.set(withAlternate.copy(mode = mode))
-        _state.update { it.copy(isComputingId = null, routeOptions = null, resolvingRouteId = null) }
-        viewModelScope.launch { _events.send(SavedRoutesEvent.NavigateBack) }
+        val resolved = withAlternate.copy(mode = mode)
+        val exportFormat = _state.value.pendingExportFormat
+        _state.update {
+            it.copy(isComputingId = null, routeOptions = null, resolvingRouteId = null, pendingExportFormat = null)
+        }
+        if (exportFormat != null) {
+            val bytes = exportRouteFile(resolved, exportFormat)
+            viewModelScope.launch { _events.send(SavedRoutesEvent.ExportReady(bytes, exportFormat)) }
+        } else {
+            lastComputedRouteHolder.set(resolved)
+            viewModelScope.launch { _events.send(SavedRoutesEvent.NavigateBack) }
+        }
     }
 }

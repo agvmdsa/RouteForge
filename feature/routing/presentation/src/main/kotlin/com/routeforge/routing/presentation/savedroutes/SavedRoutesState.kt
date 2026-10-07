@@ -2,6 +2,7 @@ package com.routeforge.routing.presentation.savedroutes
 
 import com.routeforge.coredomain.model.FavoriteRoute
 import com.routeforge.routing.domain.model.RequiredRegionsSummary
+import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.domain.model.RouteOptions
 
 enum class SavedRoutesError { INVALID_NAME }
@@ -16,4 +17,6 @@ data class SavedRoutesState(
     val editNameInput: String = "",
     val editError: SavedRoutesError? = null,
     val pendingDeleteId: String? = null,
+    val pendingExportRouteId: String? = null,
+    val pendingExportFormat: RouteFileFormat? = null,
 )

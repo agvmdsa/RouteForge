@@ -471,6 +471,25 @@ class RouteRequestViewModelTest {
     }
 
     @Test
+    fun `dismissing the mode choice (tap-outside, back, or swipe) clears it instead of leaving the sheet stuck`() {
+        routingEngine.snappableLatitudes = setOf(1.0, 2.0)
+        routingEngine.computePathResult =
+            Route(
+                points = listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)),
+                geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
+                distanceMeters = 100.0,
+            )
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        viewModel.onAction(RouteRequestAction.OnRequestRoute)
+        assertNotNull(viewModel.state.value.routeOptions)
+
+        viewModel.onAction(RouteRequestAction.OnDismissModeChoice)
+
+        assertNull(viewModel.state.value.routeOptions)
+    }
+
+    @Test
     fun `choosing guided finalizes the guided route and locks the mode`() {
         routingEngine.snappableLatitudes = setOf(1.0, 2.0)
         routingEngine.computePathResult =

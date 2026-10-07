@@ -219,7 +219,11 @@ fun RouteRequestScreen(
     }
 
     state.routeOptions?.let { options ->
-        ModeChoiceSheet(options = options, onChoose = { mode -> onAction(RouteRequestAction.OnChooseMode(mode)) })
+        ModeChoiceSheet(
+            options = options,
+            onChoose = { mode -> onAction(RouteRequestAction.OnChooseMode(mode)) },
+            onDismiss = { onAction(RouteRequestAction.OnDismissModeChoice) },
+        )
     }
 
     state.route?.let { route ->

@@ -98,6 +98,7 @@ class RouteRequestViewModel(
             is RouteRequestAction.OnExportRoute -> exportRoute(action.format)
             RouteRequestAction.OnRequestRoute -> requestRoute()
             is RouteRequestAction.OnChooseMode -> chooseMode(action.mode)
+            RouteRequestAction.OnDismissModeChoice -> _state.update { it.copy(routeOptions = null) }
             RouteRequestAction.OnUseRoute -> useRoute()
             RouteRequestAction.OnOpenRegionCatalog -> {
                 _state.update { it.copy(missingRegionsWarning = null) }

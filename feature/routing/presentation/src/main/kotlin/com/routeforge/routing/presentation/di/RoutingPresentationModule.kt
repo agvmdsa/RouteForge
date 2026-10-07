@@ -7,6 +7,7 @@ import com.routeforge.routing.domain.usecase.ComputeRouteUseCase
 import com.routeforge.routing.domain.usecase.DeleteRegionUseCase
 import com.routeforge.routing.domain.usecase.DownloadRegionUseCase
 import com.routeforge.routing.domain.usecase.EnforceStorageQuotaUseCase
+import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.GetStorageUsageSummaryUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
 import com.routeforge.routing.domain.usecase.ObserveStorageQuotaUseCase
@@ -62,6 +63,7 @@ val routingPresentationModule =
                 lastComputedRouteHolder = get(),
                 computeRequiredRegions = get(),
                 prepareRouteOptions = get(),
+                exportRouteFile = get(),
             )
         }
         viewModel { (isPickerMode: Boolean) ->

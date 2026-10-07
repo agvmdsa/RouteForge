@@ -1,5 +1,8 @@
 package com.routeforge.routing.presentation.savedroutes
 
+import android.content.Context
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -33,8 +37,12 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,6 +53,7 @@ import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.IconBadge
 import com.routeforge.designsystem.theme.RouteForgeTheme
+import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.presentation.R
 import com.routeforge.routing.presentation.routerequest.MissingRegionsWarningSheet
 import com.routeforge.routing.presentation.routerequest.ModeChoiceSheet
@@ -56,6 +65,8 @@ private val CardShape = RoundedCornerShape(20.dp)
 private val CardPadding = 16.dp
 private val EmptyStateIconBadgeSize = 72.dp
 private val UseSpinnerSize = 24.dp
+private const val JSON_MIME_TYPE = "application/json"
+private const val GPX_MIME_TYPE = "application/gpx+xml"
 
 @Composable
 fun SavedRoutesRoot(
@@ -64,15 +75,45 @@ fun SavedRoutesRoot(
     viewModel: SavedRoutesViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var pendingExportBytes by remember { mutableStateOf<ByteArray?>(null) }
+
+    val exportJsonLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(JSON_MIME_TYPE)) { uri ->
+            writePendingExport(context, uri, pendingExportBytes)
+            pendingExportBytes = null
+        }
+    val exportGpxLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(GPX_MIME_TYPE)) { uri ->
+            writePendingExport(context, uri, pendingExportBytes)
+            pendingExportBytes = null
+        }
+
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
                 SavedRoutesEvent.NavigateBack -> onDone()
                 SavedRoutesEvent.NavigateToRegionCatalog -> onOpenRegionCatalog()
+                is SavedRoutesEvent.ExportReady -> {
+                    pendingExportBytes = event.bytes
+                    when (event.format) {
+                        RouteFileFormat.JSON -> exportJsonLauncher.launch("route.json")
+                        RouteFileFormat.GPX -> exportGpxLauncher.launch("route.gpx")
+                    }
+                }
             }
         }
     }
     SavedRoutesScreen(state = state, onAction = viewModel::onAction)
+}
+
+private fun writePendingExport(
+    context: Context,
+    uri: android.net.Uri?,
+    bytes: ByteArray?,
+) {
+    if (uri == null || bytes == null) return
+    context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
 }
 
 @Composable
@@ -103,6 +144,7 @@ fun SavedRoutesScreen(
                             onUseClick = { onAction(SavedRoutesAction.OnUseClick(route.id)) },
                             onEditClick = { onAction(SavedRoutesAction.OnEditClick(route.id)) },
                             onDeleteClick = { onAction(SavedRoutesAction.OnDeleteClick(route.id)) },
+                            onExportClick = { onAction(SavedRoutesAction.OnExportClick(route.id)) },
                         )
                     }
                 }
@@ -111,7 +153,11 @@ fun SavedRoutesScreen(
     }
 
     state.routeOptions?.let { options ->
-        ModeChoiceSheet(options = options, onChoose = { mode -> onAction(SavedRoutesAction.OnChooseMode(mode)) })
+        ModeChoiceSheet(
+            options = options,
+            onChoose = { mode -> onAction(SavedRoutesAction.OnChooseMode(mode)) },
+            onDismiss = { onAction(SavedRoutesAction.OnDismissModeChoice) },
+        )
     }
 
     state.missingRegionsWarning?.let { summary ->
@@ -162,6 +208,24 @@ fun SavedRoutesScreen(
             }
         }
     }
+
+    if (state.pendingExportRouteId != null) {
+        ConfirmationBottomSheet(
+            title = stringResource(R.string.saved_routes_export_title),
+            onDismiss = { onAction(SavedRoutesAction.OnDismissExportFormat) },
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = { onAction(SavedRoutesAction.OnChooseExportFormat(RouteFileFormat.JSON)) }) {
+                    Icon(Icons.Filled.FileDownload, contentDescription = null)
+                    Text(stringResource(R.string.routing_export_json_button))
+                }
+                TextButton(onClick = { onAction(SavedRoutesAction.OnChooseExportFormat(RouteFileFormat.GPX)) }) {
+                    Icon(Icons.Filled.FileDownload, contentDescription = null)
+                    Text(stringResource(R.string.routing_export_gpx_button))
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -171,6 +235,7 @@ private fun SavedRouteCard(
     onUseClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    onExportClick: () -> Unit,
 ) {
     Surface(shape = CardShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -195,6 +260,9 @@ private fun SavedRouteCard(
             }
             IconButton(onClick = onDeleteClick) {
                 Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.routing_delete_button))
+            }
+            IconButton(onClick = onExportClick) {
+                Icon(Icons.Filled.FileDownload, contentDescription = stringResource(R.string.saved_routes_export_button))
             }
             IconButton(onClick = onUseClick) {
                 if (isComputing) {

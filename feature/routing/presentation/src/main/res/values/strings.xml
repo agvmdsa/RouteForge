@@ -84,6 +84,8 @@
     <string name="saved_routes_edit_title">Rename this route?</string>
     <string name="saved_routes_error_invalid_name">Enter a name.</string>
     <string name="saved_routes_delete_confirm_title">Delete this saved route?</string>
+    <string name="saved_routes_export_title">Export this route</string>
+    <string name="saved_routes_export_button">Export</string>
     <string name="favorites_title">Favorites</string>
     <string name="favorites_empty_title">No favorites yet</string>
     <string name="favorites_empty_message">Favorites are created from route creation\'s add-waypoint confirmation — check "Also save as favorite" there.</string>
@@ -102,5 +104,5 @@
     <string name="favorites_delete_confirm_title">Delete this favorite?</string>
     <string name="favorites_delete_confirm_message">This can\'t be undone.</string>
     <string name="saved_section_routes_label">Routes</string>
-    <string name="saved_section_favorites_label">Favorites</string>
+    <string name="saved_section_favorites_label">Locations</string>
 </resources>

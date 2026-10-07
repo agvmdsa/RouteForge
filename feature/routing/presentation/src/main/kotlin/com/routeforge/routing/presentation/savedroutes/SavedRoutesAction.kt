@@ -1,6 +1,7 @@
 package com.routeforge.routing.presentation.savedroutes
 
 import com.routeforge.coredomain.model.RoutePlaybackMode
+import com.routeforge.routing.domain.model.RouteFileFormat
 
 sealed interface SavedRoutesAction {
     data class OnEditClick(
@@ -31,9 +32,21 @@ sealed interface SavedRoutesAction {
         val mode: RoutePlaybackMode,
     ) : SavedRoutesAction
 
+    data object OnDismissModeChoice : SavedRoutesAction
+
     data object OnOpenRegionCatalog : SavedRoutesAction
 
     data object OnProceedDespiteMissingRegions : SavedRoutesAction
 
     data object OnDismissMissingRegionsWarning : SavedRoutesAction
+
+    data class OnExportClick(
+        val id: String,
+    ) : SavedRoutesAction
+
+    data class OnChooseExportFormat(
+        val format: RouteFileFormat,
+    ) : SavedRoutesAction
+
+    data object OnDismissExportFormat : SavedRoutesAction
 }

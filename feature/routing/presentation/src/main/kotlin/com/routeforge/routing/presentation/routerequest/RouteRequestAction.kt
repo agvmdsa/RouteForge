@@ -72,6 +72,8 @@ sealed interface RouteRequestAction {
         val mode: RoutePlaybackMode,
     ) : RouteRequestAction
 
+    data object OnDismissModeChoice : RouteRequestAction
+
     data object OnUseRoute : RouteRequestAction
 
     data object OnOpenRegionCatalog : RouteRequestAction

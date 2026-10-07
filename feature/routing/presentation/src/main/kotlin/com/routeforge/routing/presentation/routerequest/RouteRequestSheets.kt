@@ -40,9 +40,10 @@ private val ControlsRowSpacing = 8.dp
 internal fun ModeChoiceSheet(
     options: RouteOptions,
     onChoose: (RoutePlaybackMode) -> Unit,
+    onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState()
-    ModalBottomSheet(onDismissRequest = {}, sheetState = sheetState) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(modifier = Modifier.padding(ScreenContentPadding), verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
             Text(stringResource(R.string.routing_choose_mode_label), style = MaterialTheme.typography.titleMedium)
             if (options.guided != null) {

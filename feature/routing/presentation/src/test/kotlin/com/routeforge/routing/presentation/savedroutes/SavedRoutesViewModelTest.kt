@@ -176,6 +176,20 @@ class SavedRoutesViewModelTest {
     }
 
     @Test
+    fun `dismissing the mode choice (tap-outside, back, or swipe) clears it instead of leaving the sheet stuck`() {
+        routingEngine.snappableLatitudes = setOf(1.0, 2.0)
+        routingEngine.computePathResult = Route(points = samplePoints, geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 100.0)
+        val viewModel = createViewModel()
+        viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
+        assertNotNull(viewModel.state.value.routeOptions)
+
+        viewModel.onAction(SavedRoutesAction.OnDismissModeChoice)
+
+        assertNull(viewModel.state.value.routeOptions)
+        assertNull(viewModel.state.value.resolvingRouteId)
+    }
+
+    @Test
     fun `choosing a mode after both were viable resolves with that mode`() =
         runTest(dispatcher) {
             routingEngine.snappableLatitudes = setOf(1.0, 2.0)
