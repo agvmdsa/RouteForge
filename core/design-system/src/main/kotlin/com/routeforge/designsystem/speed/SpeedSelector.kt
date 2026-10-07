@@ -1,5 +1,6 @@
 package com.routeforge.designsystem.speed
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Speed
@@ -12,8 +13,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 
 private val DefaultSpeedRangeKmh = 0f..150f
+private val DialogContentSpacing = 8.dp
 
 /** The floating trigger for [SpeedSelectorDialog] — a small always-in-a-corner button rather than
  *  a permanently visible slider, so speed controls don't compete for space with the map. */
@@ -46,7 +49,7 @@ fun SpeedSelectorDialog(
         confirmButton = { TextButton(onClick = onDismiss) { Text(confirmButtonLabel) } },
         title = { Text(title) },
         text = {
-            Column {
+            Column(verticalArrangement = Arrangement.spacedBy(DialogContentSpacing)) {
                 Text(text = speedLabel, style = MaterialTheme.typography.labelLarge)
                 Slider(value = speedKmh, onValueChange = onSpeedChange, valueRange = speedRangeKmh)
             }

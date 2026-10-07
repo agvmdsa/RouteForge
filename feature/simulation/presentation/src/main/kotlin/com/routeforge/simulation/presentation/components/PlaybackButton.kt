@@ -1,22 +1,17 @@
 package com.routeforge.simulation.presentation.components
 
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.domain.model.SimulationStatus
 import com.routeforge.simulation.presentation.R
 import com.routeforge.simulation.presentation.SimulationAction
 import com.routeforge.simulation.presentation.SimulationState
-
-private val BigButtonDiameter = 72.dp
 
 @Composable
 internal fun PlaybackButton(
@@ -32,10 +27,7 @@ internal fun PlaybackButton(
         } else {
             Triple(Icons.Filled.PlayArrow, stringResource(R.string.simulation_start_button), SimulationAction.OnStartRouteSimulation)
         }
-    FloatingActionButton(
-        onClick = { onAction(action) },
-        modifier = Modifier.size(BigButtonDiameter),
-    ) {
+    FloatingActionButton(onClick = { onAction(action) }) {
         Icon(icon, contentDescription = description)
     }
 }

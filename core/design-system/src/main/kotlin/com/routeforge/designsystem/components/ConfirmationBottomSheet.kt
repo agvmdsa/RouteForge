@@ -1,5 +1,6 @@
 package com.routeforge.designsystem.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.padding
@@ -12,11 +13,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 private val SheetContentPadding = 16.dp
+private val SheetContentSpacing = 12.dp
 
 /** A bottom sheet for "are you sure" style prompts — title up top, then a caller-provided body
  *  (message text plus however many action buttons the situation needs: some confirmations are a
  *  plain two-button choice, others need a third "do something else instead" option). Deliberately
- *  decoupled from any specific screen or feature, same as [com.routeforge.designsystem.speed.SpeedSelectorDialog]. */
+ *  decoupled from any specific screen or feature, same as [com.routeforge.designsystem.speed.SpeedSelectorDialog].
+ *  [SheetContentSpacing] applies uniformly between the title, the body's own elements, and the
+ *  button row — every caller used to rely on a plain [Column] with no spacing at all between them. */
 @Composable
 fun ConfirmationBottomSheet(
     title: String,
@@ -25,7 +29,10 @@ fun ConfirmationBottomSheet(
 ) {
     val sheetState = rememberModalBottomSheetState()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(modifier = Modifier.padding(SheetContentPadding)) {
+        Column(
+            modifier = Modifier.padding(SheetContentPadding),
+            verticalArrangement = Arrangement.spacedBy(SheetContentSpacing),
+        ) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             content()
         }

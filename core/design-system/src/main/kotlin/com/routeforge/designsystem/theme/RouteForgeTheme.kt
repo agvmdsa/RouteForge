@@ -25,9 +25,11 @@ private val BrownContainer = Color(0xFF4A3826)
 private val OnEspresso = Color(0xFFF3E9DA)
 
 // Every ColorScheme slot the app actually reads (via MaterialTheme.colorScheme.* or a Material3
-// component's own defaults, e.g. NavigationBar's container) is set explicitly here — leaving any
-// of them unset falls back to Material3's own baseline (cool purple/navy) palette instead of this
-// one, which is exactly what previously made the bottom tab bar look mismatched.
+// component's own defaults, e.g. NavigationBar's container, AlertDialog's surfaceContainerHigh, or
+// ModalBottomSheet's surfaceContainerLow) is set explicitly here — leaving any of them unset falls
+// back to Material3's own baseline (cool purple/navy) palette instead of this one, which is exactly
+// what previously made the bottom tab bar — and, separately, every dialog/confirmation sheet —
+// look mismatched.
 private val LightColors =
     lightColorScheme(
         primary = LogoEspresso,
@@ -44,6 +46,8 @@ private val LightColors =
         surfaceVariant = LogoCreamDeep,
         onSurfaceVariant = CoffeeBrown,
         surfaceContainer = LogoCreamDeep,
+        surfaceContainerLow = CreamSurface,
+        surfaceContainerHigh = LogoCreamDeep,
         outlineVariant = LogoTan,
     )
 
