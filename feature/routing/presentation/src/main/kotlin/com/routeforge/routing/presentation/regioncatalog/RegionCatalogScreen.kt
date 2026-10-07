@@ -61,7 +61,10 @@ private val EmptyStateIconBadgeSize = 72.dp
 private val ControlsRowSpacing = 8.dp
 
 @Composable
-fun RegionCatalogRoot(viewModel: RegionCatalogViewModel = koinViewModel()) {
+fun RegionCatalogRoot(
+    viewModel: RegionCatalogViewModel = koinViewModel(),
+    onOpenCoverageMap: () -> Unit = {},
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var downloadErrorMessage by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(viewModel) {
@@ -69,13 +72,19 @@ fun RegionCatalogRoot(viewModel: RegionCatalogViewModel = koinViewModel()) {
             when (event) { is RegionCatalogEvent.DownloadFailed -> downloadErrorMessage = event.message }
         }
     }
-    RegionCatalogScreen(state = state, downloadErrorMessage = downloadErrorMessage, onAction = viewModel::onAction)
+    RegionCatalogScreen(
+        state = state,
+        onAction = viewModel::onAction,
+        onOpenCoverageMap = onOpenCoverageMap,
+        downloadErrorMessage = downloadErrorMessage,
+    )
 }
 
 @Composable
 fun RegionCatalogScreen(
     state: RegionCatalogState,
     onAction: (RegionCatalogAction) -> Unit,
+    onOpenCoverageMap: () -> Unit = {},
     downloadErrorMessage: String? = null,
 ) {
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
@@ -117,6 +126,9 @@ fun RegionCatalogScreen(
                 }
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            TextButton(onClick = onOpenCoverageMap, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.region_catalog_view_coverage_map_button))
+            }
             Text(
                 text = stringResource(R.string.region_catalog_attribution),
                 style = MaterialTheme.typography.bodySmall,

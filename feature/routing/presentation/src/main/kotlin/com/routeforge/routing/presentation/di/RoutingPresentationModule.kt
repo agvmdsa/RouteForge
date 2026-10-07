@@ -15,6 +15,7 @@ import com.routeforge.routing.domain.usecase.RecordRegionUsageUseCase
 import com.routeforge.routing.domain.usecase.SetStorageQuotaUseCase
 import com.routeforge.routing.presentation.favorites.FavoritesViewModel
 import com.routeforge.routing.presentation.regioncatalog.RegionCatalogViewModel
+import com.routeforge.routing.presentation.regioncoveragemap.RegionCoverageMapViewModel
 import com.routeforge.routing.presentation.routerequest.RouteRequestViewModel
 import com.routeforge.routing.presentation.savedroutes.SavedRoutesViewModel
 import com.routeforge.routing.presentation.settings.SettingsViewModel
@@ -53,6 +54,7 @@ val routingPresentationModule =
             )
         }
         viewModelOf(::RegionCatalogViewModel)
+        viewModelOf(::RegionCoverageMapViewModel)
         viewModelOf(::SettingsViewModel)
         viewModel {
             SavedRoutesViewModel(

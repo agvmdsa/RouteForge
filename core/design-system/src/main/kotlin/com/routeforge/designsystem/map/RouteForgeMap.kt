@@ -34,14 +34,18 @@ import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
+import org.osmdroid.views.overlay.Polygon
 import org.osmdroid.views.overlay.Polyline
 
 private const val OSMDROID_PREFS_NAME = "osmdroid_config_routeforge"
 private const val DEFAULT_MAP_ZOOM = 15.0
 private const val FALLBACK_WORLD_MAP_ZOOM = 3.0
 private const val ROUTE_LINE_WIDTH_PX = 6f
-private const val TRAVELED_LINE_COLOR = 0xB2616161.toInt()
+private const val ROUTE_LINE_COLOR = 0xFF7C4DFF.toInt()
+private const val TRAVELED_LINE_ALPHA = 55
 private const val ARROW_BORDER_WIDTH_FRACTION = 0.06f
+private const val REGION_OVERLAY_OUTLINE_WIDTH_PX = 3f
+private const val REGION_OVERLAY_FILL_ALPHA = 0.35f
 private val MarkerDotSize = 20.dp
 private val MarkerBadgeSize = 28.dp
 private val MarkerArrowSize = 32.dp
@@ -132,7 +136,7 @@ private fun RouteForgeMapMarkerIcon.toDrawable(
 
 private data class RouteForgeMapComponents(
     val mapView: MapView,
-    val routeOverlay: Polyline,
+    val routeOverlay: PulsingRouteOverlay,
     val traveledOverlay: Polyline,
 )
 
@@ -151,12 +155,6 @@ private fun buildMapComponents(
             zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
             controller.setZoom(FALLBACK_WORLD_MAP_ZOOM)
         }
-    val routeOverlay = Polyline().apply { outlinePaint.strokeWidth = ROUTE_LINE_WIDTH_PX }
-    val traveledOverlay =
-        Polyline().apply {
-            outlinePaint.strokeWidth = ROUTE_LINE_WIDTH_PX
-            outlinePaint.color = TRAVELED_LINE_COLOR
-        }
     val tapOverlay =
         MapEventsOverlay(
             object : MapEventsReceiver {
@@ -169,7 +167,8 @@ private fun buildMapComponents(
             },
         )
     mapView.overlays.add(tapOverlay)
-    mapView.overlays.add(routeOverlay)
+    val routeOverlay = buildPulsingRouteOverlay(mapView)
+    val traveledOverlay = Polyline().apply { outlinePaint.strokeWidth = ROUTE_LINE_WIDTH_PX }
     mapView.overlays.add(traveledOverlay)
     return RouteForgeMapComponents(mapView, routeOverlay, traveledOverlay)
 }
@@ -190,6 +189,7 @@ fun RouteForgeMap(
     modifier: Modifier = Modifier,
     polylinePoints: List<Pair<Double, Double>> = emptyList(),
     traveledPolylinePoints: List<Pair<Double, Double>> = emptyList(),
+    regions: List<RouteForgeMapRegionOverlay> = emptyList(),
     cameraTarget: Pair<Double, Double>? = null,
     onMapTap: ((Double, Double) -> Unit)? = null,
 ) {
@@ -197,7 +197,8 @@ fun RouteForgeMap(
     val density = LocalDensity.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnTap by rememberUpdatedState(onMapTap)
-    val routeColorArgb = MaterialTheme.colorScheme.primary.toArgb()
+    val routeColorArgb = ROUTE_LINE_COLOR
+    val regionFillColorArgb = MaterialTheme.colorScheme.primary.copy(alpha = REGION_OVERLAY_FILL_ALPHA).toArgb()
 
     val components =
         remember {
@@ -208,9 +209,12 @@ fun RouteForgeMap(
         }
 
     LaunchedEffect(routeColorArgb) {
-        components.routeOverlay.outlinePaint.color = routeColorArgb
+        components.routeOverlay.setColor(routeColorArgb, ROUTE_LINE_WIDTH_PX)
+        components.traveledOverlay.outlinePaint.color = (TRAVELED_LINE_ALPHA shl 24) or (routeColorArgb and 0x00FFFFFF)
         components.mapView.invalidate()
     }
+
+    AnimateRoutePulse(overlay = components.routeOverlay, onPulse = { components.mapView.invalidate() })
 
     DisposableEffect(lifecycleOwner) {
         val observer =
@@ -272,8 +276,35 @@ fun RouteForgeMap(
         mapView.invalidate()
     }
 
+    LaunchedEffect(regions, regionFillColorArgb) {
+        val mapView = components.mapView
+        mapView.overlays.removeAll { it is Polygon }
+        for (region in regions) {
+            val polygon =
+                Polygon(mapView).apply {
+                    setPoints(
+                        listOf(
+                            GeoPoint(region.minLatitude, region.minLongitude),
+                            GeoPoint(region.minLatitude, region.maxLongitude),
+                            GeoPoint(region.maxLatitude, region.maxLongitude),
+                            GeoPoint(region.maxLatitude, region.minLongitude),
+                        ),
+                    )
+                    outlinePaint.color = Color.BLACK
+                    outlinePaint.strokeWidth = REGION_OVERLAY_OUTLINE_WIDTH_PX
+                    fillPaint.color = if (region.filled) regionFillColorArgb else Color.TRANSPARENT
+                    // Without this, Polygon's built-in tap handling (PolyOverlayWithIW.onSingleTapConfirmed)
+                    // consumes the tap itself and pops its own blank info-window bubble, so onMapTap below
+                    // would never fire for taps landing inside a region.
+                    setOnClickListener { _, _, _ -> false }
+                }
+            mapView.overlays.add(polygon)
+        }
+        mapView.invalidate()
+    }
+
     LaunchedEffect(polylinePoints) {
-        components.routeOverlay.setPoints(polylinePoints.map { (latitude, longitude) -> GeoPoint(latitude, longitude) })
+        components.routeOverlay.setPoints(polylinePoints)
         components.mapView.invalidate()
     }
 

@@ -9,6 +9,8 @@ import com.routeforge.routing.presentation.favorites.FavoritesRoot
 import com.routeforge.routing.presentation.favorites.FavoritesRoute
 import com.routeforge.routing.presentation.regioncatalog.RegionCatalogRoot
 import com.routeforge.routing.presentation.regioncatalog.RegionCatalogRoute
+import com.routeforge.routing.presentation.regioncoveragemap.RegionCoverageMapRoot
+import com.routeforge.routing.presentation.regioncoveragemap.RegionCoverageMapRoute
 import com.routeforge.routing.presentation.routerequest.RouteRequestRoot
 import com.routeforge.routing.presentation.routerequest.RouteRequestRoute
 import com.routeforge.routing.presentation.savedroutes.SavedRoutesRoot
@@ -28,7 +30,10 @@ fun NavGraphBuilder.routingGraph(
         )
     }
     composable<RegionCatalogRoute> {
-        RegionCatalogRoot()
+        RegionCatalogRoot(onOpenCoverageMap = { navController.navigate(RegionCoverageMapRoute) })
+    }
+    composable<RegionCoverageMapRoute> {
+        RegionCoverageMapRoot()
     }
     composable<SettingsRoute> {
         SettingsRoot(onManageDownloadsClick = { navController.navigate(RegionCatalogRoute) })

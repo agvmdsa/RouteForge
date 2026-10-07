@@ -49,6 +49,9 @@
     <string name="region_catalog_delete_warning_message">Still in use by: %1$s</string>
     <string name="region_catalog_delete_warning_item_draft">your current route draft</string>
     <string name="region_catalog_delete_warning_item_active_route">the active route</string>
+    <string name="region_catalog_view_coverage_map_button">View coverage map</string>
+    <string name="region_coverage_map_tapped_region_label">Covered by: %1$s</string>
+    <string name="region_coverage_map_empty_message">No region data to show yet. Plan a route or download regions from the catalog first.</string>
     <string name="settings_title">Settings</string>
     <string name="settings_storage_section_title">Offline map storage</string>
     <string name="settings_quota_500mb">500 MB</string>
