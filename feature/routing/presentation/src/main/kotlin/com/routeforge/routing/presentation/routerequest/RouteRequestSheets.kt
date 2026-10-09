@@ -113,20 +113,6 @@ internal fun RouteReadySheet(
 }
 
 @Composable
-internal fun GoToSimulateConfirmationSheet(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    ConfirmationBottomSheet(title = stringResource(R.string.routing_go_to_simulate_confirm_title), onDismiss = onDismiss) {
-        Text(stringResource(R.string.routing_go_to_simulate_confirm_message))
-        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
-            Button(onClick = onConfirm) { Text(stringResource(R.string.routing_go_to_simulate_confirm_button)) }
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.routing_go_to_simulate_dismiss_button)) }
-        }
-    }
-}
-
-@Composable
 internal fun EditWaypointSheet(
     latitude: String,
     longitude: String,

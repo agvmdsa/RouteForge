@@ -1,6 +1,5 @@
 package com.routeforge.routing.presentation.routerequest
 
-import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.routing.domain.model.RouteFileFormat
 
 sealed interface RouteRequestAction {
@@ -68,12 +67,6 @@ sealed interface RouteRequestAction {
 
     data object OnRequestRoute : RouteRequestAction
 
-    data class OnChooseMode(
-        val mode: RoutePlaybackMode,
-    ) : RouteRequestAction
-
-    data object OnDismissModeChoice : RouteRequestAction
-
     data object OnUseRoute : RouteRequestAction
 
     data object OnOpenRegionCatalog : RouteRequestAction
@@ -81,10 +74,6 @@ sealed interface RouteRequestAction {
     data object OnProceedDespiteMissingRegions : RouteRequestAction
 
     data object OnDismissMissingRegionsWarning : RouteRequestAction
-
-    data object OnConfirmGoToSimulate : RouteRequestAction
-
-    data object OnDismissGoToSimulateConfirmation : RouteRequestAction
 
     data object OnSwitchRouteModeClick : RouteRequestAction
 }

@@ -35,7 +35,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -345,7 +344,6 @@ class RouteRequestViewModelTest {
         viewModel.onAction(RouteRequestAction.OnRequestRoute)
 
         assertNotNull(viewModel.state.value.errorType)
-        assertNull(viewModel.state.value.routeOptions)
         assertNull(viewModel.state.value.route)
     }
 
@@ -386,7 +384,6 @@ class RouteRequestViewModelTest {
 
         assertNotNull(viewModel.state.value.missingRegionsWarning)
         assertNull(viewModel.state.value.route)
-        assertNull(viewModel.state.value.routeOptions)
     }
 
     @Test
@@ -449,7 +446,7 @@ class RouteRequestViewModelTest {
     // --- User Story 1: mode gate ---
 
     @Test
-    fun `both modes are offered when guided is fully computable, and route stays null until a mode is chosen`() {
+    fun `requesting a route with no preview selected finalizes free-roam directly, without asking`() {
         routingEngine.snappableLatitudes = setOf(1.0, 2.0)
         routingEngine.computePathResult =
             Route(
@@ -461,77 +458,15 @@ class RouteRequestViewModelTest {
         viewModel.tapTwoPoints()
 
         viewModel.onAction(RouteRequestAction.OnRequestRoute)
-
-        val state = viewModel.state.value
-        assertNotNull(state.routeOptions?.guided)
-        assertNotNull(state.routeOptions?.freeRoam)
-        assertNull(state.route)
-        assertNull(state.chosenMode)
-        assertTrue(!state.isComputing)
-    }
-
-    @Test
-    fun `dismissing the mode choice (tap-outside, back, or swipe) clears it instead of leaving the sheet stuck`() {
-        routingEngine.snappableLatitudes = setOf(1.0, 2.0)
-        routingEngine.computePathResult =
-            Route(
-                points = listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)),
-                geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
-                distanceMeters = 100.0,
-            )
-        val viewModel = createViewModel()
-        viewModel.tapTwoPoints()
-        viewModel.onAction(RouteRequestAction.OnRequestRoute)
-        assertNotNull(viewModel.state.value.routeOptions)
-
-        viewModel.onAction(RouteRequestAction.OnDismissModeChoice)
-
-        assertNull(viewModel.state.value.routeOptions)
-    }
-
-    @Test
-    fun `choosing guided finalizes the guided route and locks the mode`() {
-        routingEngine.snappableLatitudes = setOf(1.0, 2.0)
-        routingEngine.computePathResult =
-            Route(
-                points = listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)),
-                geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
-                distanceMeters = 100.0,
-            )
-        val viewModel = createViewModel()
-        viewModel.tapTwoPoints()
-        viewModel.onAction(RouteRequestAction.OnRequestRoute)
-
-        viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.GUIDED))
-
-        val state = viewModel.state.value
-        assertEquals(RoutePlaybackMode.GUIDED, state.route?.mode)
-        assertEquals(RoutePlaybackMode.GUIDED, state.chosenMode)
-        assertNull(state.routeOptions)
-    }
-
-    @Test
-    fun `choosing free-roam finalizes the free-roam route even when guided was also available`() {
-        routingEngine.snappableLatitudes = setOf(1.0, 2.0)
-        routingEngine.computePathResult =
-            Route(
-                points = listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)),
-                geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
-                distanceMeters = 100.0,
-            )
-        val viewModel = createViewModel()
-        viewModel.tapTwoPoints()
-        viewModel.onAction(RouteRequestAction.OnRequestRoute)
-
-        viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
 
         val state = viewModel.state.value
         assertEquals(RoutePlaybackMode.FREE_ROAM, state.route?.mode)
         assertEquals(RoutePlaybackMode.FREE_ROAM, state.chosenMode)
+        assertTrue(!state.isComputing)
     }
 
     @Test
-    fun `choosing a mode when both are viable stores the other mode's path as the alternate`() {
+    fun `requesting a route after previewing guided finalizes guided directly, without asking again`() {
         routingEngine.snappableLatitudes = setOf(1.0, 2.0)
         routingEngine.computePathResult =
             Route(
@@ -541,14 +476,35 @@ class RouteRequestViewModelTest {
             )
         val viewModel = createViewModel()
         viewModel.tapTwoPoints()
-        viewModel.onAction(RouteRequestAction.OnRequestRoute)
-        val freeRoam = viewModel.state.value.routeOptions?.freeRoam
+        viewModel.onAction(RouteRequestAction.OnSwitchRouteModeClick)
+        assertEquals(RoutePlaybackMode.GUIDED, viewModel.state.value.previewMode)
 
-        viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.GUIDED))
+        viewModel.onAction(RouteRequestAction.OnRequestRoute)
 
         val state = viewModel.state.value
-        assertEquals(freeRoam?.geometry, state.route?.alternateGeometry)
-        assertEquals(freeRoam?.distanceMeters, state.route?.alternateDistanceMeters)
+        assertEquals(RoutePlaybackMode.GUIDED, state.route?.mode)
+        assertEquals(RoutePlaybackMode.GUIDED, state.chosenMode)
+    }
+
+    @Test
+    fun `finalizing a mode when both are viable stores the other mode's path as the alternate`() {
+        routingEngine.snappableLatitudes = setOf(1.0, 2.0)
+        routingEngine.computePathResult =
+            Route(
+                points = listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)),
+                geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
+                distanceMeters = 100.0,
+            )
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        viewModel.onAction(RouteRequestAction.OnSwitchRouteModeClick)
+
+        viewModel.onAction(RouteRequestAction.OnRequestRoute)
+
+        val state = viewModel.state.value
+        assertEquals(RoutePlaybackMode.GUIDED, state.route?.mode)
+        assertNotNull(state.route?.alternateGeometry)
+        assertNotNull(state.route?.alternateDistanceMeters)
     }
 
     @Test
@@ -574,7 +530,6 @@ class RouteRequestViewModelTest {
         val state = viewModel.state.value
         assertEquals(RoutePlaybackMode.FREE_ROAM, state.chosenMode)
         assertNotNull(state.route)
-        assertNull(state.routeOptions)
         assertNull(state.errorType)
     }
 
@@ -592,21 +547,19 @@ class RouteRequestViewModelTest {
     }
 
     @Test
-    fun `re-running the check clears a previously locked mode`() {
+    fun `requesting a route again after finalizing one recomputes and finalizes again`() {
         routingEngine.snappableLatitudes = setOf(1.0, 2.0)
         routingEngine.computePathResult =
             Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
         val viewModel = createViewModel()
         viewModel.tapTwoPoints()
         viewModel.onAction(RouteRequestAction.OnRequestRoute)
-        viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.GUIDED))
-        assertNotNull(viewModel.state.value.chosenMode)
+        assertEquals(RoutePlaybackMode.FREE_ROAM, viewModel.state.value.chosenMode)
 
         viewModel.onAction(RouteRequestAction.OnRequestRoute)
 
-        assertNull(viewModel.state.value.chosenMode)
-        assertNull(viewModel.state.value.route)
-        assertNotNull(viewModel.state.value.routeOptions)
+        assertEquals(RoutePlaybackMode.FREE_ROAM, viewModel.state.value.chosenMode)
+        assertNotNull(viewModel.state.value.route)
     }
 
     // --- User Story 3: file import/export ---
@@ -646,7 +599,6 @@ class RouteRequestViewModelTest {
         val viewModel = createViewModel()
         viewModel.tapTwoPoints()
         viewModel.onAction(RouteRequestAction.OnRequestRoute)
-        viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
 
         viewModel.onAction(RouteRequestAction.OnExportRoute(RouteFileFormat.GPX))
 
@@ -655,21 +607,20 @@ class RouteRequestViewModelTest {
     }
 
     @Test
-    fun `choosing a mode finalizes the route but does not navigate away by itself`() {
+    fun `requesting a route finalizes it but does not navigate away by itself`() {
         routingEngine.snappableLatitudes = setOf(1.0, 2.0)
         routingEngine.computePathResult =
             Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
         val viewModel = createViewModel()
         viewModel.tapTwoPoints()
-        viewModel.onAction(RouteRequestAction.OnRequestRoute)
 
-        viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
+        viewModel.onAction(RouteRequestAction.OnRequestRoute)
 
         assertNotNull(viewModel.state.value.route)
     }
 
     @Test
-    fun `OnUseRoute opens the go-to-Simulate confirmation instead of navigating immediately`() =
+    fun `OnUseRoute navigates to Simulate directly, without an extra confirmation`() =
         runTest(dispatcher) {
             routingEngine.snappableLatitudes = setOf(1.0, 2.0)
             routingEngine.computePathResult =
@@ -677,63 +628,11 @@ class RouteRequestViewModelTest {
             val viewModel = createViewModel()
             viewModel.tapTwoPoints()
             viewModel.onAction(RouteRequestAction.OnRequestRoute)
-            viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
-
-            viewModel.onAction(RouteRequestAction.OnUseRoute)
-
-            assertTrue(viewModel.state.value.pendingGoToSimulateConfirmation)
-        }
-
-    @Test
-    fun `OnConfirmGoToSimulate sends GoToSimulate and clears the confirmation`() =
-        runTest(dispatcher) {
-            routingEngine.snappableLatitudes = setOf(1.0, 2.0)
-            routingEngine.computePathResult =
-                Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
-            val viewModel = createViewModel()
-            viewModel.tapTwoPoints()
-            viewModel.onAction(RouteRequestAction.OnRequestRoute)
-            viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
-            viewModel.onAction(RouteRequestAction.OnUseRoute)
 
             val eventDeferred = async { viewModel.events.first() }
-            viewModel.onAction(RouteRequestAction.OnConfirmGoToSimulate)
+            viewModel.onAction(RouteRequestAction.OnUseRoute)
 
             assertEquals(RouteRequestEvent.GoToSimulate, eventDeferred.await())
-            assertFalse(viewModel.state.value.pendingGoToSimulateConfirmation)
-        }
-
-    @Test
-    fun `OnDismissGoToSimulateConfirmation clears the confirmation without navigating`() =
-        runTest(dispatcher) {
-            routingEngine.snappableLatitudes = setOf(1.0, 2.0)
-            routingEngine.computePathResult =
-                Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
-            val viewModel = createViewModel()
-            viewModel.tapTwoPoints()
-            viewModel.onAction(RouteRequestAction.OnRequestRoute)
-            viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
-            viewModel.onAction(RouteRequestAction.OnUseRoute)
-
-            viewModel.onAction(RouteRequestAction.OnDismissGoToSimulateConfirmation)
-
-            assertFalse(viewModel.state.value.pendingGoToSimulateConfirmation)
-            assertNotNull(viewModel.state.value.route)
-        }
-
-    @Test
-    fun `dismissing the go-to-Simulate confirmation keeps the route available for a later manual switch`() =
-        runTest(dispatcher) {
-            routingEngine.snappableLatitudes = setOf(1.0, 2.0)
-            routingEngine.computePathResult =
-                Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
-            val viewModel = createViewModel()
-            viewModel.tapTwoPoints()
-            viewModel.onAction(RouteRequestAction.OnRequestRoute)
-            viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
-            viewModel.onAction(RouteRequestAction.OnUseRoute)
-            viewModel.onAction(RouteRequestAction.OnDismissGoToSimulateConfirmation)
-
             assertNotNull(lastComputedRouteHolder.route.value)
         }
 
@@ -746,13 +645,11 @@ class RouteRequestViewModelTest {
             val viewModel = createViewModel()
             viewModel.tapTwoPoints()
             viewModel.onAction(RouteRequestAction.OnRequestRoute)
-            viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
             assertNotNull(viewModel.state.value.route)
 
             viewModel.applyEditedWaypoints(listOf(RoutePoint(2.0, 2.0), RoutePoint(1.0, 1.0)))
 
             assertNull(viewModel.state.value.route)
-            assertNull(viewModel.state.value.routeOptions)
             assertEquals(listOf(RoutePoint(2.0, 2.0), RoutePoint(1.0, 1.0)), viewModel.state.value.draft.points)
         }
 }

@@ -272,14 +272,6 @@ fun RouteRequestScreen(
         }
     }
 
-    state.routeOptions?.let { options ->
-        ModeChoiceSheet(
-            options = options,
-            onChoose = { mode -> onAction(RouteRequestAction.OnChooseMode(mode)) },
-            onDismiss = { onAction(RouteRequestAction.OnDismissModeChoice) },
-        )
-    }
-
     state.route?.let { route ->
         var isDismissed by remember(route) { mutableStateOf(false) }
         if (!isDismissed) {
@@ -296,13 +288,6 @@ fun RouteRequestScreen(
                 onDismiss = { isDismissed = true },
             )
         }
-    }
-
-    if (state.pendingGoToSimulateConfirmation) {
-        GoToSimulateConfirmationSheet(
-            onConfirm = { onAction(RouteRequestAction.OnConfirmGoToSimulate) },
-            onDismiss = { onAction(RouteRequestAction.OnDismissGoToSimulateConfirmation) },
-        )
     }
 
     if (state.editingIndex != null) {

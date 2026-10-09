@@ -97,8 +97,6 @@ class RouteRequestViewModel(
             is RouteRequestAction.OnRouteFileImported -> importRoute(action.bytes, action.format)
             is RouteRequestAction.OnExportRoute -> exportRoute(action.format)
             RouteRequestAction.OnRequestRoute -> requestRoute()
-            is RouteRequestAction.OnChooseMode -> chooseMode(action.mode)
-            RouteRequestAction.OnDismissModeChoice -> _state.update { it.copy(routeOptions = null) }
             RouteRequestAction.OnUseRoute -> useRoute()
             RouteRequestAction.OnOpenRegionCatalog -> {
                 _state.update { it.copy(missingRegionsWarning = null, pendingModePreviewTarget = null) }
@@ -122,9 +120,6 @@ class RouteRequestViewModel(
             is RouteRequestAction.OnRouteNameInputChange -> _state.update { it.copy(routeNameInput = action.value) }
             RouteRequestAction.OnConfirmSaveRoute -> confirmSaveRoute()
             RouteRequestAction.OnDismissSaveRoute -> dismissSaveRoute()
-            RouteRequestAction.OnConfirmGoToSimulate -> confirmGoToSimulate()
-            RouteRequestAction.OnDismissGoToSimulateConfirmation ->
-                _state.update { it.copy(pendingGoToSimulateConfirmation = false) }
             RouteRequestAction.OnSwitchRouteModeClick -> onSwitchRouteModeClick()
         }
     }
@@ -171,7 +166,6 @@ class RouteRequestViewModel(
         _state.update {
             it.copy(
                 draft = transform(it.draft),
-                routeOptions = null,
                 chosenMode = null,
                 route = null,
                 errorType = null,
@@ -251,7 +245,6 @@ class RouteRequestViewModel(
                 _state.update {
                     it.copy(
                         draft = result.data,
-                        routeOptions = null,
                         chosenMode = null,
                         route = null,
                         errorType = null,
@@ -288,12 +281,15 @@ class RouteRequestViewModel(
     }
 
     private fun proceedWithRouteComputation(points: List<RoutePoint>) {
-        // FR-004: a fresh evaluation always clears any previously locked mode/choice.
+        // FR-004: a fresh evaluation always clears any previously locked mode/choice. The mode the
+        // user already picked via the preview switch (or Free-roam, its implicit default) carries
+        // straight through instead of asking again with a mode-choice sheet — they already made
+        // this call once.
+        val preferredMode = _state.value.previewMode ?: RoutePlaybackMode.FREE_ROAM
         _state.update {
             it.copy(
                 isComputing = true,
                 errorType = null,
-                routeOptions = null,
                 chosenMode = null,
                 route = null,
                 previewMode = null,
@@ -306,21 +302,12 @@ class RouteRequestViewModel(
             if (autoResolved != null) {
                 // FR-003: Guided isn't computable — skip straight to Free-roam, no choice shown.
                 finalizeRoute(autoResolved.first, autoResolved.second, options)
+            } else if (preferredMode == RoutePlaybackMode.GUIDED && options.guided != null) {
+                finalizeRoute(options.guided!!, RoutePlaybackMode.GUIDED, options)
             } else {
-                // FR-002: both modes are viable — let the user choose.
-                _state.update { it.copy(isComputing = false, routeOptions = options) }
+                finalizeRoute(options.freeRoam, RoutePlaybackMode.FREE_ROAM, options)
             }
         }
-    }
-
-    private fun chooseMode(mode: RoutePlaybackMode) {
-        val options = _state.value.routeOptions ?: return
-        val chosen =
-            when (mode) {
-                RoutePlaybackMode.GUIDED -> options.guided ?: return
-                RoutePlaybackMode.FREE_ROAM -> options.freeRoam
-            }
-        finalizeRoute(chosen, mode, options)
     }
 
     private fun finalizeRoute(
@@ -335,24 +322,25 @@ class RouteRequestViewModel(
                 RoutePlaybackMode.FREE_ROAM ->
                     route.copy(alternateGeometry = options.guided?.geometry, alternateDistanceMeters = options.guided?.distanceMeters)
             }
-        _state.update { it.copy(isComputing = false, routeOptions = null, chosenMode = mode, route = withAlternate) }
+        _state.update { it.copy(isComputing = false, chosenMode = mode, route = withAlternate) }
         lastComputedRouteHolder.set(withAlternate)
     }
 
     /** The user explicitly confirms they're done previewing/exporting and wants to play this
-     *  route — opens the go-to-Simulate confirmation rather than navigating automatically
-     *  (FR-008). The route is already in [lastComputedRouteHolder] from [finalizeRoute]. */
+     *  route — navigates straight to Simulate with no extra "go to the map?" confirmation; the
+     *  mode and route are already fully decided by this point, so that question added nothing.
+     *  The route is already in [lastComputedRouteHolder] from [finalizeRoute]. */
     private fun useRoute() {
         _state.value.route ?: return
-        _state.update { it.copy(pendingGoToSimulateConfirmation = true) }
+        viewModelScope.launch { _events.send(RouteRequestEvent.GoToSimulate) }
     }
 
     /** Lets the user preview/switch between Guided and Free-roam at any planning-time point —
      *  before an official route is computed (toggles [RouteRequestState.previewRoute], independent
-     *  of [route]/[routeOptions], never opens the ready sheet), or after ([route] already computed).
-     *  Neither case needs confirmation — switching modes while planning has no real consequence
-     *  (nothing is being played). Only Simulate's execution-time switch asks to confirm, since that
-     *  one affects a live session. */
+     *  of [RouteRequestState.route], never opens the ready sheet), or after ([route] already
+     *  computed). Neither case needs confirmation — switching modes while planning has no real
+     *  consequence (nothing is being played). Only Simulate's execution-time switch asks to
+     *  confirm, since that one affects a live session. */
     private fun onSwitchRouteModeClick() {
         val route = _state.value.route
         if (route != null) {
@@ -438,13 +426,6 @@ class RouteRequestViewModel(
         lastComputedRouteHolder.set(swapped)
     }
 
-    /** FR-009: only the explicit "go to the map" choice switches tabs; dismissing any other way
-     *  (FR-010) is handled by [RouteRequestAction.OnDismissGoToSimulateConfirmation] and never
-     *  reaches here. */
-    private fun confirmGoToSimulate() {
-        _state.update { it.copy(pendingGoToSimulateConfirmation = false) }
-        viewModelScope.launch { _events.send(RouteRequestEvent.GoToSimulate) }
-    }
 }
 
 private fun RouteFileFailure.toRouteRequestError(): RouteRequestError =
