@@ -2,8 +2,9 @@ package com.routeforge.routing.domain.usecase
 
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.EmptyResult
+import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.coredomain.Result
-import com.routeforge.routing.domain.RegionCatalog
+import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
 import com.routeforge.routing.domain.RegionDownloader
 
 class DownloadRegionUseCase(

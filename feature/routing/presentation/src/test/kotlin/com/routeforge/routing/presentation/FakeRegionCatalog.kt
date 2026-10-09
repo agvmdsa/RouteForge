@@ -1,7 +1,7 @@
 package com.routeforge.routing.presentation
 
-import com.routeforge.routing.domain.RegionCatalog
-import com.routeforge.routing.domain.model.Region
+import com.routeforge.coredomain.RegionCatalog
+import com.routeforge.coredomain.model.Region
 
 class FakeRegionCatalog(
     var regions: List<Region> = emptyList(),

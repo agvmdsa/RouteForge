@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation.regioncoveragemap
 
-import com.routeforge.routing.domain.model.Region
+import com.routeforge.coredomain.model.Region
 
 data class RegionCoverageMapState(
     val regions: List<Region> = emptyList(),

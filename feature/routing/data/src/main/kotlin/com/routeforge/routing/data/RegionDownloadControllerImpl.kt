@@ -3,11 +3,11 @@ package com.routeforge.routing.data
 import android.content.Context
 import android.content.Intent
 import com.routeforge.coredomain.Result
-import com.routeforge.routing.domain.RegionCatalog
+import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.routing.domain.RegionDownloadController
 import com.routeforge.routing.domain.RegionDownloadEvent
-import com.routeforge.routing.domain.RegionUsageTracker
-import com.routeforge.routing.domain.model.Region
+import com.routeforge.coredomain.RegionUsageTracker
+import com.routeforge.coredomain.model.Region
 import com.routeforge.routing.domain.model.RegionDownloadState
 import com.routeforge.routing.domain.usecase.DownloadRegionUseCase
 import kotlinx.coroutines.CoroutineScope

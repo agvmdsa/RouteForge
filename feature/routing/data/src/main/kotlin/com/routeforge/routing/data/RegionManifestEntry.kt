@@ -1,7 +1,7 @@
 package com.routeforge.routing.data
 
-import com.routeforge.routing.domain.model.Region
-import com.routeforge.routing.domain.model.RegionStatus
+import com.routeforge.coredomain.model.Region
+import com.routeforge.coredomain.model.RegionStatus
 import kotlinx.serialization.Serializable
 
 @Serializable

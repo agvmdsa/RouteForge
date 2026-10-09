@@ -1,9 +1,9 @@
 package com.routeforge.routing.presentation.savedroutes
 
 import com.routeforge.coredomain.model.FavoriteRoute
-import com.routeforge.routing.domain.model.RequiredRegionsSummary
+import com.routeforge.coredomain.model.RequiredRegionsSummary
 import com.routeforge.routing.domain.model.RouteFileFormat
-import com.routeforge.routing.domain.model.RouteOptions
+import com.routeforge.coredomain.model.RouteOptions
 
 enum class SavedRoutesError { INVALID_NAME }
 

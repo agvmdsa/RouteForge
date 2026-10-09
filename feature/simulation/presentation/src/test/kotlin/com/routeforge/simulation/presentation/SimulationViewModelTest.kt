@@ -836,4 +836,24 @@ class SimulationViewModelTest {
 
         assertEquals(listOf(SpeedSetting.Manual(5f)), controller.setSpeedCalls)
     }
+
+    @Test
+    fun `applying a committed waypoint edit updates the loaded route and the live session`() {
+        val viewModel = createViewModel()
+        val edited = sampleRoute.copy(distanceMeters = 999.0)
+
+        viewModel.applyEditedRoute(edited)
+
+        assertEquals(edited, lastComputedRouteHolder.route.value)
+        assertEquals(listOf(edited), controller.updateActiveRouteCalls)
+    }
+
+    @Test
+    fun `an edit-triggered auto-pause request invokes the same pause path as the manual control`() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(SimulationAction.OnPauseSimulation)
+
+        assertEquals(1, controller.pauseCallCount)
+    }
 }

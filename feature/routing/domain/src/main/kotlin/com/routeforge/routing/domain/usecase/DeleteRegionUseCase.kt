@@ -1,8 +1,8 @@
 package com.routeforge.routing.domain.usecase
 
-import com.routeforge.routing.domain.RegionCatalog
-import com.routeforge.routing.domain.RegionUsageTracker
-import com.routeforge.routing.domain.model.Region
+import com.routeforge.coredomain.RegionCatalog
+import com.routeforge.coredomain.RegionUsageTracker
+import com.routeforge.coredomain.model.Region
 
 /** Deletes a fully-or-partially downloaded region to free storage, on explicit user request
  *  (spec 006 FR-007/FR-010) — distinct from [EnforceStorageQuotaUseCase]'s automatic eviction, but

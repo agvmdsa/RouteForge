@@ -12,9 +12,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Signpost
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -35,12 +36,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapMarker
 import com.routeforge.designsystem.map.RouteForgeMapMarkerIcon
+import com.routeforge.designsystem.sheets.AddWaypointConfirmationSheet
+import com.routeforge.designsystem.sheets.MissingRegionsWarningSheet
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.routing.domain.model.RouteFileFormat
+import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditAction
+import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditEvent
+import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditState
+import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditViewModel
 import com.routeforge.routing.presentation.R
 import org.koin.androidx.compose.koinViewModel
 
@@ -55,8 +63,10 @@ fun RouteRequestRoot(
     onOpenRegionCatalog: () -> Unit,
     onOpenFavorites: () -> Unit,
     viewModel: RouteRequestViewModel = koinViewModel(),
+    waypointEditViewModel: WaypointEditViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val editState by waypointEditViewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var pendingExportBytes by remember { mutableStateOf<ByteArray?>(null) }
 
@@ -96,10 +106,21 @@ fun RouteRequestRoot(
         }
     }
 
+    LaunchedEffect(waypointEditViewModel) {
+        waypointEditViewModel.events.collect { event ->
+            when (event) {
+                is WaypointEditEvent.Committed -> viewModel.applyEditedWaypoints(event.points)
+                WaypointEditEvent.GoToDownloads -> onOpenRegionCatalog()
+            }
+        }
+    }
+
     RouteRequestScreen(
         state = state,
         onAction = viewModel::onAction,
         onImportClick = { importLauncher.launch(arrayOf("*/*")) },
+        editState = editState,
+        onEditAction = waypointEditViewModel::onAction,
     )
 }
 
@@ -117,6 +138,8 @@ fun RouteRequestScreen(
     state: RouteRequestState,
     onAction: (RouteRequestAction) -> Unit,
     onImportClick: () -> Unit = {},
+    editState: WaypointEditState = WaypointEditState(),
+    onEditAction: (WaypointEditAction) -> Unit = {},
 ) {
     var hasCenteredOnce by remember { mutableStateOf(false) }
     var cameraTarget by remember { mutableStateOf<Pair<Double, Double>?>(null) }
@@ -134,6 +157,8 @@ fun RouteRequestScreen(
 
     val markerBackground = MaterialTheme.colorScheme.primary.toArgb()
     val markerText = MaterialTheme.colorScheme.onPrimary.toArgb()
+    var draggingIndex by remember { mutableStateOf<Int?>(null) }
+    var draggingPosition by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     val markers =
         state.draft.points.mapIndexed { index, point ->
             RouteForgeMapMarker(
@@ -143,10 +168,24 @@ fun RouteRequestScreen(
                 icon = RouteForgeMapMarkerIcon.Numbered(index + 1, markerBackground, markerText),
                 draggable = true,
                 onClick = { onAction(RouteRequestAction.OnMarkerClick(index)) },
-                onDragEnd = { latitude, longitude -> onAction(RouteRequestAction.OnMarkerDragged(index, latitude, longitude)) },
+                onDrag = { latitude, longitude ->
+                    draggingIndex = index
+                    draggingPosition = latitude to longitude
+                },
+                onDragEnd = { latitude, longitude ->
+                    draggingIndex = null
+                    draggingPosition = null
+                    onAction(RouteRequestAction.OnMarkerDragged(index, latitude, longitude))
+                },
             )
         }
-    val polylinePoints = state.route?.geometry ?: state.draft.points.map { it.latitude to it.longitude }
+    val liveDraggingPosition = draggingPosition
+    val polylinePoints =
+        if (draggingIndex != null && liveDraggingPosition != null) {
+            state.draft.points.mapIndexed { i, p -> if (i == draggingIndex) liveDraggingPosition else p.latitude to p.longitude }
+        } else {
+            state.route?.geometry ?: state.previewRoute?.geometry ?: state.draft.points.map { it.latitude to it.longitude }
+        }
 
     Scaffold { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
@@ -190,6 +229,12 @@ fun RouteRequestScreen(
                         Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.routing_undo_button))
                     }
                 }
+                WaypointEditSection(
+                    points = state.draft.points,
+                    chosenMode = state.chosenMode ?: state.route?.mode,
+                    editState = editState,
+                    onEditAction = onEditAction,
+                )
             }
 
             Column(
@@ -198,6 +243,18 @@ fun RouteRequestScreen(
                 modifier = Modifier.align(Alignment.BottomEnd).padding(ScreenContentPadding),
             ) {
                 if (state.draft.points.size >= MIN_WAYPOINTS_TO_PLAY) {
+                    if (state.route == null) {
+                        FloatingActionButton(onClick = { onAction(RouteRequestAction.OnSwitchRouteModeClick) }) {
+                            if (state.isComputingPreview) {
+                                CircularProgressIndicator()
+                            } else {
+                                Icon(
+                                    imageVector = if (state.previewMode == RoutePlaybackMode.GUIDED) Icons.Filled.Straighten else Icons.Filled.Signpost,
+                                    contentDescription = stringResource(R.string.routing_switch_route_mode_button),
+                                )
+                            }
+                        }
+                    }
                     FloatingActionButton(
                         onClick = { onAction(RouteRequestAction.OnRequestRoute) },
                     ) {
@@ -210,9 +267,6 @@ fun RouteRequestScreen(
                     FloatingActionButton(onClick = { onAction(RouteRequestAction.OnSaveRouteClick) }) {
                         Icon(Icons.Filled.Bookmark, contentDescription = stringResource(R.string.routing_save_route_button))
                     }
-                }
-                FloatingActionButton(onClick = { onAction(RouteRequestAction.OnOpenRegionCatalog) }) {
-                    Icon(Icons.Filled.Map, contentDescription = stringResource(R.string.routing_manage_regions_button))
                 }
             }
         }
@@ -232,11 +286,13 @@ fun RouteRequestScreen(
             RouteReadySheet(
                 route = route,
                 chosenMode = state.chosenMode,
+                isComputingPreview = state.isComputingPreview,
                 onExport = { format -> onAction(RouteRequestAction.OnExportRoute(format)) },
                 onUseRoute = {
                     isDismissed = true
                     onAction(RouteRequestAction.OnUseRoute)
                 },
+                onSwitchMode = { onAction(RouteRequestAction.OnSwitchRouteModeClick) },
                 onDismiss = { isDismissed = true },
             )
         }
@@ -264,6 +320,21 @@ fun RouteRequestScreen(
     state.missingRegionsWarning?.let { summary ->
         MissingRegionsWarningSheet(
             summary = summary,
+            title = stringResource(R.string.routing_missing_regions_title),
+            message =
+                stringResource(
+                    R.string.routing_missing_regions_message,
+                    summary.totalMissingBytes / 1_000_000,
+                    summary.regions.joinToString { it.displayName },
+                ),
+            uncoveredNote =
+                if (summary.uncoveredWaypointCount > 0) {
+                    stringResource(R.string.routing_missing_regions_uncovered_note, summary.uncoveredWaypointCount)
+                } else {
+                    null
+                },
+            goToDownloadsLabel = stringResource(R.string.routing_missing_regions_go_to_downloads),
+            continueAnywayLabel = stringResource(R.string.routing_missing_regions_continue_anyway),
             onGoToDownloads = { onAction(RouteRequestAction.OnOpenRegionCatalog) },
             onContinueAnyway = { onAction(RouteRequestAction.OnProceedDespiteMissingRegions) },
             onDismiss = { onAction(RouteRequestAction.OnDismissMissingRegionsWarning) },
@@ -283,8 +354,12 @@ fun RouteRequestScreen(
     val pendingAddLongitude = state.pendingAddLongitude
     if (pendingAddLatitude != null && pendingAddLongitude != null) {
         AddWaypointConfirmationSheet(
-            latitude = pendingAddLatitude,
-            longitude = pendingAddLongitude,
+            title = stringResource(R.string.routing_add_waypoint_title),
+            coordinatesMessage = stringResource(R.string.routing_add_waypoint_message, pendingAddLatitude, pendingAddLongitude),
+            saveAsFavoriteLabel = stringResource(R.string.routing_save_as_favorite_label),
+            favoriteNameLabel = stringResource(R.string.routing_favorite_name_label),
+            confirmLabel = stringResource(R.string.routing_add_waypoint_confirm_button),
+            cancelLabel = stringResource(R.string.routing_add_waypoint_cancel_button),
             isSaveAsFavoriteChecked = state.isSaveAsFavoriteChecked,
             favoriteNameInput = state.favoriteNameInput,
             onToggleSaveAsFavorite = { onAction(RouteRequestAction.OnToggleSaveAsFavorite) },
@@ -303,6 +378,7 @@ private fun RouteRequestError.toMessage(): String =
         RouteRequestError.IMPORT_TOO_FEW_WAYPOINTS -> stringResource(R.string.routing_error_import_too_few_waypoints)
         RouteRequestError.IMPORT_COORDINATE_OUT_OF_RANGE -> stringResource(R.string.routing_error_import_coordinate_out_of_range)
         RouteRequestError.IMPORT_MALFORMED -> stringResource(R.string.routing_error_import_malformed)
+        RouteRequestError.MODE_PREVIEW_NO_PATH -> stringResource(R.string.routing_error_mode_preview_no_path)
     }
 
 @Preview

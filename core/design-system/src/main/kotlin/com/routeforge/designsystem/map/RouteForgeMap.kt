@@ -46,6 +46,7 @@ private const val TRAVELED_LINE_ALPHA = 55
 private const val ARROW_BORDER_WIDTH_FRACTION = 0.06f
 private const val REGION_OVERLAY_OUTLINE_WIDTH_PX = 3f
 private const val REGION_OVERLAY_FILL_ALPHA = 0.35f
+private const val GHOST_MARKER_ALPHA = 0.4f
 private val MarkerDotSize = 20.dp
 private val MarkerBadgeSize = 28.dp
 private val MarkerArrowSize = 32.dp
@@ -232,7 +233,12 @@ fun RouteForgeMap(
         }
     }
 
-    LaunchedEffect(markers) {
+    // Keyed on a representation that excludes onClick/onDrag/onDragEnd (closures that get a new
+    // identity on every recomposition, e.g. from a caller-side `onAction` reference changing) —
+    // otherwise every recomposition during an active drag (onDrag fires continuously) would tear
+    // down and rebuild every Marker, including the one the user's finger is still on.
+    val markersKey = markers.map { listOf(it.id, it.latitude, it.longitude, it.icon, it.draggable, it.rotationDegrees) }
+    LaunchedEffect(markersKey) {
         val mapView = components.mapView
         mapView.overlays.removeAll { it is Marker }
         for (marker in markers) {
@@ -258,15 +264,32 @@ fun RouteForgeMap(
                         }
                     }
                     marker.onDragEnd?.let { onDragEnd ->
+                        val onDragCallback = marker.onDrag
+                        var ghostMarker: Marker? = null
                         setOnMarkerDragListener(
                             object : Marker.OnMarkerDragListener {
-                                override fun onMarkerDrag(marker: Marker) = Unit
-
-                                override fun onMarkerDragEnd(marker: Marker) {
-                                    onDragEnd(marker.position.latitude, marker.position.longitude)
+                                override fun onMarkerDragStart(marker: Marker) {
+                                    ghostMarker =
+                                        Marker(mapView).apply {
+                                            position = GeoPoint(marker.position.latitude, marker.position.longitude)
+                                            icon = marker.icon
+                                            setAlpha(GHOST_MARKER_ALPHA)
+                                            isDraggable = false
+                                        }
+                                    mapView.overlays.add(ghostMarker)
+                                    mapView.invalidate()
                                 }
 
-                                override fun onMarkerDragStart(marker: Marker) = Unit
+                                override fun onMarkerDrag(marker: Marker) {
+                                    onDragCallback?.invoke(marker.position.latitude, marker.position.longitude)
+                                }
+
+                                override fun onMarkerDragEnd(marker: Marker) {
+                                    ghostMarker?.let { mapView.overlays.remove(it) }
+                                    ghostMarker = null
+                                    mapView.invalidate()
+                                    onDragEnd(marker.position.latitude, marker.position.longitude)
+                                }
                             },
                         )
                     }

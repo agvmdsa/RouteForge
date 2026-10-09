@@ -4,11 +4,11 @@ import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.RegionDownloadEvent
-import com.routeforge.routing.domain.model.Region
+import com.routeforge.coredomain.model.Region
 import com.routeforge.routing.domain.model.RegionDownloadState
-import com.routeforge.routing.domain.model.RegionStatus
+import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.routing.domain.usecase.ComputeRegionUsageUseCase
-import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
+import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.usecase.DeleteRegionUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
 import com.routeforge.routing.presentation.FakeFavoriteRoutesRepository

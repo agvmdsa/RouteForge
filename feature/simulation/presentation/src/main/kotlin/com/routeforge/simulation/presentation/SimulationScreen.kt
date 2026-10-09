@@ -57,6 +57,10 @@ import com.routeforge.simulation.presentation.components.PlaybackButton
 import com.routeforge.simulation.presentation.components.StartRouteDialog
 import com.routeforge.simulation.presentation.components.SwitchRouteModeSheet
 import com.routeforge.simulation.presentation.components.TeleportConfirmationSheet
+import com.routeforge.simulation.presentation.waypointedit.WaypointEditAction
+import com.routeforge.simulation.presentation.waypointedit.WaypointEditEvent
+import com.routeforge.simulation.presentation.waypointedit.WaypointEditState
+import com.routeforge.simulation.presentation.waypointedit.WaypointEditViewModel
 import kotlin.math.roundToInt
 import org.koin.androidx.compose.koinViewModel
 
@@ -70,9 +74,12 @@ private val SpeedSelectorRangeKmh = MIN_SPEED_KMH..MAX_SPEED_KMH
 @Composable
 fun SimulationRoot(
     onOpenSetup: () -> Unit,
+    onOpenRegionCatalog: () -> Unit,
     viewModel: SimulationViewModel = koinViewModel(),
+    waypointEditViewModel: WaypointEditViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val editState by waypointEditViewModel.state.collectAsStateWithLifecycle()
 
     val runtimePermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
@@ -104,17 +111,34 @@ fun SimulationRoot(
         }
     }
 
+    LaunchedEffect(waypointEditViewModel) {
+        waypointEditViewModel.events.collect { event ->
+            when (event) {
+                is WaypointEditEvent.Committed -> viewModel.applyEditedRoute(event.activeRoute)
+                WaypointEditEvent.GoToDownloads -> onOpenRegionCatalog()
+                WaypointEditEvent.AutoPauseRequested -> viewModel.onAction(SimulationAction.OnPauseSimulation)
+            }
+        }
+    }
+
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         viewModel.onAction(SimulationAction.OnScreenResumed)
     }
 
-    SimulationScreen(state = state, onAction = viewModel::onAction)
+    SimulationScreen(
+        state = state,
+        onAction = viewModel::onAction,
+        editState = editState,
+        onEditAction = waypointEditViewModel::onAction,
+    )
 }
 
 @Composable
 fun SimulationScreen(
     state: SimulationState,
     onAction: (SimulationAction) -> Unit,
+    editState: WaypointEditState = WaypointEditState(),
+    onEditAction: (WaypointEditAction) -> Unit = {},
 ) {
     var previousSessionWasNull by remember { mutableStateOf(true) }
     var previousRealWasNull by remember { mutableStateOf(true) }
@@ -138,14 +162,13 @@ fun SimulationScreen(
     }
 
     val markerBackground = MaterialTheme.colorScheme.primary.toArgb()
+    val markerMutedBackground = MaterialTheme.colorScheme.outline.toArgb()
     val markerText = MaterialTheme.colorScheme.onPrimary.toArgb()
     val routeProgressCalculator = remember { RouteProgressCalculator() }
     val loadedRoute = state.loadedRoute
-    val routeProgress =
-        loadedRoute?.let {
-            val distanceTraveled = state.mockedSession?.takeIf { session -> session.mode == SimulationMode.ROUTE }?.distanceTraveledMeters ?: 0.0
-            routeProgressCalculator.interpolate(it, distanceTraveled)
-        }
+    val sessionDistanceTraveledMeters =
+        state.mockedSession?.takeIf { session -> session.mode == SimulationMode.ROUTE }?.distanceTraveledMeters
+    val routeProgress = loadedRoute?.let { routeProgressCalculator.interpolate(it, sessionDistanceTraveledMeters ?: 0.0) }
     val traveledPolylinePoints =
         if (loadedRoute != null && routeProgress != null) {
             loadedRoute.geometry.subList(0, (routeProgress.segmentIndex + 1).coerceAtMost(loadedRoute.geometry.size)) +
@@ -154,15 +177,33 @@ fun SimulationScreen(
             emptyList()
         }
 
+    var draggingIndex by remember { mutableStateOf<Int?>(null) }
+    var draggingPosition by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     val markers =
         buildList {
             loadedRoute?.points?.forEachIndexed { index, point ->
+                val isReadOnly = editState.isOpen && index < editState.firstEditableIndex
                 add(
                     RouteForgeMapMarker(
                         id = "waypoint-$index",
                         latitude = point.latitude,
                         longitude = point.longitude,
-                        icon = RouteForgeMapMarkerIcon.Numbered(index + 1, markerBackground, markerText),
+                        icon =
+                            RouteForgeMapMarkerIcon.Numbered(
+                                index + 1,
+                                if (isReadOnly) markerMutedBackground else markerBackground,
+                                markerText,
+                            ),
+                        draggable = editState.isOpen && !isReadOnly,
+                        onDrag = { latitude, longitude ->
+                            draggingIndex = index
+                            draggingPosition = latitude to longitude
+                        },
+                        onDragEnd = { latitude, longitude ->
+                            draggingIndex = null
+                            draggingPosition = null
+                            onEditAction(WaypointEditAction.OnMarkerDragged(index, latitude, longitude))
+                        },
                     ),
                 )
             }
@@ -191,14 +232,28 @@ fun SimulationScreen(
             }
         }
 
+    val liveDraggingPosition = draggingPosition
+    val mainPolylinePoints =
+        if (draggingIndex != null && liveDraggingPosition != null && loadedRoute != null) {
+            loadedRoute.points.mapIndexed { i, p -> if (i == draggingIndex) liveDraggingPosition else p.latitude to p.longitude }
+        } else {
+            state.loadedRoute?.geometry.orEmpty()
+        }
+
     Scaffold { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             RouteForgeMap(
                 markers = markers,
-                polylinePoints = state.loadedRoute?.geometry.orEmpty(),
+                polylinePoints = mainPolylinePoints,
                 traveledPolylinePoints = traveledPolylinePoints,
                 cameraTarget = cameraTarget,
-                onMapTap = { latitude, longitude -> onAction(SimulationAction.OnMapTap(latitude, longitude)) },
+                onMapTap = { latitude, longitude ->
+                    if (editState.isOpen) {
+                        onEditAction(WaypointEditAction.OnMapTap(latitude, longitude))
+                    } else {
+                        onAction(SimulationAction.OnMapTap(latitude, longitude))
+                    }
+                },
                 modifier = Modifier.fillMaxSize(),
             )
 
@@ -319,6 +374,12 @@ fun SimulationScreen(
                             )
                         }
                     }
+                    WaypointEditSection(
+                        loadedRoute = loadedRoute,
+                        distanceTraveledMeters = sessionDistanceTraveledMeters,
+                        editState = editState,
+                        onEditAction = onEditAction,
+                    )
                 }
             }
         }

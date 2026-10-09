@@ -1,7 +1,7 @@
 package com.routeforge.routing.data
 
 import android.content.Context
-import com.routeforge.routing.domain.RegionUsageTracker
+import com.routeforge.coredomain.RegionUsageTracker
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString

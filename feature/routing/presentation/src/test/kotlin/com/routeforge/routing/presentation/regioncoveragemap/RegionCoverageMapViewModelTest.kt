@@ -1,7 +1,7 @@
 package com.routeforge.routing.presentation.regioncoveragemap
 
-import com.routeforge.routing.domain.model.Region
-import com.routeforge.routing.domain.model.RegionStatus
+import com.routeforge.coredomain.model.Region
+import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
 import com.routeforge.routing.presentation.FakeRegionCatalog
 import org.junit.jupiter.api.Assertions.assertEquals

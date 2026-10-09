@@ -8,11 +8,11 @@ import com.routeforge.coredomain.model.FavoriteRoute
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.routing.domain.model.RouteFileFormat
-import com.routeforge.routing.domain.model.RouteOptions
-import com.routeforge.routing.domain.model.autoResolved
-import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
+import com.routeforge.coredomain.model.RouteOptions
+import com.routeforge.coredomain.model.autoResolved
+import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
-import com.routeforge.routing.domain.usecase.PrepareRouteOptionsUseCase
+import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel

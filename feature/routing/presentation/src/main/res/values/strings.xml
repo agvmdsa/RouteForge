@@ -105,4 +105,11 @@
     <string name="favorites_delete_confirm_message">This can\'t be undone.</string>
     <string name="saved_section_routes_label">Routes</string>
     <string name="saved_section_favorites_label">Locations</string>
+    <string name="routing_edit_waypoints_button">Edit waypoints</string>
+    <string name="routing_waypoint_edit_sheet_title">Edit waypoints</string>
+    <string name="routing_apply_waypoint_changes_button">Update changes</string>
+    <string name="routing_cancel_waypoint_changes_button">Cancel</string>
+    <string name="routing_mode_temporarily_unavailable">%1$s is temporarily unavailable — retrying automatically</string>
+    <string name="routing_switch_route_mode_button">Preview other mode</string>
+    <string name="routing_error_mode_preview_no_path">No viable path found for that mode.</string>
 </resources>

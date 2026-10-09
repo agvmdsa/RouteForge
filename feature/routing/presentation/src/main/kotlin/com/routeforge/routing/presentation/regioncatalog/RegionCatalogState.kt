@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation.regioncatalog
 
-import com.routeforge.routing.domain.model.Region
+import com.routeforge.coredomain.model.Region
 import com.routeforge.routing.domain.model.RegionUsage
 
 data class RegionCatalogState(

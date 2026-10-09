@@ -1,6 +1,6 @@
 package com.routeforge.routing.data
 
-import com.routeforge.routing.domain.model.RegionStatus
+import com.routeforge.coredomain.model.RegionStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir

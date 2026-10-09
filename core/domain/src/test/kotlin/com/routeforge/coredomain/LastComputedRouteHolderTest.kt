@@ -1,5 +1,6 @@
 package com.routeforge.coredomain
 
+import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.Route
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull

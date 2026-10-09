@@ -1,7 +1,7 @@
 package com.routeforge.routing.domain.usecase
 
-import com.routeforge.routing.domain.RegionCatalog
-import com.routeforge.routing.domain.model.RegionStatus
+import com.routeforge.coredomain.RegionCatalog
+import com.routeforge.coredomain.model.RegionStatus
 
 class GetStorageUsageSummaryUseCase(
     private val regionCatalog: RegionCatalog,

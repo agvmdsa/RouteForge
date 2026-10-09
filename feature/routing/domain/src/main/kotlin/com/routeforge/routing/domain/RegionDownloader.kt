@@ -2,7 +2,7 @@ package com.routeforge.routing.domain
 
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.EmptyResult
-import com.routeforge.routing.domain.model.Region
+import com.routeforge.coredomain.model.Region
 
 interface RegionDownloader {
     /** [onProgress] receives the running fraction (0f..1f) across all of [region]'s tiles, or

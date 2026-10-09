@@ -15,6 +15,7 @@ import com.routeforge.simulation.domain.usecase.TeleportUseCase
 import com.routeforge.simulation.domain.usecase.UpdateActiveRouteUseCase
 import com.routeforge.simulation.domain.usecase.UpdateJoystickDirectionUseCase
 import com.routeforge.simulation.presentation.SimulationViewModel
+import com.routeforge.simulation.presentation.waypointedit.WaypointEditViewModel
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
@@ -36,5 +37,6 @@ val simulationPresentationModule =
         factoryOf(::UpdateJoystickDirectionUseCase)
         factoryOf(::UpdateActiveRouteUseCase)
         viewModelOf(::SimulationViewModel)
+        viewModelOf(::WaypointEditViewModel)
     }
 

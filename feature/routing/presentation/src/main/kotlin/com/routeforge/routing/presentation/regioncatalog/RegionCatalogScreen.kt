@@ -47,8 +47,8 @@ import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.IconBadge
 import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.theme.RouteForgeTheme
-import com.routeforge.routing.domain.model.Region
-import com.routeforge.routing.domain.model.RegionStatus
+import com.routeforge.coredomain.model.Region
+import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.routing.domain.model.RegionUsage
 import com.routeforge.routing.presentation.R
 import org.koin.androidx.compose.koinViewModel

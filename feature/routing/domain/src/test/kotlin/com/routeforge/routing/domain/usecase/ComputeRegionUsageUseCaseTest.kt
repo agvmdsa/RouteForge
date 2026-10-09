@@ -5,10 +5,11 @@ import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.FavoriteRoute
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.FakeFavoriteRoutesRepository
-import com.routeforge.routing.domain.FakeRegionCatalog
-import com.routeforge.routing.domain.model.Region
-import com.routeforge.routing.domain.model.RegionStatus
+import com.routeforge.coredomain.FakeRegionCatalog
+import com.routeforge.coredomain.model.Region
+import com.routeforge.coredomain.model.RegionStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue

@@ -85,4 +85,6 @@ sealed interface RouteRequestAction {
     data object OnConfirmGoToSimulate : RouteRequestAction
 
     data object OnDismissGoToSimulateConfirmation : RouteRequestAction
+
+    data object OnSwitchRouteModeClick : RouteRequestAction
 }

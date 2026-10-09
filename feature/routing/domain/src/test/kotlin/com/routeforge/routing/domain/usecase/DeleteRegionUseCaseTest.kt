@@ -1,9 +1,9 @@
 package com.routeforge.routing.domain.usecase
 
-import com.routeforge.routing.domain.FakeRegionCatalog
-import com.routeforge.routing.domain.FakeRegionUsageTracker
-import com.routeforge.routing.domain.model.Region
-import com.routeforge.routing.domain.model.RegionStatus
+import com.routeforge.coredomain.FakeRegionCatalog
+import com.routeforge.coredomain.FakeRegionUsageTracker
+import com.routeforge.coredomain.model.Region
+import com.routeforge.coredomain.model.RegionStatus
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull

@@ -5,13 +5,16 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Signpost
+import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -21,20 +24,19 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
-import com.routeforge.routing.domain.model.RequiredRegionsSummary
 import com.routeforge.routing.domain.model.RouteFileFormat
-import com.routeforge.routing.domain.model.RouteOptions
+import com.routeforge.coredomain.model.RouteOptions
 import com.routeforge.routing.presentation.R
 
 private val ScreenContentPadding = 16.dp
 private val ControlsRowSpacing = 8.dp
+private val SwitchModeSpinnerSize = 24.dp
 
 @Composable
 internal fun ModeChoiceSheet(
@@ -62,8 +64,10 @@ internal fun ModeChoiceSheet(
 internal fun RouteReadySheet(
     route: Route,
     chosenMode: RoutePlaybackMode?,
+    isComputingPreview: Boolean,
     onExport: (RouteFileFormat) -> Unit,
     onUseRoute: () -> Unit,
+    onSwitchMode: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState()
@@ -88,6 +92,17 @@ internal fun RouteReadySheet(
                     Icon(Icons.Filled.FileDownload, contentDescription = null)
                     Text(stringResource(R.string.routing_export_gpx_button))
                 }
+            }
+            TextButton(onClick = onSwitchMode, modifier = Modifier.fillMaxWidth(), enabled = !isComputingPreview) {
+                if (isComputingPreview) {
+                    CircularProgressIndicator(modifier = Modifier.size(SwitchModeSpinnerSize))
+                } else {
+                    Icon(
+                        imageVector = if (route.mode == RoutePlaybackMode.GUIDED) Icons.Filled.Straighten else Icons.Filled.Signpost,
+                        contentDescription = null,
+                    )
+                }
+                Text(stringResource(R.string.routing_switch_route_mode_button))
             }
             Button(onClick = onUseRoute, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Filled.Check, contentDescription = null)
@@ -154,34 +169,6 @@ internal fun EditWaypointSheet(
 }
 
 @Composable
-internal fun MissingRegionsWarningSheet(
-    summary: RequiredRegionsSummary,
-    onGoToDownloads: () -> Unit,
-    onContinueAnyway: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    ConfirmationBottomSheet(title = stringResource(R.string.routing_missing_regions_title), onDismiss = onDismiss) {
-        Text(
-            stringResource(
-                R.string.routing_missing_regions_message,
-                summary.totalMissingBytes / 1_000_000,
-                summary.regions.joinToString { it.displayName },
-            ),
-        )
-        if (summary.uncoveredWaypointCount > 0) {
-            Text(
-                text = stringResource(R.string.routing_missing_regions_uncovered_note, summary.uncoveredWaypointCount),
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
-            Button(onClick = onGoToDownloads) { Text(stringResource(R.string.routing_missing_regions_go_to_downloads)) }
-            TextButton(onClick = onContinueAnyway) { Text(stringResource(R.string.routing_missing_regions_continue_anyway)) }
-        }
-    }
-}
-
-@Composable
 internal fun SaveRouteSheet(
     nameInput: String,
     onNameChange: (String) -> Unit,
@@ -198,40 +185,6 @@ internal fun SaveRouteSheet(
         Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
             Button(onClick = onConfirm, enabled = nameInput.isNotBlank()) {
                 Text(stringResource(R.string.routing_save_route_confirm_button))
-            }
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.routing_add_waypoint_cancel_button)) }
-        }
-    }
-}
-
-@Composable
-internal fun AddWaypointConfirmationSheet(
-    latitude: Double,
-    longitude: Double,
-    isSaveAsFavoriteChecked: Boolean,
-    favoriteNameInput: String,
-    onToggleSaveAsFavorite: () -> Unit,
-    onFavoriteNameChange: (String) -> Unit,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    ConfirmationBottomSheet(title = stringResource(R.string.routing_add_waypoint_title), onDismiss = onDismiss) {
-        Text(stringResource(R.string.routing_add_waypoint_message, latitude, longitude))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = isSaveAsFavoriteChecked, onCheckedChange = { onToggleSaveAsFavorite() })
-            Text(stringResource(R.string.routing_save_as_favorite_label))
-        }
-        if (isSaveAsFavoriteChecked) {
-            OutlinedTextField(
-                value = favoriteNameInput,
-                onValueChange = onFavoriteNameChange,
-                label = { Text(stringResource(R.string.routing_favorite_name_label)) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
-            Button(onClick = onConfirm, enabled = !isSaveAsFavoriteChecked || favoriteNameInput.isNotBlank()) {
-                Text(stringResource(R.string.routing_add_waypoint_confirm_button))
             }
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.routing_add_waypoint_cancel_button)) }
         }

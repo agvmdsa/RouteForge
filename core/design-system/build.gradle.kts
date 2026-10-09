@@ -8,6 +8,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:domain"))
     implementation(libs.osmdroid.android)
     implementation(libs.compose.material.icons.extended)
 }

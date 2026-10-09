@@ -3,8 +3,9 @@ package com.routeforge.routing.domain.usecase
 import com.routeforge.coredomain.FavoriteRoutesRepository
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RoutePoint
-import com.routeforge.routing.domain.model.Region
+import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.model.RegionUsage
 
 /** Answers "would deleting this region break something the user is currently relying on" (spec

@@ -8,19 +8,19 @@ import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
-import com.routeforge.routing.domain.FreeRoamRouteBuilder
+import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
 import com.routeforge.routing.domain.RouteFileCodec
-import com.routeforge.routing.domain.model.Region
-import com.routeforge.routing.domain.model.RegionStatus
+import com.routeforge.coredomain.model.Region
+import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.routing.domain.model.RouteDraft
 import com.routeforge.routing.domain.model.RouteFileFailure
 import com.routeforge.routing.domain.model.RouteFileFormat
-import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
-import com.routeforge.routing.domain.usecase.ComputeRouteUseCase
+import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
+import com.routeforge.coredomain.usecase.ComputeRouteUseCase
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
-import com.routeforge.routing.domain.usecase.PrepareRouteOptionsUseCase
-import com.routeforge.routing.domain.usecase.RecordRegionUsageUseCase
+import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
+import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
 import com.routeforge.routing.presentation.FakeFavoriteRoutesRepository
 import com.routeforge.routing.presentation.FakeFavoriteWaypointsRepository
 import com.routeforge.routing.presentation.FakeRegionCatalog
@@ -735,5 +735,24 @@ class RouteRequestViewModelTest {
             viewModel.onAction(RouteRequestAction.OnDismissGoToSimulateConfirmation)
 
             assertNotNull(lastComputedRouteHolder.route.value)
+        }
+
+    @Test
+    fun `applying a committed reorder-list edit invalidates an already-computed route, per FR-018`() =
+        runTest(dispatcher) {
+            routingEngine.snappableLatitudes = setOf(1.0, 2.0)
+            routingEngine.computePathResult =
+                Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
+            val viewModel = createViewModel()
+            viewModel.tapTwoPoints()
+            viewModel.onAction(RouteRequestAction.OnRequestRoute)
+            viewModel.onAction(RouteRequestAction.OnChooseMode(RoutePlaybackMode.FREE_ROAM))
+            assertNotNull(viewModel.state.value.route)
+
+            viewModel.applyEditedWaypoints(listOf(RoutePoint(2.0, 2.0), RoutePoint(1.0, 1.0)))
+
+            assertNull(viewModel.state.value.route)
+            assertNull(viewModel.state.value.routeOptions)
+            assertEquals(listOf(RoutePoint(2.0, 2.0), RoutePoint(1.0, 1.0)), viewModel.state.value.draft.points)
         }
 }

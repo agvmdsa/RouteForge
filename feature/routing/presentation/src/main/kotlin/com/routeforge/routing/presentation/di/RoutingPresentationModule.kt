@@ -1,9 +1,10 @@
 package com.routeforge.routing.presentation.di
 
-import com.routeforge.routing.domain.FreeRoamRouteBuilder
+import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
 import com.routeforge.routing.domain.usecase.ComputeRegionUsageUseCase
-import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
-import com.routeforge.routing.domain.usecase.ComputeRouteUseCase
+import com.routeforge.coredomain.usecase.ComputeEditableWaypointRangeUseCase
+import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
+import com.routeforge.coredomain.usecase.ComputeRouteUseCase
 import com.routeforge.routing.domain.usecase.DeleteRegionUseCase
 import com.routeforge.routing.domain.usecase.DownloadRegionUseCase
 import com.routeforge.routing.domain.usecase.EnforceStorageQuotaUseCase
@@ -11,13 +12,15 @@ import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.GetStorageUsageSummaryUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
 import com.routeforge.routing.domain.usecase.ObserveStorageQuotaUseCase
-import com.routeforge.routing.domain.usecase.PrepareRouteOptionsUseCase
-import com.routeforge.routing.domain.usecase.RecordRegionUsageUseCase
+import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
+import com.routeforge.coredomain.usecase.RecomputeRouteForBothModesUseCase
+import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
 import com.routeforge.routing.domain.usecase.SetStorageQuotaUseCase
 import com.routeforge.routing.presentation.favorites.FavoritesViewModel
 import com.routeforge.routing.presentation.regioncatalog.RegionCatalogViewModel
 import com.routeforge.routing.presentation.regioncoveragemap.RegionCoverageMapViewModel
 import com.routeforge.routing.presentation.routerequest.RouteRequestViewModel
+import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditViewModel
 import com.routeforge.routing.presentation.savedroutes.SavedRoutesViewModel
 import com.routeforge.routing.presentation.settings.SettingsViewModel
 import org.koin.core.module.dsl.factoryOf
@@ -40,6 +43,8 @@ val routingPresentationModule =
         factoryOf(::GetStorageUsageSummaryUseCase)
         factoryOf(::DeleteRegionUseCase)
         factoryOf(::ComputeRegionUsageUseCase)
+        factoryOf(::RecomputeRouteForBothModesUseCase)
+        factoryOf(::ComputeEditableWaypointRangeUseCase)
         viewModel {
             RouteRequestViewModel(
                 prepareRouteOptions = get(),
@@ -54,6 +59,7 @@ val routingPresentationModule =
                 selectedFavoriteWaypointHolder = get(),
             )
         }
+        viewModelOf(::WaypointEditViewModel)
         viewModelOf(::RegionCatalogViewModel)
         viewModelOf(::RegionCoverageMapViewModel)
         viewModelOf(::SettingsViewModel)

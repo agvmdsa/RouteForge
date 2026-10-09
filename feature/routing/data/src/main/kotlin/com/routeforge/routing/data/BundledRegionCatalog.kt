@@ -1,9 +1,9 @@
 package com.routeforge.routing.data
 
 import com.routeforge.routing.domain.BrouterTileGrid
-import com.routeforge.routing.domain.RegionCatalog
-import com.routeforge.routing.domain.model.Region
-import com.routeforge.routing.domain.model.RegionStatus
+import com.routeforge.coredomain.RegionCatalog
+import com.routeforge.coredomain.model.Region
+import com.routeforge.coredomain.model.RegionStatus
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File

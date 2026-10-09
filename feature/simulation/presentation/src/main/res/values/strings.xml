@@ -62,5 +62,20 @@
     <string name="simulation_cancel_route_confirm_message">This will stop playback (if running) and clear the loaded route. You\'ll need to plan it again to play it.</string>
     <string name="simulation_cancel_route_confirm_button">Cancel route</string>
     <string name="simulation_cancel_route_dismiss_button">Keep route</string>
+    <string name="simulation_edit_route_button">Edit route</string>
+    <string name="simulation_waypoint_edit_sheet_title">Edit waypoints</string>
+    <string name="simulation_apply_waypoint_changes_button">Update changes</string>
+    <string name="simulation_cancel_waypoint_changes_button">Cancel</string>
+    <string name="simulation_mode_temporarily_unavailable">%1$s is temporarily unavailable — retrying automatically</string>
+    <string name="simulation_add_waypoint_title">Add this waypoint?</string>
+    <string name="simulation_add_waypoint_message">Latitude: %1$s\nLongitude: %2$s</string>
+    <string name="simulation_save_as_favorite_label">Also save as favorite</string>
+    <string name="simulation_favorite_name_label">Favorite name</string>
+    <string name="simulation_add_waypoint_confirm_button">Add waypoint</string>
+    <string name="simulation_add_waypoint_cancel_button">Cancel</string>
+    <string name="simulation_missing_regions_title">Missing map data for Guided</string>
+    <string name="simulation_missing_regions_message">Guided routing needs about %1$d MB more map data for this edit</string>
+    <string name="simulation_missing_regions_go_to_downloads">Go to downloads</string>
+    <string name="simulation_missing_regions_continue_anyway">Continue anyway</string>
 </resources>
 

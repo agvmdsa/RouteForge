@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation
 
-import com.routeforge.routing.domain.RegionUsageTracker
+import com.routeforge.coredomain.RegionUsageTracker
 
 class FakeRegionUsageTracker(
     initialUsage: Map<String, Long> = emptyMap(),

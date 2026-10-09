@@ -7,6 +7,7 @@ import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
+import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.simulation.domain.RealLocationFailure
@@ -178,6 +179,15 @@ class SimulationViewModel(
         }
     }
 
+    /** Applies a committed waypoint edit (spec 008) exactly like [confirmSwitchRouteMode] applies
+     *  a mode swap: pushes the recomputed [route] to [lastComputedRouteHolder] (so the loaded-route
+     *  UI updates whether or not playback has started) and, if a session is actively playing, to
+     *  the controller's live session via [updateActiveRouteUseCase] — a no-op there otherwise. */
+    fun applyEditedRoute(route: Route) {
+        lastComputedRouteHolder.set(route)
+        updateActiveRouteUseCase(route)
+    }
+
     /** Mock-location authorization can be revoked at any time from outside the app (Developer
      *  Options, an MDM policy, the user picking a different mock-location app) — catch that here
      *  instead of only at the next explicit action, and send the user back to setup to fix it. */
@@ -225,7 +235,11 @@ class SimulationViewModel(
     /** Swaps geometry/mode with their "alternate" counterparts (so switching back and forth keeps
      *  working) and pushes the result both to [lastComputedRouteHolder] (so the loaded-route UI
      *  updates whether or not playback has started yet) and, if a route is actively playing, to
-     *  the controller's live session via [updateActiveRouteUseCase] — a no-op there otherwise. */
+     *  the controller's live session via [updateActiveRouteUseCase] — a no-op there otherwise.
+     *  [Route.waypointCumulativeDistances] belongs to whichever geometry was active when it was
+     *  computed, so it's cleared on swap (spec 008) — the editable-range check safely treats an
+     *  empty list as "unknown, treat everything as editable" until the next edit recomputes it for
+     *  the newly active mode. */
     private fun confirmSwitchRouteMode() {
         val targetMode = _state.value.pendingRouteModeSwitch ?: return
         _state.update { it.copy(pendingRouteModeSwitch = null) }
@@ -239,6 +253,7 @@ class SimulationViewModel(
                 distanceMeters = alternateDistance,
                 alternateGeometry = route.geometry,
                 alternateDistanceMeters = route.distanceMeters,
+                waypointCumulativeDistances = emptyList(),
             )
         lastComputedRouteHolder.set(swapped)
         updateActiveRouteUseCase(swapped)

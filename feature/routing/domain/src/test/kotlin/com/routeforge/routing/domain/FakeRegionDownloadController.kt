@@ -1,6 +1,6 @@
 package com.routeforge.routing.domain
 
-import com.routeforge.routing.domain.model.Region
+import com.routeforge.coredomain.model.Region
 import com.routeforge.routing.domain.model.RegionDownloadState
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow

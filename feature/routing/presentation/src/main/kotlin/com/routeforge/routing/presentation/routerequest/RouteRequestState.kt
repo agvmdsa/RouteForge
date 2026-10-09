@@ -3,9 +3,9 @@ package com.routeforge.routing.presentation.routerequest
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
-import com.routeforge.routing.domain.model.RequiredRegionsSummary
+import com.routeforge.coredomain.model.RequiredRegionsSummary
 import com.routeforge.routing.domain.model.RouteDraft
-import com.routeforge.routing.domain.model.RouteOptions
+import com.routeforge.coredomain.model.RouteOptions
 
 data class RouteRequestState(
     val draft: RouteDraft = RouteDraft(),
@@ -26,4 +26,14 @@ data class RouteRequestState(
     val isSaveRouteSheetOpen: Boolean = false,
     val routeNameInput: String = "",
     val pendingGoToSimulateConfirmation: Boolean = false,
+    val pendingModePreviewTarget: RoutePlaybackMode? = null,
+    /** A live preview of the draft in Guided mode, before any official "request route" computation
+     *  (independent of [route]/[routeOptions], so it never opens the ready sheet). Null means the
+     *  map shows the default straight-line draft preview. */
+    val previewMode: RoutePlaybackMode? = null,
+    val previewRoute: Route? = null,
+    /** True while [computeDraftPreview]/[attemptModePreview] is running — drives a loading spinner
+     *  on whichever button triggered it, instead of leaving the user guessing why nothing changed
+     *  yet. */
+    val isComputingPreview: Boolean = false,
 )

@@ -3,7 +3,7 @@ package com.routeforge.routing.domain
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.EmptyResult
 import com.routeforge.coredomain.Result
-import com.routeforge.routing.domain.model.Region
+import com.routeforge.coredomain.model.Region
 
 class FakeRegionDownloader : RegionDownloader {
     var result: EmptyResult<DataError.Network> = Result.Success(Unit)

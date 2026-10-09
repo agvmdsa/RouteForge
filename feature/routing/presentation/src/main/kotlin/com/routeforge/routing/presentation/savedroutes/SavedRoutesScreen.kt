@@ -52,10 +52,10 @@ import com.routeforge.coredomain.model.FavoriteRoute
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.IconBadge
+import com.routeforge.designsystem.sheets.MissingRegionsWarningSheet
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.presentation.R
-import com.routeforge.routing.presentation.routerequest.MissingRegionsWarningSheet
 import com.routeforge.routing.presentation.routerequest.ModeChoiceSheet
 import org.koin.androidx.compose.koinViewModel
 
@@ -163,6 +163,21 @@ fun SavedRoutesScreen(
     state.missingRegionsWarning?.let { summary ->
         MissingRegionsWarningSheet(
             summary = summary,
+            title = stringResource(R.string.routing_missing_regions_title),
+            message =
+                stringResource(
+                    R.string.routing_missing_regions_message,
+                    summary.totalMissingBytes / 1_000_000,
+                    summary.regions.joinToString { it.displayName },
+                ),
+            uncoveredNote =
+                if (summary.uncoveredWaypointCount > 0) {
+                    stringResource(R.string.routing_missing_regions_uncovered_note, summary.uncoveredWaypointCount)
+                } else {
+                    null
+                },
+            goToDownloadsLabel = stringResource(R.string.routing_missing_regions_go_to_downloads),
+            continueAnywayLabel = stringResource(R.string.routing_missing_regions_continue_anyway),
             onGoToDownloads = { onAction(SavedRoutesAction.OnOpenRegionCatalog) },
             onContinueAnyway = { onAction(SavedRoutesAction.OnProceedDespiteMissingRegions) },
             onDismiss = { onAction(SavedRoutesAction.OnDismissMissingRegionsWarning) },

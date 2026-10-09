@@ -15,16 +15,16 @@ import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.model.RouteDraft
 import com.routeforge.routing.domain.model.RouteFileFailure
 import com.routeforge.routing.domain.model.RouteFileFormat
-import com.routeforge.routing.domain.model.RouteOptions
-import com.routeforge.routing.domain.model.autoResolved
+import com.routeforge.coredomain.model.RouteOptions
+import com.routeforge.coredomain.model.autoResolved
 import com.routeforge.routing.domain.usecase.AddWaypointUseCase
-import com.routeforge.routing.domain.usecase.ComputeRequiredRegionsUseCase
+import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.usecase.DeleteWaypointUseCase
 import com.routeforge.routing.domain.usecase.EditWaypointUseCase
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.MoveWaypointUseCase
-import com.routeforge.routing.domain.usecase.PrepareRouteOptionsUseCase
+import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
 import com.routeforge.routing.domain.usecase.UndoRouteDraftUseCase
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -101,16 +101,23 @@ class RouteRequestViewModel(
             RouteRequestAction.OnDismissModeChoice -> _state.update { it.copy(routeOptions = null) }
             RouteRequestAction.OnUseRoute -> useRoute()
             RouteRequestAction.OnOpenRegionCatalog -> {
-                _state.update { it.copy(missingRegionsWarning = null) }
+                _state.update { it.copy(missingRegionsWarning = null, pendingModePreviewTarget = null) }
                 viewModelScope.launch { _events.send(RouteRequestEvent.NavigateToRegionCatalog) }
             }
             RouteRequestAction.OnOpenFavoritesClick ->
                 viewModelScope.launch { _events.send(RouteRequestEvent.NavigateToFavorites) }
             RouteRequestAction.OnProceedDespiteMissingRegions -> {
-                _state.update { it.copy(missingRegionsWarning = null) }
-                proceedWithRouteComputation(_state.value.draft.points)
+                val previewTarget = _state.value.pendingModePreviewTarget
+                val hasOfficialRoute = _state.value.route != null
+                _state.update { it.copy(missingRegionsWarning = null, pendingModePreviewTarget = null) }
+                when {
+                    previewTarget != null && hasOfficialRoute -> attemptModePreview(previewTarget)
+                    previewTarget != null -> computeDraftPreview(_state.value.draft.points)
+                    else -> proceedWithRouteComputation(_state.value.draft.points)
+                }
             }
-            RouteRequestAction.OnDismissMissingRegionsWarning -> _state.update { it.copy(missingRegionsWarning = null) }
+            RouteRequestAction.OnDismissMissingRegionsWarning ->
+                _state.update { it.copy(missingRegionsWarning = null, pendingModePreviewTarget = null) }
             RouteRequestAction.OnSaveRouteClick -> _state.update { it.copy(isSaveRouteSheetOpen = true) }
             is RouteRequestAction.OnRouteNameInputChange -> _state.update { it.copy(routeNameInput = action.value) }
             RouteRequestAction.OnConfirmSaveRoute -> confirmSaveRoute()
@@ -118,6 +125,7 @@ class RouteRequestViewModel(
             RouteRequestAction.OnConfirmGoToSimulate -> confirmGoToSimulate()
             RouteRequestAction.OnDismissGoToSimulateConfirmation ->
                 _state.update { it.copy(pendingGoToSimulateConfirmation = false) }
+            RouteRequestAction.OnSwitchRouteModeClick -> onSwitchRouteModeClick()
         }
     }
 
@@ -159,6 +167,7 @@ class RouteRequestViewModel(
 
     /** Any draft mutation invalidates a previously computed/chosen route (FR-004's spirit). */
     private fun mutateDraft(transform: (RouteDraft) -> RouteDraft) {
+        val wasPreviewingGuided = _state.value.previewMode == RoutePlaybackMode.GUIDED
         _state.update {
             it.copy(
                 draft = transform(it.draft),
@@ -166,9 +175,42 @@ class RouteRequestViewModel(
                 chosenMode = null,
                 route = null,
                 errorType = null,
+                previewMode = if (wasPreviewingGuided) RoutePlaybackMode.GUIDED else null,
+                // previewRoute is deliberately left as-is here (stale, but still the right mode's
+                // shape) rather than cleared to null — clearing it would flash the map to the plain
+                // straight-line view for the brief recompute window below, which read as "switched
+                // to Free-roam and back." refreshGuidedPreview() below replaces it with the fresh
+                // result; a non-Guided preview still gets cleared since there's nothing to carry over.
+                previewRoute = if (wasPreviewingGuided) it.previewRoute else null,
             )
         }
         draftWaypointsHolder.set(_state.value.draft.points)
+        // A Guided preview that was already on screen should carry over and recompute with the
+        // new point list, rather than silently dropping back to the default free-roam view —
+        // the user has to explicitly turn it off (OnSwitchRouteModeClick) to lose it.
+        if (wasPreviewingGuided) refreshGuidedPreview()
+    }
+
+    private fun refreshGuidedPreview() {
+        val points = _state.value.draft.points
+        if (points.size < 2) {
+            _state.update { it.copy(previewMode = null, previewRoute = null) }
+            return
+        }
+        val requiredRegions = computeRequiredRegions(points)
+        if (!requiredRegions.isFullyDownloaded) {
+            _state.update { it.copy(missingRegionsWarning = requiredRegions, pendingModePreviewTarget = RoutePlaybackMode.GUIDED) }
+        } else {
+            computeDraftPreview(points)
+        }
+    }
+
+    /** Applies a committed edit from the shared reorder-list sheet (spec 008) via the same
+     *  invalidation rule as every other draft mutation (FR-018) — the recompute that already ran
+     *  to validate the edit is not reused here; "Finish Route" always recomputes fresh, same as
+     *  after any other draft mutation today. */
+    fun applyEditedWaypoints(points: List<RoutePoint>) {
+        mutateDraft { RouteDraft(points = points) }
     }
 
     private fun openEditDialog(index: Int) {
@@ -248,7 +290,15 @@ class RouteRequestViewModel(
     private fun proceedWithRouteComputation(points: List<RoutePoint>) {
         // FR-004: a fresh evaluation always clears any previously locked mode/choice.
         _state.update {
-            it.copy(isComputing = true, errorType = null, routeOptions = null, chosenMode = null, route = null)
+            it.copy(
+                isComputing = true,
+                errorType = null,
+                routeOptions = null,
+                chosenMode = null,
+                route = null,
+                previewMode = null,
+                previewRoute = null,
+            )
         }
         viewModelScope.launch {
             val options = withContext(backgroundDispatcher) { prepareRouteOptions(points) }
@@ -295,6 +345,97 @@ class RouteRequestViewModel(
     private fun useRoute() {
         _state.value.route ?: return
         _state.update { it.copy(pendingGoToSimulateConfirmation = true) }
+    }
+
+    /** Lets the user preview/switch between Guided and Free-roam at any planning-time point —
+     *  before an official route is computed (toggles [RouteRequestState.previewRoute], independent
+     *  of [route]/[routeOptions], never opens the ready sheet), or after ([route] already computed).
+     *  Neither case needs confirmation — switching modes while planning has no real consequence
+     *  (nothing is being played). Only Simulate's execution-time switch asks to confirm, since that
+     *  one affects a live session. */
+    private fun onSwitchRouteModeClick() {
+        val route = _state.value.route
+        if (route != null) {
+            val targetMode = if (route.mode == RoutePlaybackMode.GUIDED) RoutePlaybackMode.FREE_ROAM else RoutePlaybackMode.GUIDED
+            val alternateGeometry = route.alternateGeometry
+            val alternateDistance = route.alternateDistanceMeters
+            if (alternateGeometry != null && alternateDistance != null) {
+                applyModeSwitch(route, targetMode, alternateGeometry, alternateDistance)
+            } else {
+                val requiredRegions = computeRequiredRegions(route.points)
+                if (!requiredRegions.isFullyDownloaded) {
+                    _state.update { it.copy(missingRegionsWarning = requiredRegions, pendingModePreviewTarget = targetMode) }
+                } else {
+                    attemptModePreview(targetMode)
+                }
+            }
+            return
+        }
+
+        if (_state.value.previewMode == RoutePlaybackMode.GUIDED) {
+            _state.update { it.copy(previewMode = null, previewRoute = null) }
+            return
+        }
+        refreshGuidedPreview()
+    }
+
+    /** Computes a live Guided preview for the current draft (no official route exists yet) — the
+     *  missing-regions check, if needed, already ran in [onSwitchRouteModeClick] or was just
+     *  dismissed via "continue anyway". On failure (genuinely no viable path), surfaces
+     *  [RouteRequestError.MODE_PREVIEW_NO_PATH]. */
+    private fun computeDraftPreview(points: List<RoutePoint>) {
+        _state.update { it.copy(isComputingPreview = true) }
+        viewModelScope.launch {
+            val options = withContext(backgroundDispatcher) { prepareRouteOptions(points) }
+            val guided = options.guided
+            if (guided == null) {
+                _state.update { it.copy(isComputingPreview = false, errorType = RouteRequestError.MODE_PREVIEW_NO_PATH) }
+                return@launch
+            }
+            _state.update { it.copy(isComputingPreview = false, previewMode = RoutePlaybackMode.GUIDED, previewRoute = guided) }
+        }
+    }
+
+    /** Computes [targetMode]'s geometry on demand (the missing-regions check, if needed, already ran
+     *  in [onSwitchRouteModeClick] or was just dismissed via "continue anyway"). On success, applies
+     *  it immediately via [applyModeSwitch] — no confirmation while planning, see
+     *  [onSwitchRouteModeClick]. On failure (genuinely no viable path, not a download problem),
+     *  surfaces [RouteRequestError.MODE_PREVIEW_NO_PATH] instead. */
+    private fun attemptModePreview(targetMode: RoutePlaybackMode) {
+        val route = _state.value.route ?: return
+        _state.update { it.copy(isComputingPreview = true) }
+        viewModelScope.launch {
+            val options = withContext(backgroundDispatcher) { prepareRouteOptions(route.points) }
+            val targetRoute =
+                when (targetMode) {
+                    RoutePlaybackMode.GUIDED -> options.guided
+                    RoutePlaybackMode.FREE_ROAM -> options.freeRoam
+                }
+            if (targetRoute == null) {
+                _state.update { it.copy(isComputingPreview = false, errorType = RouteRequestError.MODE_PREVIEW_NO_PATH) }
+                return@launch
+            }
+            _state.update { it.copy(isComputingPreview = false) }
+            applyModeSwitch(route, targetMode, targetRoute.geometry, targetRoute.distanceMeters)
+        }
+    }
+
+    private fun applyModeSwitch(
+        route: Route,
+        targetMode: RoutePlaybackMode,
+        alternateGeometry: List<Pair<Double, Double>>,
+        alternateDistanceMeters: Double,
+    ) {
+        val swapped =
+            route.copy(
+                mode = targetMode,
+                geometry = alternateGeometry,
+                distanceMeters = alternateDistanceMeters,
+                alternateGeometry = route.geometry,
+                alternateDistanceMeters = route.distanceMeters,
+            )
+        _state.update { it.copy(route = swapped, chosenMode = targetMode) }
+        lastComputedRouteHolder.set(swapped)
     }
 
     /** FR-009: only the explicit "go to the map" choice switches tabs; dismissing any other way

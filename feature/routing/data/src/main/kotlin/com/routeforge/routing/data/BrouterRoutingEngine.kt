@@ -4,10 +4,11 @@ import btools.mapaccess.OsmNode
 import btools.router.OsmNodeNamed
 import btools.router.OsmTrack
 import btools.router.RoutingContext
+import com.routeforge.coredomain.GeoMath
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
-import com.routeforge.routing.domain.RoutingEngine
-import com.routeforge.routing.domain.model.Region
+import com.routeforge.coredomain.RoutingEngine
+import com.routeforge.coredomain.model.Region
 import java.io.File
 import btools.router.RoutingEngine as BrouterEngine
 
@@ -46,7 +47,41 @@ class BrouterRoutingEngine(
             points = points,
             geometry = geometry,
             distanceMeters = track.distance.toDouble(),
+            waypointCumulativeDistances = computeWaypointCumulativeDistances(track, points.size, geometry),
         )
+    }
+
+    /** Correlates each original input waypoint (named `wp0`, `wp1`, ... in [computePath]) back to
+     *  the track-node index it landed at, via [OsmTrack.getMatchedWaypoint]'s
+     *  [MatchedWaypoint.name]/[MatchedWaypoint.indexInTrack] — BRouter tracks this internally but
+     *  [OsmTrack] never otherwise exposes a waypoint-to-geometry-position mapping (spec 008's
+     *  research.md Decision 4). Falls back to an empty list (meaning "boundary unknown, treat
+     *  everything as editable," per [Route.waypointCumulativeDistances]'s own contract) if any
+     *  waypoint's track position can't be found — e.g. an older/alternate BRouter build that
+     *  doesn't populate this internal matching. */
+    private fun computeWaypointCumulativeDistances(
+        track: OsmTrack,
+        waypointCount: Int,
+        geometry: List<Pair<Double, Double>>,
+    ): List<Double> {
+        val trackIndexByWaypointName =
+            geometry.indices
+                .mapNotNull { nodeIndex -> track.getMatchedWaypoint(nodeIndex)?.let { it.name to nodeIndex } }
+                .toMap()
+
+        val cumulativeAtNode = mutableListOf(0.0)
+        for (i in 1 until geometry.size) {
+            val (lat1, lon1) = geometry[i - 1]
+            val (lat2, lon2) = geometry[i]
+            cumulativeAtNode.add(cumulativeAtNode.last() + GeoMath.haversineMeters(lat1, lon1, lat2, lon2))
+        }
+
+        val result = mutableListOf<Double>()
+        for (waypointIndex in 0 until waypointCount) {
+            val nodeIndex = trackIndexByWaypointName["wp$waypointIndex"] ?: return emptyList()
+            result.add(cumulativeAtNode[nodeIndex])
+        }
+        return result
     }
 
     private fun runEngine(waypoints: List<OsmNodeNamed>): OsmTrack? {

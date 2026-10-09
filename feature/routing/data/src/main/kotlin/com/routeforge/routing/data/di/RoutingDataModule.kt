@@ -9,12 +9,12 @@ import com.routeforge.routing.data.JsonRouteFileCodec
 import com.routeforge.routing.data.RegionDownloadControllerImpl
 import com.routeforge.routing.data.SharedPreferencesRegionUsageTracker
 import com.routeforge.routing.data.SharedPreferencesStorageQuotaStore
-import com.routeforge.routing.domain.RegionCatalog
+import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.routing.domain.RegionDownloadController
 import com.routeforge.routing.domain.RegionDownloader
-import com.routeforge.routing.domain.RegionUsageTracker
+import com.routeforge.coredomain.RegionUsageTracker
 import com.routeforge.routing.domain.RouteFileCodec
-import com.routeforge.routing.domain.RoutingEngine
+import com.routeforge.coredomain.RoutingEngine
 import com.routeforge.routing.domain.StorageQuotaStore
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
