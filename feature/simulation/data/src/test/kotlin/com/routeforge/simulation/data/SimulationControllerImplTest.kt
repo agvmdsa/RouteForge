@@ -12,6 +12,8 @@ import com.routeforge.simulation.domain.model.SimulationStatus
 import com.routeforge.simulation.domain.model.SpeedSetting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -103,26 +105,86 @@ class SimulationControllerImplTest {
     }
 
     @Test
-    fun `a route reaching its end completes and keeps reporting the final point rather than stopping or looping`() {
-        val controller = createController()
+    fun `a route reaching its truly final completion keeps reporting the final point, then automatically ends once the completion-auto-stop delay elapses`() =
+        runTest {
+            val controller =
+                SimulationControllerImpl(
+                    mockLocationPublisher = publisher,
+                    mockLocationAuthorizationChecker = authorizationChecker,
+                    lastKnownRealLocationHolder = lastKnownRealLocationHolder,
+                    coroutineScope = this,
+                    completionAutoStopDelayMillis = 5_000L,
+                )
 
-        controller.startRoute(shortRoute, speedSetting = SpeedSetting.Manual(100f))
-        controller.tick(elapsedSeconds = 1.0)
+            controller.startRoute(shortRoute, speedSetting = SpeedSetting.Manual(100f))
+            controller.tick(elapsedSeconds = 1.0)
 
-        val completedSession = controller.mockedSession.value
-        assertEquals(SimulationStatus.COMPLETED, completedSession?.status)
-        assertEquals(0.0001, completedSession?.longitude)
-        val distanceAtCompletion = completedSession?.distanceTraveledMeters
+            val completedSession = controller.mockedSession.value
+            assertEquals(SimulationStatus.COMPLETED, completedSession?.status)
+            assertEquals(0.0001, completedSession?.longitude)
+            val distanceAtCompletion = completedSession?.distanceTraveledMeters
 
-        controller.tick(elapsedSeconds = 1.0)
-        controller.tick(elapsedSeconds = 1.0)
+            controller.tick(elapsedSeconds = 1.0)
+            controller.tick(elapsedSeconds = 1.0)
 
-        val stillCompletedSession = controller.mockedSession.value
-        assertEquals(SimulationStatus.COMPLETED, stillCompletedSession?.status)
-        assertEquals(distanceAtCompletion, stillCompletedSession?.distanceTraveledMeters)
-        assertEquals(0.0001, stillCompletedSession?.longitude)
-        assertTrue(publisher.publishedFixes.size >= 3)
-    }
+            val stillCompletedSession = controller.mockedSession.value
+            assertEquals(SimulationStatus.COMPLETED, stillCompletedSession?.status)
+            assertEquals(distanceAtCompletion, stillCompletedSession?.distanceTraveledMeters)
+            assertEquals(0.0001, stillCompletedSession?.longitude)
+            assertTrue(publisher.publishedFixes.size >= 3)
+
+            advanceTimeBy(4_000)
+            assertEquals(SimulationStatus.COMPLETED, controller.mockedSession.value?.status)
+
+            advanceTimeBy(2_000) // total elapsed 6_000ms, past the 5_000ms completion-auto-stop delay
+            assertNull(controller.mockedSession.value)
+        }
+
+    @Test
+    fun `a manual stop before the completion-auto-stop delay elapses ends the session immediately, and the later-elapsing scheduled callback is a harmless no-op`() =
+        runTest {
+            val controller =
+                SimulationControllerImpl(
+                    mockLocationPublisher = publisher,
+                    mockLocationAuthorizationChecker = authorizationChecker,
+                    lastKnownRealLocationHolder = lastKnownRealLocationHolder,
+                    coroutineScope = this,
+                    completionAutoStopDelayMillis = 5_000L,
+                )
+
+            controller.startRoute(shortRoute, speedSetting = SpeedSetting.Manual(100f))
+            controller.tick(elapsedSeconds = 1.0)
+            assertEquals(SimulationStatus.COMPLETED, controller.mockedSession.value?.status)
+
+            controller.stop()
+            assertNull(controller.mockedSession.value)
+
+            advanceTimeBy(6_000) // past the scheduled delay — must not throw or revive the session
+            assertNull(controller.mockedSession.value)
+        }
+
+    @Test
+    fun `a Loop restart never schedules the completion-auto-stop timer, so the session stays alive well past the delay`() =
+        runTest {
+            val controller =
+                SimulationControllerImpl(
+                    mockLocationPublisher = publisher,
+                    mockLocationAuthorizationChecker = authorizationChecker,
+                    lastKnownRealLocationHolder = lastKnownRealLocationHolder,
+                    coroutineScope = this,
+                    completionAutoStopDelayMillis = 5_000L,
+                )
+
+            controller.startRoute(shortRoute, speedSetting = SpeedSetting.Manual(100f))
+            controller.setExecutionMode(ExecutionMode.Loop)
+            controller.tick(elapsedSeconds = 1.0) // completes lap 1, restarts to RUNNING — never COMPLETED
+
+            assertEquals(SimulationStatus.RUNNING, controller.mockedSession.value?.status)
+
+            advanceTimeBy(6_000) // past what would have been the completion-auto-stop delay, had one been scheduled
+            assertEquals(SimulationStatus.RUNNING, controller.mockedSession.value?.status)
+            assertTrue((controller.mockedSession.value?.completedRuns ?: 0) >= 1)
+        }
 
     @Test
     fun `pause halts distance progression and resume continues from the paused distance`() {

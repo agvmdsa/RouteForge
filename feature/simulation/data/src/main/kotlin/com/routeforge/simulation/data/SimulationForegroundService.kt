@@ -3,9 +3,11 @@ package com.routeforge.simulation.data
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.IBinder
 import com.routeforge.simulation.domain.SimulationController
@@ -21,6 +23,19 @@ import org.koin.android.ext.android.inject
 
 private const val NOTIFICATION_CHANNEL_ID = "simulation_active"
 private const val NOTIFICATION_ID = 1001
+private const val ACTION_PAUSE = "com.routeforge.simulation.action.PAUSE"
+private const val ACTION_RESUME = "com.routeforge.simulation.action.RESUME"
+private const val ACTION_STOP = "com.routeforge.simulation.action.STOP"
+
+/** Carried on the notification's content [PendingIntent] (see [SimulationForegroundService.contentPendingIntent])
+ *  so [com.routeforge.app.MainActivity] knows to switch to the Simulate tab even if it was already running on a
+ *  different one — not referenced by class, since `feature:simulation:data` must never depend on the `app` module. */
+const val EXTRA_OPEN_SIMULATE = "com.routeforge.simulation.extra.OPEN_SIMULATE"
+
+private const val PAUSE_REQUEST_CODE = 1
+private const val RESUME_REQUEST_CODE = 2
+private const val STOP_REQUEST_CODE = 3
+private const val CONTENT_REQUEST_CODE = 4
 
 class SimulationForegroundService : Service() {
     private val simulationController: SimulationController by inject()
@@ -29,7 +44,14 @@ class SimulationForegroundService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
-        startInForeground(buildNotification(contentText = getString(R.string.simulation_notification_text_route_running)))
+        val initialSession = simulationController.mockedSession.value
+        startInForeground(
+            if (initialSession != null) {
+                buildNotificationFor(initialSession.mode, initialSession.status)
+            } else {
+                buildNotification(getString(R.string.simulation_notification_text_route_running), emptyList())
+            },
+        )
 
         simulationController.mockedSession
             .onEach { mockedSession ->
@@ -45,7 +67,14 @@ class SimulationForegroundService : Service() {
         intent: Intent?,
         flags: Int,
         startId: Int,
-    ): Int = START_NOT_STICKY
+    ): Int {
+        when (intent?.action) {
+            ACTION_PAUSE -> simulationController.pause()
+            ACTION_RESUME -> simulationController.resume()
+            ACTION_STOP -> simulationController.stop()
+        }
+        return START_NOT_STICKY
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -72,19 +101,75 @@ class SimulationForegroundService : Service() {
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
-    private fun buildNotification(contentText: String): Notification =
+    private fun actionPendingIntent(
+        action: String,
+        requestCode: Int,
+    ): PendingIntent =
+        PendingIntent.getForegroundService(
+            this,
+            requestCode,
+            Intent(this, SimulationForegroundService::class.java).setAction(action),
+            PendingIntent.FLAG_IMMUTABLE,
+        )
+
+    /** Resolved via [android.content.pm.PackageManager.getLaunchIntentForPackage] rather than an explicit
+     *  `Intent(this, MainActivity::class.java)` — this module must never depend on `app` (Constitution II). */
+    private fun contentPendingIntent(): PendingIntent? {
+        val launchIntent =
+            packageManager.getLaunchIntentForPackage(packageName)?.apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                putExtra(EXTRA_OPEN_SIMULATE, true)
+            } ?: return null
+        return PendingIntent.getActivity(this, CONTENT_REQUEST_CODE, launchIntent, PendingIntent.FLAG_IMMUTABLE)
+    }
+
+    private fun pauseAction(): Notification.Action =
+        Notification.Action
+            .Builder(
+                Icon.createWithResource(this, android.R.drawable.ic_media_pause),
+                getString(R.string.simulation_notification_action_pause),
+                actionPendingIntent(ACTION_PAUSE, PAUSE_REQUEST_CODE),
+            ).build()
+
+    private fun resumeAction(): Notification.Action =
+        Notification.Action
+            .Builder(
+                Icon.createWithResource(this, android.R.drawable.ic_media_play),
+                getString(R.string.simulation_notification_action_resume),
+                actionPendingIntent(ACTION_RESUME, RESUME_REQUEST_CODE),
+            ).build()
+
+    private fun stopAction(): Notification.Action =
+        Notification.Action
+            .Builder(
+                Icon.createWithResource(this, android.R.drawable.ic_menu_close_clear_cancel),
+                getString(R.string.simulation_notification_action_stop),
+                actionPendingIntent(ACTION_STOP, STOP_REQUEST_CODE),
+            ).build()
+
+    private fun buildNotification(
+        contentText: String,
+        actions: List<Notification.Action>,
+    ): Notification =
         Notification
             .Builder(this, NOTIFICATION_CHANNEL_ID)
             .setContentTitle(getString(R.string.simulation_notification_title))
             .setContentText(contentText)
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setOngoing(true)
-            .build()
+            .setVisibility(Notification.VISIBILITY_PUBLIC)
+            .apply {
+                contentPendingIntent()?.let { setContentIntent(it) }
+                actions.forEach { addAction(it) }
+            }.build()
 
-    private fun updateNotification(
+    /** Maps [mode]/[status] to this notification's text and action set in one place (FR-001/003/004/005/008)
+     *  so the very first notification built in [onCreate] and every later [updateNotification] call agree —
+     *  no one-frame mismatch where the first notification shows the wrong text or no actions at all. */
+    private fun buildNotificationFor(
         mode: SimulationMode,
         status: SimulationStatus,
-    ) {
+    ): Notification {
         val contentText =
             when {
                 mode == SimulationMode.STATIONARY -> getString(R.string.simulation_notification_text_stationary)
@@ -92,6 +177,20 @@ class SimulationForegroundService : Service() {
                 status == SimulationStatus.COMPLETED -> getString(R.string.simulation_notification_text_route_complete)
                 else -> getString(R.string.simulation_notification_text_route_running)
             }
-        getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, buildNotification(contentText))
+        val actions =
+            when {
+                mode != SimulationMode.ROUTE -> listOf(stopAction())
+                status == SimulationStatus.RUNNING -> listOf(pauseAction(), stopAction())
+                status == SimulationStatus.PAUSED -> listOf(resumeAction(), stopAction())
+                else -> listOf(stopAction()) // COMPLETED: no Pause/Resume for a finished route (FR-008/FR-010)
+            }
+        return buildNotification(contentText, actions)
+    }
+
+    private fun updateNotification(
+        mode: SimulationMode,
+        status: SimulationStatus,
+    ) {
+        getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, buildNotificationFor(mode, status))
     }
 }

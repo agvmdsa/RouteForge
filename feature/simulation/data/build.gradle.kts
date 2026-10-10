@@ -13,4 +13,6 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.core.ktx)
+
+    testImplementation(libs.kotlinx.coroutines.test)
 }

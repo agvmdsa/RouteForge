@@ -30,6 +30,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 private const val DEFAULT_TICK_INTERVAL_MILLIS = 100L
+private const val DEFAULT_COMPLETION_AUTO_STOP_DELAY_MILLIS = 5_000L
 
 class SimulationControllerImpl(
     private val mockLocationPublisher: MockLocationPublisher,
@@ -38,6 +39,7 @@ class SimulationControllerImpl(
     private val context: Context? = null,
     private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
     private val tickIntervalMillis: Long = DEFAULT_TICK_INTERVAL_MILLIS,
+    private val completionAutoStopDelayMillis: Long = DEFAULT_COMPLETION_AUTO_STOP_DELAY_MILLIS,
 ) : SimulationController {
     private val routeProgressCalculator = RouteProgressCalculator()
 
@@ -197,6 +199,22 @@ class SimulationControllerImpl(
 
         _mockedSession.value = updated
         publishCurrent()
+
+        if (current.status != SimulationStatus.COMPLETED && updated.status == SimulationStatus.COMPLETED) {
+            scheduleCompletionAutoStop(updated)
+        }
+    }
+
+    /** FR-008/009/010/011: a route's truly final completion stays visible (notification + every UI
+     *  surface reactive to [mockedSession]) for [completionAutoStopDelayMillis], then ends the session
+     *  exactly as [stop] would. Guarding by reference identity (`===`), not just status, means a later,
+     *  different session reaching COMPLETED within the same window is unaffected by this stale callback;
+     *  [stop] is already idempotent, so a manual stop racing this timer needs no extra guard either way. */
+    private fun scheduleCompletionAutoStop(completedSession: SimulationSession) {
+        coroutineScope.launch {
+            delay(completionAutoStopDelayMillis)
+            if (_mockedSession.value === completedSession) stop()
+        }
     }
 
     private fun tickRoute(
