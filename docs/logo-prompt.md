@@ -131,24 +131,17 @@ No text, no gradients, no shadows, no extra colors.
 
 ## From image to app icon
 
-The source image is `Gemini_Generated_Image_cdcckzcdcckzcdcc.jpeg` (2048x2048). To regenerate the
-vector assets after replacing it (macOS, Swift toolchain, no third-party dependencies):
+The Gemini output (a 2048x2048 JPEG) was traced to vectors with a small custom tracer; the source
+image and scripts are not kept in the repo. The method, in case the art needs redoing:
 
-```sh
-cd docs/logo-tools
-swiftc -O vectorize.swift -o /tmp/vectorize && swiftc -O render.swift -o /tmp/render
-mkdir -p /tmp/logo-out
-/tmp/vectorize ../Gemini_Generated_Image_cdcckzcdcckzcdcc.jpeg /tmp/logo-out 0.7
-python3 -I assemble.py /tmp/logo-out ../..      # writes docs/logo.svg + ic_launcher_foreground.xml
-/tmp/render ../logo.svg /tmp/logo-preview.png 1024
-```
-
-What the tracer does: classifies each flat-color pixel into the four palette colors (edge pixels
-take the nearest flat neighbor's color, which removes JPEG anti-alias fringes), traces each color
-region's boundary, smooths and simplifies it (tolerance 0.7 px at 2048), and fits cubic Beziers.
-Output is three layers painted back to front (tan, dark tan, espresso), each extended 1px under the
-layer above so no seams show. The colors are snapped to the exact palette hex values, not the
-slightly different ones Gemini produced.
+1. Classify each flat-color pixel into the four palette colors. Edge pixels take the color of the
+   nearest flat neighbor, which removes JPEG anti-alias fringes.
+2. Trace each color region's boundary, smooth it, simplify it (tolerance 0.7 px at 2048) and fit
+   cubic Beziers. Cap each Bezier handle by the shorter neighboring segment, or long straight
+   edges bulge.
+3. Emit three layers painted back to front (tan, dark tan, espresso), each extended 1px under the
+   layer above so no seams show, with the colors snapped to the exact palette hex values rather
+   than the slightly different ones Gemini produced.
 
 The launcher foreground is scaled so the art sits inside a circle of radius 35 (of 54) around the
 art's center, inside the adaptive-icon visible area. `docs/logo.svg` uses the same art, larger, on
