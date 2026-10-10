@@ -1,0 +1,13 @@
+<resources>
+    <string name="address_search_query_placeholder">Search for a place</string>
+    <string name="address_search_back_button">Back</string>
+    <string name="address_search_submit_button">Search</string>
+    <string name="address_search_no_results_message">No results found.</string>
+    <string name="address_search_error_message">Couldn\'t search right now. Check your connection and try again.</string>
+    <string name="address_search_teleport_button">Teleport here</string>
+    <string name="address_search_save_favorite_button">Save as favorite</string>
+    <string name="address_search_favorite_name_title">Save as favorite</string>
+    <string name="address_search_favorite_name_label">Name</string>
+    <string name="address_search_favorite_save_button">Save</string>
+    <string name="address_search_cancel_button">Cancel</string>
+</resources>

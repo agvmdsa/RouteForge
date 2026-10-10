@@ -1,6 +1,8 @@
 package com.routeforge.app
 
 import android.app.Application
+import com.routeforge.addresssearch.data.di.addressSearchDataModule
+import com.routeforge.addresssearch.presentation.di.addressSearchPresentationModule
 import com.routeforge.coredata.di.coreDataModule
 import com.routeforge.mocklocationsetup.data.di.mockLocationSetupDataModule
 import com.routeforge.mocklocationsetup.presentation.di.mockLocationSetupPresentationModule
@@ -18,6 +20,8 @@ class RouteForgeApp : Application() {
             androidContext(this@RouteForgeApp)
             modules(
                 coreDataModule,
+                addressSearchDataModule,
+                addressSearchPresentationModule,
                 mockLocationSetupDataModule,
                 mockLocationSetupPresentationModule,
                 routingDataModule,

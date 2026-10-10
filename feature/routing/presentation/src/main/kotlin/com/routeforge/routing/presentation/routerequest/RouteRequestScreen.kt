@@ -37,6 +37,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.model.RoutePlaybackMode
+import com.routeforge.designsystem.components.ConfirmationPill
 import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapMarker
@@ -50,12 +51,14 @@ import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEdi
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditState
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditViewModel
 import com.routeforge.routing.presentation.R
+import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
 private val ScreenContentPadding = 16.dp
 private val ControlsRowSpacing = 8.dp
 private const val JSON_MIME_TYPE = "application/json"
 private const val GPX_MIME_TYPE = "application/gpx+xml"
+private const val WAYPOINTS_UPDATED_CONFIRMATION_DURATION_MILLIS = 2_500L
 
 @Composable
 fun RouteRequestRoot(
@@ -69,6 +72,7 @@ fun RouteRequestRoot(
     val editState by waypointEditViewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var pendingExportBytes by remember { mutableStateOf<ByteArray?>(null) }
+    var showWaypointsUpdatedConfirmation by remember { mutableStateOf(false) }
 
     val importLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -111,6 +115,7 @@ fun RouteRequestRoot(
             when (event) {
                 is WaypointEditEvent.Committed -> viewModel.applyEditedWaypoints(event.points)
                 WaypointEditEvent.GoToDownloads -> onOpenRegionCatalog()
+                WaypointEditEvent.WaypointsUpdated -> showWaypointsUpdatedConfirmation = true
             }
         }
     }
@@ -121,6 +126,8 @@ fun RouteRequestRoot(
         onImportClick = { importLauncher.launch(arrayOf("*/*")) },
         editState = editState,
         onEditAction = waypointEditViewModel::onAction,
+        showWaypointsUpdatedConfirmation = showWaypointsUpdatedConfirmation,
+        onDismissWaypointsUpdatedConfirmation = { showWaypointsUpdatedConfirmation = false },
     )
 }
 
@@ -140,6 +147,8 @@ fun RouteRequestScreen(
     onImportClick: () -> Unit = {},
     editState: WaypointEditState = WaypointEditState(),
     onEditAction: (WaypointEditAction) -> Unit = {},
+    showWaypointsUpdatedConfirmation: Boolean = false,
+    onDismissWaypointsUpdatedConfirmation: () -> Unit = {},
 ) {
     var hasCenteredOnce by remember { mutableStateOf(false) }
     var cameraTarget by remember { mutableStateOf<Pair<Double, Double>?>(null) }
@@ -211,6 +220,17 @@ fun RouteRequestScreen(
                 ) {
                     Text(text = errorType.toMessage())
                 }
+            }
+
+            if (showWaypointsUpdatedConfirmation) {
+                LaunchedEffect(Unit) {
+                    delay(WAYPOINTS_UPDATED_CONFIRMATION_DURATION_MILLIS)
+                    onDismissWaypointsUpdatedConfirmation()
+                }
+                ConfirmationPill(
+                    message = stringResource(R.string.routing_waypoints_updated_message),
+                    modifier = Modifier.align(Alignment.TopCenter).padding(top = 72.dp),
+                )
             }
 
             Column(
@@ -338,9 +358,15 @@ fun RouteRequestScreen(
     val pendingAddLatitude = state.pendingAddLatitude
     val pendingAddLongitude = state.pendingAddLongitude
     if (pendingAddLatitude != null && pendingAddLongitude != null) {
+        val pendingAddPlaceName = state.pendingAddPlaceName
         AddWaypointConfirmationSheet(
             title = stringResource(R.string.routing_add_waypoint_title),
-            coordinatesMessage = stringResource(R.string.routing_add_waypoint_message, pendingAddLatitude, pendingAddLongitude),
+            coordinatesMessage =
+                if (pendingAddPlaceName != null) {
+                    stringResource(R.string.routing_add_waypoint_message_named, pendingAddPlaceName)
+                } else {
+                    stringResource(R.string.routing_add_waypoint_message, pendingAddLatitude, pendingAddLongitude)
+                },
             saveAsFavoriteLabel = stringResource(R.string.routing_save_as_favorite_label),
             favoriteNameLabel = stringResource(R.string.routing_favorite_name_label),
             confirmLabel = stringResource(R.string.routing_add_waypoint_confirm_button),

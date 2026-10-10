@@ -57,7 +57,7 @@ class WaypointEditViewModel(
                 _state.update { it.copy(points = points, hasUnappliedReorder = true) }
             }
             WaypointEditAction.OnApplyChanges -> {
-                if (_state.value.hasUnappliedReorder) commitEdit(_state.value.points)
+                if (_state.value.hasUnappliedReorder) commitEdit(_state.value.points, closeOnSuccess = true)
             }
             WaypointEditAction.OnCancelChanges ->
                 _state.update { it.copy(points = committedPoints, hasUnappliedReorder = false) }
@@ -86,6 +86,7 @@ class WaypointEditViewModel(
     private fun commitEdit(
         points: List<RoutePoint>,
         bypassRegionCheck: Boolean = false,
+        closeOnSuccess: Boolean = false,
     ) {
         editJob?.cancel()
         editJob =
@@ -99,9 +100,11 @@ class WaypointEditViewModel(
                                 hasUnappliedReorder = false,
                                 inactiveModeAvailability = result.inactiveModeAvailability,
                                 errorMessage = null,
+                                isOpen = if (closeOnSuccess) false else it.isOpen,
                             )
                         }
                         _events.send(WaypointEditEvent.Committed(points, result.activeRoute))
+                        if (closeOnSuccess) _events.send(WaypointEditEvent.WaypointsUpdated)
                     }
                     is RouteRecomputeResult.ActiveModeFailed ->
                         _state.update { it.copy(points = committedPoints, hasUnappliedReorder = false, errorMessage = result.reason) }

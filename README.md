@@ -19,6 +19,7 @@ Most "fake GPS" apps on the Play Store connect waypoints with a straight line an
 - **Always-on joystick** — free-direction movement is available at any time, including as a deliberate, confirmed interrupt of a route that's currently playing.
 - **Edit a route live, not just before it starts** — reorder, add, move, or delete waypoints while a route is actively playing, not only while planning it; only the portion still ahead of your current position is ever editable mid-run.
 - **Control it without opening the app** — pause, resume, or stop an active simulation straight from its notification, including from the lock screen.
+- **Search for a place, not just tap a map** — look up an address or place name (OpenStreetMap/Nominatim), ranked by relevance and distance to you, then add it as a waypoint, teleport to it, or save it as a favorite.
 - **Favorites, not just one-off routes** — save a single location or a whole planned route by name and reuse it later, without re-tapping every point again.
 - **Offline map data you control** — download only the regions you actually need, with a storage quota you set and manage yourself.
 - **No ads, open source.**
@@ -35,6 +36,7 @@ Most "fake GPS" apps on the Play Store connect waypoints with a straight line an
 - **Favorite a location** — save any point you tap while building a route, then teleport straight to it later (with confirmation) from the star button on the Plan Route screen.
 - **Favorite a whole route** — once you've placed two or more waypoints, save the set as a named favorite route — before you've even computed or played it. Reopen it later from the Saved tab, which computes it and loads it straight onto the Simulate screen.
 - **Manage offline regions** — the Settings tab shows how much space downloaded map data is using, lets you set a storage quota, and the region catalog lets you download or delete coverage for specific areas.
+- **Search** — tap the magnifying-glass icon in the bottom bar from any tab to look up an address or place. From Plan Route, picking a result adds it as a waypoint; from anywhere else, you're offered to teleport to it or save it as a favorite.
 
 ## Status
 

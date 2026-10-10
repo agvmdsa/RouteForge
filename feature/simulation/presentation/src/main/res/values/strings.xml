@@ -67,6 +67,7 @@
     <string name="simulation_apply_waypoint_changes_button">Update changes</string>
     <string name="simulation_cancel_waypoint_changes_button">Cancel</string>
     <string name="simulation_mode_temporarily_unavailable">%1$s is temporarily unavailable — retrying automatically</string>
+    <string name="simulation_waypoints_updated_message">Waypoints updated</string>
     <string name="simulation_add_waypoint_title">Add this waypoint?</string>
     <string name="simulation_add_waypoint_message">Latitude: %1$s\nLongitude: %2$s</string>
     <string name="simulation_save_as_favorite_label">Also save as favorite</string>

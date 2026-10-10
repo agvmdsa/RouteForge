@@ -1,6 +1,7 @@
 package com.routeforge.coredata.di
 
 import com.routeforge.coredata.AndroidNetworkConnectivityChecker
+import com.routeforge.coredata.HttpClientFactory
 import com.routeforge.coredata.PlatformMockLocationAuthorizationChecker
 import com.routeforge.coredata.SharedPreferencesFavoriteRoutesRepository
 import com.routeforge.coredata.SharedPreferencesFavoriteWaypointsRepository
@@ -11,6 +12,7 @@ import com.routeforge.coredomain.NetworkConnectivityChecker
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import org.koin.android.ext.koin.androidContext
@@ -20,11 +22,13 @@ import org.koin.dsl.module
 
 val coreDataModule =
     module {
+        single { HttpClientFactory.create() }
         singleOf(::PlatformMockLocationAuthorizationChecker).bind<MockLocationAuthorizationChecker>()
         single { LastComputedRouteHolder() }
         single { LastKnownRealLocationHolder() }
         single { DraftWaypointsHolder() }
         single { PendingTeleportTargetHolder() }
+        single { PendingSearchWaypointHolder() }
         single { SelectedFavoriteWaypointHolder() }
         single { SharedPreferencesFavoriteWaypointsRepository(androidContext()) }.bind<FavoriteWaypointsRepository>()
         single { SharedPreferencesFavoriteRoutesRepository(androidContext()) }.bind<FavoriteRoutesRepository>()

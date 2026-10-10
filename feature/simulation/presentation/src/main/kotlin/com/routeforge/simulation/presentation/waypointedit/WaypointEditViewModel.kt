@@ -144,7 +144,7 @@ class WaypointEditViewModel(
 
     private fun onApplyChanges() {
         if (!_state.value.hasUnappliedReorder) return
-        commitEdit(_state.value.points)
+        commitEdit(_state.value.points, closeOnSuccess = true)
     }
 
     private fun onDelete(id: String) {
@@ -176,6 +176,7 @@ class WaypointEditViewModel(
     private fun commitEdit(
         newPoints: List<RoutePoint>,
         bypassRegionCheck: Boolean = false,
+        closeOnSuccess: Boolean = false,
     ) {
         val activeMode = route?.mode ?: return
         editJob?.cancel()
@@ -193,9 +194,11 @@ class WaypointEditViewModel(
                                 firstEditableIndex = range.firstEditableIndex,
                                 inactiveModeAvailability = result.inactiveModeAvailability,
                                 errorMessage = null,
+                                isOpen = if (closeOnSuccess) false else it.isOpen,
                             )
                         }
                         _events.send(WaypointEditEvent.Committed(newPoints, result.activeRoute))
+                        if (closeOnSuccess) _events.send(WaypointEditEvent.WaypointsUpdated)
                     }
                     is RouteRecomputeResult.ActiveModeFailed ->
                         _state.update { it.copy(points = committedPoints, hasUnappliedReorder = false, errorMessage = result.reason) }

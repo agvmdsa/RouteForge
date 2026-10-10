@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.EditLocation
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
@@ -22,6 +23,8 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.routeforge.addresssearch.presentation.AddressSearchRoute
+import com.routeforge.addresssearch.presentation.SearchSourceContext
 import com.routeforge.routing.presentation.routerequest.RouteRequestRoute
 import com.routeforge.routing.presentation.saved.SavedRoute
 import com.routeforge.routing.presentation.settings.SettingsRoute
@@ -110,7 +113,25 @@ fun MainTabsScaffold(
                 // gesture navigation and a taller one under 3-button navigation. Adding another
                 // windowInsetsPadding around this would double-count that inset.
                 ShortNavigationBar {
-                    TabItems.forEach { tab ->
+                    TabItems.take(2).forEach { tab ->
+                        ShortNavigationBarItem(
+                            selected = currentDestination != null && tab.isInHierarchy(currentDestination),
+                            onClick = { navController.switchToTab(tab.tabRoute) },
+                            icon = { Icon(tab.icon, contentDescription = null) },
+                            label = { Text(stringResource(tab.labelRes)) },
+                        )
+                    }
+                    ShortNavigationBarItem(
+                        selected = false,
+                        onClick = {
+                            val sourceContext =
+                                if (activeRootTab?.tabRoute === PlanRouteTabRoute) SearchSourceContext.PLAN_ROUTE else SearchSourceContext.OTHER
+                            navController.navigate(AddressSearchRoute(sourceContext = sourceContext))
+                        },
+                        icon = { Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.tab_search_label)) },
+                        label = { Text(stringResource(R.string.tab_search_label)) },
+                    )
+                    TabItems.drop(2).forEach { tab ->
                         ShortNavigationBarItem(
                             selected = currentDestination != null && tab.isInHierarchy(currentDestination),
                             onClick = { navController.switchToTab(tab.tabRoute) },

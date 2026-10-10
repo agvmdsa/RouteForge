@@ -8,6 +8,7 @@ import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
@@ -51,6 +52,7 @@ class RouteRequestViewModel(
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
     private val favoriteRoutesRepository: FavoriteRoutesRepository,
     private val selectedFavoriteWaypointHolder: SelectedFavoriteWaypointHolder,
+    private val pendingSearchWaypointHolder: PendingSearchWaypointHolder,
     private val addWaypoint: AddWaypointUseCase = AddWaypointUseCase(),
     private val moveWaypoint: MoveWaypointUseCase = MoveWaypointUseCase(),
     private val editWaypoint: EditWaypointUseCase = EditWaypointUseCase(),
@@ -70,6 +72,20 @@ class RouteRequestViewModel(
                 if (point != null) {
                     mutateDraft { addWaypoint(it, point) }
                     selectedFavoriteWaypointHolder.clear()
+                }
+            }.launchIn(viewModelScope)
+
+        pendingSearchWaypointHolder.selected
+            .onEach { result ->
+                if (result != null) {
+                    _state.update {
+                        it.copy(
+                            pendingAddLatitude = result.latitude,
+                            pendingAddLongitude = result.longitude,
+                            pendingAddPlaceName = result.name,
+                        )
+                    }
+                    pendingSearchWaypointHolder.clear()
                 }
             }.launchIn(viewModelScope)
     }
@@ -153,6 +169,7 @@ class RouteRequestViewModel(
             it.copy(
                 pendingAddLatitude = null,
                 pendingAddLongitude = null,
+                pendingAddPlaceName = null,
                 isSaveAsFavoriteChecked = false,
                 favoriteNameInput = "",
             )

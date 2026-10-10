@@ -38,6 +38,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.model.RoutePlaybackMode
+import com.routeforge.designsystem.components.ConfirmationPill
 import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapMarker
@@ -62,11 +63,13 @@ import com.routeforge.simulation.presentation.waypointedit.WaypointEditEvent
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditState
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditViewModel
 import kotlin.math.roundToInt
+import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
 private val ScreenContentPadding = 16.dp
 private val ControlsRowSpacing = 8.dp
 private val BannerTopOffset = 72.dp
+private const val WAYPOINTS_UPDATED_CONFIRMATION_DURATION_MILLIS = 2_500L
 private const val MIN_SPEED_KMH = 0f
 private const val MAX_SPEED_KMH = 150f
 private val SpeedSelectorRangeKmh = MIN_SPEED_KMH..MAX_SPEED_KMH
@@ -80,6 +83,7 @@ fun SimulationRoot(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val editState by waypointEditViewModel.state.collectAsStateWithLifecycle()
+    var showWaypointsUpdatedConfirmation by remember { mutableStateOf(false) }
 
     val runtimePermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
@@ -117,6 +121,7 @@ fun SimulationRoot(
                 is WaypointEditEvent.Committed -> viewModel.applyEditedRoute(event.activeRoute)
                 WaypointEditEvent.GoToDownloads -> onOpenRegionCatalog()
                 WaypointEditEvent.AutoPauseRequested -> viewModel.onAction(SimulationAction.OnPauseSimulation)
+                WaypointEditEvent.WaypointsUpdated -> showWaypointsUpdatedConfirmation = true
             }
         }
     }
@@ -130,6 +135,8 @@ fun SimulationRoot(
         onAction = viewModel::onAction,
         editState = editState,
         onEditAction = waypointEditViewModel::onAction,
+        showWaypointsUpdatedConfirmation = showWaypointsUpdatedConfirmation,
+        onDismissWaypointsUpdatedConfirmation = { showWaypointsUpdatedConfirmation = false },
     )
 }
 
@@ -139,6 +146,8 @@ fun SimulationScreen(
     onAction: (SimulationAction) -> Unit,
     editState: WaypointEditState = WaypointEditState(),
     onEditAction: (WaypointEditAction) -> Unit = {},
+    showWaypointsUpdatedConfirmation: Boolean = false,
+    onDismissWaypointsUpdatedConfirmation: () -> Unit = {},
 ) {
     var previousSessionWasNull by remember { mutableStateOf(true) }
     var previousRealWasNull by remember { mutableStateOf(true) }
@@ -291,6 +300,17 @@ fun SimulationScreen(
                         Text(text = errorType.toMessage())
                     }
                 }
+            }
+
+            if (showWaypointsUpdatedConfirmation) {
+                LaunchedEffect(Unit) {
+                    delay(WAYPOINTS_UPDATED_CONFIRMATION_DURATION_MILLIS)
+                    onDismissWaypointsUpdatedConfirmation()
+                }
+                ConfirmationPill(
+                    message = stringResource(R.string.simulation_waypoints_updated_message),
+                    modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset),
+                )
             }
 
             var isJoystickSpeedDialogOpen by remember { mutableStateOf(false) }

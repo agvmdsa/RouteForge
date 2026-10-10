@@ -4,7 +4,9 @@ import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
+import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
@@ -65,6 +67,7 @@ class RouteRequestViewModelTest {
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
     private val favoriteRoutesRepository = FakeFavoriteRoutesRepository()
     private val selectedFavoriteWaypointHolder = SelectedFavoriteWaypointHolder()
+    private val pendingSearchWaypointHolder = PendingSearchWaypointHolder()
 
     @BeforeEach
     fun setUp() {
@@ -92,6 +95,7 @@ class RouteRequestViewModelTest {
             favoriteWaypointsRepository = favoriteWaypointsRepository,
             favoriteRoutesRepository = favoriteRoutesRepository,
             selectedFavoriteWaypointHolder = selectedFavoriteWaypointHolder,
+            pendingSearchWaypointHolder = pendingSearchWaypointHolder,
             backgroundDispatcher = dispatcher,
         )
 
@@ -193,6 +197,22 @@ class RouteRequestViewModelTest {
             viewModel.state.value.draft.points,
         )
         assertNull(selectedFavoriteWaypointHolder.selected.value)
+    }
+
+    @Test
+    fun `a place picked from address search becomes a pending add, named, not a silent append`() {
+        val viewModel = createViewModel()
+
+        pendingSearchWaypointHolder.set(
+            PlaceSearchResult(name = "Eiffel Tower", formattedAddress = "Paris, France", latitude = 48.8584, longitude = 2.2945, importance = 0.8),
+        )
+
+        val state = viewModel.state.value
+        assertEquals(48.8584, state.pendingAddLatitude)
+        assertEquals(2.2945, state.pendingAddLongitude)
+        assertEquals("Eiffel Tower", state.pendingAddPlaceName)
+        assertEquals(emptyList<RoutePoint>(), state.draft.points)
+        assertNull(pendingSearchWaypointHolder.selected.value)
     }
 
     // --- Favorite Routes: save a planned route (spec 005-favorite-routes, US1) ---

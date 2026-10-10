@@ -19,6 +19,9 @@ data class RouteRequestState(
     val missingRegionsWarning: RequiredRegionsSummary? = null,
     val pendingAddLatitude: Double? = null,
     val pendingAddLongitude: Double? = null,
+    /** Set when the pending add came from address search (not a map tap) — lets the confirmation
+     *  sheet name the place instead of only showing raw coordinates. */
+    val pendingAddPlaceName: String? = null,
     val isSaveAsFavoriteChecked: Boolean = false,
     val favoriteNameInput: String = "",
     val isSaveRouteSheetOpen: Boolean = false,

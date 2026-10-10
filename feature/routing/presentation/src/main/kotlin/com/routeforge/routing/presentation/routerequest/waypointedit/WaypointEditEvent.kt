@@ -14,4 +14,9 @@ sealed interface WaypointEditEvent {
     ) : WaypointEditEvent
 
     data object GoToDownloads : WaypointEditEvent
+
+    /** Sent once, right after [Committed], only when the just-applied edit was the explicit
+     *  "Apply changes" action — not every edit (delete/map-tap-add/marker-drag commit immediately
+     *  and don't trigger this) — so the UI can close the sheet and show a success confirmation. */
+    data object WaypointsUpdated : WaypointEditEvent
 }

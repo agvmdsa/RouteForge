@@ -57,6 +57,7 @@ val routingPresentationModule =
                 favoriteWaypointsRepository = get(),
                 favoriteRoutesRepository = get(),
                 selectedFavoriteWaypointHolder = get(),
+                pendingSearchWaypointHolder = get(),
             )
         }
         viewModelOf(::WaypointEditViewModel)

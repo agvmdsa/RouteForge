@@ -14,6 +14,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import com.routeforge.addresssearch.presentation.AddressSearchRoot
+import com.routeforge.addresssearch.presentation.AddressSearchRoute
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.mocklocationsetup.domain.usecase.ObserveSetupStateUseCase
 import com.routeforge.mocklocationsetup.presentation.MockLocationSetupRoute
@@ -97,6 +100,15 @@ class MainActivity : ComponentActivity() {
                         }
                         navigation<SettingsTabRoute>(startDestination = SettingsRoute) {
                             settingsGraph(navController = navController)
+                        }
+                        composable<AddressSearchRoute> { backStackEntry ->
+                            val route = backStackEntry.toRoute<AddressSearchRoute>()
+                            AddressSearchRoot(
+                                sourceContext = route.sourceContext,
+                                referenceLatitude = route.referenceLatitude,
+                                referenceLongitude = route.referenceLongitude,
+                                onNavigateBack = { navController.popBackStack() },
+                            )
                         }
                     }
                 }

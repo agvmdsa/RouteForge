@@ -64,6 +64,7 @@
     <string name="settings_manage_downloads_button">Manage downloads</string>
     <string name="routing_add_waypoint_title">Add this waypoint?</string>
     <string name="routing_add_waypoint_message">Latitude: %1$s\nLongitude: %2$s</string>
+    <string name="routing_add_waypoint_message_named">Add %1$s as a waypoint?</string>
     <string name="routing_add_waypoint_confirm_button">Add waypoint</string>
     <string name="routing_add_waypoint_cancel_button">Cancel</string>
     <string name="routing_save_as_favorite_label">Also save as favorite</string>
@@ -106,6 +107,7 @@
     <string name="routing_apply_waypoint_changes_button">Update changes</string>
     <string name="routing_cancel_waypoint_changes_button">Cancel</string>
     <string name="routing_mode_temporarily_unavailable">%1$s is temporarily unavailable — retrying automatically</string>
+    <string name="routing_waypoints_updated_message">Waypoints updated</string>
     <string name="routing_switch_route_mode_button">Preview other mode</string>
     <string name="routing_error_mode_preview_no_path">No viable path found for that mode.</string>
 </resources>
