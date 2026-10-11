@@ -29,7 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
-import com.routeforge.designsystem.components.ConfirmationBottomSheet
+import com.routeforge.designsystem.components.NameEntryConfirmationSheet
 import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.coredomain.model.RouteOptions
@@ -160,18 +160,14 @@ internal fun SaveRouteSheet(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ConfirmationBottomSheet(title = stringResource(R.string.routing_save_route_title), onDismiss = onDismiss) {
-        OutlinedTextField(
-            value = nameInput,
-            onValueChange = onNameChange,
-            label = { Text(stringResource(R.string.routing_route_name_label)) },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
-            Button(onClick = onConfirm, enabled = nameInput.isNotBlank()) {
-                Text(stringResource(R.string.routing_save_route_confirm_button))
-            }
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.routing_add_waypoint_cancel_button)) }
-        }
-    }
+    NameEntryConfirmationSheet(
+        title = stringResource(R.string.routing_save_route_title),
+        nameInput = nameInput,
+        onNameChange = onNameChange,
+        nameLabel = stringResource(R.string.routing_route_name_label),
+        confirmLabel = stringResource(R.string.routing_save_route_confirm_button),
+        dismissLabel = stringResource(R.string.routing_add_waypoint_cancel_button),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+    )
 }

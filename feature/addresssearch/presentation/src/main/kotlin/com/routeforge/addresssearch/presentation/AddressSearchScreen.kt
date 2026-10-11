@@ -1,10 +1,8 @@
 package com.routeforge.addresssearch.presentation
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
+import com.routeforge.designsystem.components.NameEntryConfirmationSheet
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.designsystem.theme.Spacing
 import org.koin.androidx.compose.koinViewModel
@@ -192,20 +191,16 @@ private fun FavoriteNameSheet(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ConfirmationBottomSheet(title = stringResource(R.string.address_search_favorite_name_title), onDismiss = onDismiss) {
-        OutlinedTextField(
-            value = nameInput,
-            onValueChange = onNameChange,
-            label = { Text(stringResource(R.string.address_search_favorite_name_label)) },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
-            Button(onClick = onConfirm, enabled = nameInput.isNotBlank()) {
-                Text(stringResource(R.string.address_search_favorite_save_button))
-            }
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.address_search_cancel_button)) }
-        }
-    }
+    NameEntryConfirmationSheet(
+        title = stringResource(R.string.address_search_favorite_name_title),
+        nameInput = nameInput,
+        onNameChange = onNameChange,
+        nameLabel = stringResource(R.string.address_search_favorite_name_label),
+        confirmLabel = stringResource(R.string.address_search_favorite_save_button),
+        dismissLabel = stringResource(R.string.address_search_cancel_button),
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+    )
 }
 
 @Preview
