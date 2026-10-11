@@ -1,6 +1,6 @@
 package com.routeforge.addresssearch.data
 
-import com.routeforge.addresssearch.domain.MAX_SEARCH_RESULTS
+import com.routeforge.addresssearch.domain.GeocodeClient
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
 import io.ktor.client.HttpClient
@@ -69,7 +69,7 @@ class NominatimGeocodeClientTest {
 
             client.search("anything")
 
-            assertEquals(MAX_SEARCH_RESULTS.toString(), requestedLimit)
+            assertEquals(GeocodeClient.MAX_SEARCH_RESULTS.toString(), requestedLimit)
         }
 
     @Test

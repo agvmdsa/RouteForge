@@ -2,7 +2,6 @@ package com.routeforge.addresssearch.data
 
 import android.util.Log
 import com.routeforge.addresssearch.domain.GeocodeClient
-import com.routeforge.addresssearch.domain.MAX_SEARCH_RESULTS
 import com.routeforge.coredata.toNetworkError
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
@@ -31,7 +30,7 @@ class NominatimGeocodeClient(
                 httpClient.get(SEARCH_URL) {
                     parameter("q", query)
                     parameter("format", "jsonv2")
-                    parameter("limit", MAX_SEARCH_RESULTS)
+                    parameter("limit", GeocodeClient.MAX_SEARCH_RESULTS)
                 }
             if (!response.status.isSuccess()) {
                 Log.w(TAG, "Nominatim returned ${response.status}")

@@ -7,7 +7,7 @@ import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.model.PlaceSearchResult
 
 /** Orchestrates a search: calls [GeocodeClient] (which already caps the result count at
- *  [com.routeforge.addresssearch.domain.MAX_SEARCH_RESULTS]), then ranks via [RankSearchResultsUseCase]
+ *  [GeocodeClient.MAX_SEARCH_RESULTS]), then ranks via [RankSearchResultsUseCase]
  *  using the user's current real location if known, else [fallbackReferenceLatitude]/
  *  [fallbackReferenceLongitude] (the caller's current map center), else no reference point at all
  *  (research.md Decision 5). */
