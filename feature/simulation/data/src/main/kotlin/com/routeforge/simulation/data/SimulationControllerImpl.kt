@@ -1,7 +1,7 @@
 package com.routeforge.simulation.data
 
-import android.content.Context
-import android.content.Intent
+import com.routeforge.coredata.ForegroundServiceController
+import com.routeforge.coredata.NoOpForegroundServiceController
 import com.routeforge.coredomain.GeoMath
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
 import com.routeforge.coredomain.Result
@@ -36,7 +36,7 @@ internal class SimulationControllerImpl(
     private val mockLocationPublisher: MockLocationPublisher,
     private val mockLocationAuthorizationChecker: MockLocationAuthorizationChecker,
     private val lastKnownRealLocationHolder: LastKnownRealLocationHolder = LastKnownRealLocationHolder(),
-    private val context: Context? = null,
+    private val foregroundServiceController: ForegroundServiceController = NoOpForegroundServiceController,
     private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
     private val tickIntervalMillis: Long = DEFAULT_TICK_INTERVAL_MILLIS,
     private val completionAutoStopDelayMillis: Long = DEFAULT_COMPLETION_AUTO_STOP_DELAY_MILLIS,
@@ -105,7 +105,7 @@ internal class SimulationControllerImpl(
         tickJob = null
         _mockedSession.value = null
         mockLocationPublisher.clear()
-        context?.stopService(Intent(context, SimulationForegroundService::class.java))
+        foregroundServiceController.stop()
     }
 
     override fun setSpeed(speed: SpeedSetting) {
@@ -170,7 +170,7 @@ internal class SimulationControllerImpl(
         tickJob?.cancel()
         _mockedSession.value = mockedSession
         publishCurrent()
-        context?.startForegroundService(Intent(context, SimulationForegroundService::class.java))
+        foregroundServiceController.start()
         tickJob =
             coroutineScope.launch {
                 while (isActive) {

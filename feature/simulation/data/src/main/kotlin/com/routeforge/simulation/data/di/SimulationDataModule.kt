@@ -1,8 +1,10 @@
 package com.routeforge.simulation.data.di
 
+import com.routeforge.coredata.AndroidForegroundServiceController
 import com.routeforge.simulation.data.AndroidMockLocationPublisher
 import com.routeforge.simulation.data.AndroidRealLocationDataSource
 import com.routeforge.simulation.data.SimulationControllerImpl
+import com.routeforge.simulation.data.SimulationForegroundService
 import com.routeforge.simulation.domain.MockLocationPublisher
 import com.routeforge.simulation.domain.RealLocationDataSource
 import com.routeforge.simulation.domain.SimulationController
@@ -20,7 +22,8 @@ val simulationDataModule =
                 mockLocationPublisher = get(),
                 mockLocationAuthorizationChecker = get(),
                 lastKnownRealLocationHolder = get(),
-                context = androidContext(),
+                foregroundServiceController =
+                    AndroidForegroundServiceController(androidContext(), SimulationForegroundService::class.java),
             )
         }.bind<SimulationController>()
     }

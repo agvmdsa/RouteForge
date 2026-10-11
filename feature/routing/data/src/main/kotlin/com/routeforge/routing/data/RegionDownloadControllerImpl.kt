@@ -1,7 +1,7 @@
 package com.routeforge.routing.data
 
-import android.content.Context
-import android.content.Intent
+import com.routeforge.coredata.ForegroundServiceController
+import com.routeforge.coredata.NoOpForegroundServiceController
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.routing.domain.RegionDownloadController
@@ -26,7 +26,7 @@ class RegionDownloadControllerImpl(
     private val downloadRegion: DownloadRegionUseCase,
     private val regionCatalog: RegionCatalog,
     private val regionUsageTracker: RegionUsageTracker,
-    private val context: Context? = null,
+    private val foregroundServiceController: ForegroundServiceController = NoOpForegroundServiceController,
     private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) : RegionDownloadController {
     private val _state = MutableStateFlow<RegionDownloadState?>(null)
@@ -40,7 +40,7 @@ class RegionDownloadControllerImpl(
     override fun start(region: Region) {
         if (_state.value != null) return
         _state.value = RegionDownloadState(region, progress = 0f)
-        context?.startForegroundService(Intent(context, RegionDownloadForegroundService::class.java))
+        foregroundServiceController.start()
         downloadJob =
             coroutineScope.launch {
                 val result =
@@ -49,7 +49,7 @@ class RegionDownloadControllerImpl(
                     }
                 if (result is Result.Error) _events.send(RegionDownloadEvent.Failed(region.id))
                 _state.value = null
-                context?.stopService(Intent(context, RegionDownloadForegroundService::class.java))
+                foregroundServiceController.stop()
             }
     }
 
@@ -60,6 +60,6 @@ class RegionDownloadControllerImpl(
         regionCatalog.deleteRegion(current.region)
         regionUsageTracker.clear(current.region.id)
         _state.value = null
-        context?.stopService(Intent(context, RegionDownloadForegroundService::class.java))
+        foregroundServiceController.stop()
     }
 }

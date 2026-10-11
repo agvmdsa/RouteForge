@@ -6,8 +6,10 @@ import com.routeforge.routing.data.GpxRouteFileCodec
 import com.routeforge.routing.data.HttpRegionDownloader
 import com.routeforge.routing.data.JsonRouteFileCodec
 import com.routeforge.routing.data.RegionDownloadControllerImpl
+import com.routeforge.routing.data.RegionDownloadForegroundService
 import com.routeforge.routing.data.SharedPreferencesRegionUsageTracker
 import com.routeforge.routing.data.SharedPreferencesStorageQuotaStore
+import com.routeforge.coredata.AndroidForegroundServiceController
 import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.routing.domain.RegionDownloadController
 import com.routeforge.routing.domain.RegionDownloader
@@ -56,7 +58,8 @@ val routingDataModule =
                 downloadRegion = get(),
                 regionCatalog = get<BundledRegionCatalog>(),
                 regionUsageTracker = get(),
-                context = androidContext(),
+                foregroundServiceController =
+                    AndroidForegroundServiceController(androidContext(), RegionDownloadForegroundService::class.java),
             )
         }.bind<RegionDownloadController>()
 

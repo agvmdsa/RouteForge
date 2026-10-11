@@ -9,6 +9,7 @@ android {
 
 dependencies {
     implementation(project(":core:domain"))
+    implementation(project(":core:data"))
     implementation(project(":feature:simulation:domain"))
 
     implementation(libs.kotlinx.coroutines.core)
