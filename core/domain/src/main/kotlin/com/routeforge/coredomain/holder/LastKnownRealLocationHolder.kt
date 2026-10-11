@@ -1,15 +1,11 @@
 package com.routeforge.coredomain.holder
 
 import com.routeforge.coredomain.model.RealLocation
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 class LastKnownRealLocationHolder {
-    private val _location = MutableStateFlow<RealLocation?>(null)
-    val location: StateFlow<RealLocation?> = _location.asStateFlow()
+    private val holder = HandoffHolder<RealLocation?>(initial = null)
+    val location: StateFlow<RealLocation?> = holder.value
 
-    fun set(location: RealLocation) {
-        _location.value = location
-    }
+    fun set(location: RealLocation) = holder.set(location)
 }

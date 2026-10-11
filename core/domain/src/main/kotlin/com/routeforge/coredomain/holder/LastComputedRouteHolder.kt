@@ -1,19 +1,13 @@
 package com.routeforge.coredomain.holder
 
 import com.routeforge.coredomain.model.Route
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 class LastComputedRouteHolder {
-    private val _route = MutableStateFlow<Route?>(null)
-    val route: StateFlow<Route?> = _route.asStateFlow()
+    private val holder = HandoffHolder<Route?>(initial = null)
+    val route: StateFlow<Route?> = holder.value
 
-    fun set(route: Route) {
-        _route.value = route
-    }
+    fun set(route: Route) = holder.set(route)
 
-    fun clear() {
-        _route.value = null
-    }
+    fun clear() = holder.set(null)
 }
