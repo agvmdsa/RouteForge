@@ -67,7 +67,7 @@ class BundledRegionCatalog(
         if (region.tileIds.all { fileName -> val file = File(segmentDirectory, fileName); !file.exists() || file.delete() }) {
             RegionDeletionResult.FULLY_DELETED
         } else {
-            RegionDeletionResult.PARTIALLY_DELETED
+            RegionDeletionResult.NOT_FULLY_DELETED
         }
 
     internal fun markDownloading(regionId: String) {

@@ -24,7 +24,7 @@ class FakeRegionCatalog(
     override fun actualSizeOnDiskBytes(region: Region): Long = sizesOnDiskBytes[region.id] ?: 0L
 
     override fun deleteRegion(region: Region): RegionDeletionResult {
-        if (region.id in regionIdsThatFailToDelete) return RegionDeletionResult.PARTIALLY_DELETED
+        if (region.id in regionIdsThatFailToDelete) return RegionDeletionResult.NOT_FULLY_DELETED
         deletedRegionIds.add(region.id)
         regions = regions.filterNot { it.id == region.id }
         sizesOnDiskBytes = sizesOnDiskBytes - region.id
