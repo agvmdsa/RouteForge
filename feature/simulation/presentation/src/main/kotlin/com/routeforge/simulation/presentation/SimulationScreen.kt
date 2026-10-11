@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -148,6 +149,54 @@ fun SimulationScreen(
     showWaypointsUpdatedConfirmation: Boolean = false,
     onDismissWaypointsUpdatedConfirmation: () -> Unit = {},
 ) {
+    val cameraTarget = rememberSimulationCameraTarget(state)
+    val mapContent = rememberSimulationMapContent(state, editState, onEditAction)
+
+    Scaffold { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            RouteForgeMap(
+                markers = mapContent.markers,
+                polylinePoints = mapContent.polylinePoints,
+                traveledPolylinePoints = mapContent.traveledPolylinePoints,
+                cameraTarget = cameraTarget,
+                onMapTap = { latitude, longitude ->
+                    if (editState.isOpen) {
+                        onEditAction(WaypointEditAction.OnMapTap(latitude, longitude))
+                    } else {
+                        onAction(SimulationAction.OnMapTap(latitude, longitude))
+                    }
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+
+            SimulationTopOverlays(
+                state = state,
+                showWaypointsUpdatedConfirmation = showWaypointsUpdatedConfirmation,
+                onDismissWaypointsUpdatedConfirmation = onDismissWaypointsUpdatedConfirmation,
+                onAction = onAction,
+            )
+
+            SimulationMovementControls(state = state, onAction = onAction)
+
+            SimulationRouteControls(
+                state = state,
+                sessionDistanceTraveledMeters = mapContent.sessionDistanceTraveledMeters,
+                editState = editState,
+                onEditAction = onEditAction,
+                onAction = onAction,
+            )
+        }
+    }
+
+    SimulationDialogs(state = state, onAction = onAction)
+}
+
+/** Re-centers the map once each time a mocked session starts, or — only while no mocked session is
+ *  active — once each time a real-location fix first becomes available. [previousSessionWasNull]/
+ *  [previousRealWasNull] track the transition so later updates to an already-active source don't
+ *  keep yanking the camera back. */
+@Composable
+private fun rememberSimulationCameraTarget(state: SimulationState): Pair<Double, Double>? {
     var previousSessionWasNull by remember { mutableStateOf(true) }
     var previousRealWasNull by remember { mutableStateOf(true) }
     var cameraTarget by remember { mutableStateOf<Pair<Double, Double>?>(null) }
@@ -168,7 +217,25 @@ fun SimulationScreen(
             previousRealWasNull = real == null
         }
     }
+    return cameraTarget
+}
 
+private data class SimulationMapContent(
+    val markers: List<RouteForgeMapMarker>,
+    val polylinePoints: List<Pair<Double, Double>>,
+    val traveledPolylinePoints: List<Pair<Double, Double>>,
+    val sessionDistanceTraveledMeters: Double?,
+)
+
+/** Builds the map's waypoint/mocked-position/real-position markers and both polylines (the full
+ *  route, and the traveled-so-far portion), substituting a marker's live drag position into the
+ *  main polyline while it's being dragged so the line visibly follows the gesture. */
+@Composable
+private fun rememberSimulationMapContent(
+    state: SimulationState,
+    editState: WaypointEditState,
+    onEditAction: (WaypointEditAction) -> Unit,
+): SimulationMapContent {
     val markerBackground = MaterialTheme.colorScheme.primary.toArgb()
     val markerMutedBackground = MaterialTheme.colorScheme.outline.toArgb()
     val markerText = MaterialTheme.colorScheme.onPrimary.toArgb()
@@ -248,162 +315,187 @@ fun SimulationScreen(
             state.loadedRoute?.geometry.orEmpty()
         }
 
-    Scaffold { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            RouteForgeMap(
-                markers = markers,
-                polylinePoints = mainPolylinePoints,
-                traveledPolylinePoints = traveledPolylinePoints,
-                cameraTarget = cameraTarget,
-                onMapTap = { latitude, longitude ->
-                    if (editState.isOpen) {
-                        onEditAction(WaypointEditAction.OnMapTap(latitude, longitude))
-                    } else {
-                        onAction(SimulationAction.OnMapTap(latitude, longitude))
-                    }
-                },
-                modifier = Modifier.fillMaxSize(),
-            )
+    return SimulationMapContent(
+        markers = markers,
+        polylinePoints = mainPolylinePoints,
+        traveledPolylinePoints = traveledPolylinePoints,
+        sessionDistanceTraveledMeters = sessionDistanceTraveledMeters,
+    )
+}
 
-            Box(
-                modifier =
-                    Modifier
-                        .align(Alignment.TopCenter)
-                        .fillMaxWidth()
-                        .padding(top = Spacing.ScreenContent, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
-                contentAlignment = Alignment.Center,
+/** Top-anchored overlays: the coordinate pill, the authorization/error banner, and the transient
+ *  "waypoints updated" confirmation. */
+@Composable
+private fun BoxScope.SimulationTopOverlays(
+    state: SimulationState,
+    showWaypointsUpdatedConfirmation: Boolean,
+    onDismissWaypointsUpdatedConfirmation: () -> Unit,
+    onAction: (SimulationAction) -> Unit,
+) {
+    Box(
+        modifier =
+            Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .padding(top = Spacing.ScreenContent, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
+        contentAlignment = Alignment.Center,
+    ) {
+        CoordinatePill(
+            mockedSession = state.mockedSession,
+            isSearchingRealLocation = state.isSearchingRealLocation,
+            hasKnownRealLocation = state.realLocation != null,
+            onCancelMockClick = { onAction(SimulationAction.OnCancelMockClick) },
+        )
+    }
+
+    if (state.isBlockedByAuthorization) {
+        TopBanner(
+            contentPadding = Spacing.ScreenContent,
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
+        ) {
+            Text(stringResource(R.string.simulation_error_not_authorized))
+            Button(onClick = { onAction(SimulationAction.OnOpenSetupClick) }) {
+                Text(stringResource(R.string.simulation_go_to_setup_button))
+            }
+        }
+    } else {
+        state.errorType?.let { errorType ->
+            TopBanner(
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
             ) {
-                CoordinatePill(
-                    mockedSession = state.mockedSession,
-                    isSearchingRealLocation = state.isSearchingRealLocation,
-                    hasKnownRealLocation = state.realLocation != null,
-                    onCancelMockClick = { onAction(SimulationAction.OnCancelMockClick) },
-                )
-            }
-
-            if (state.isBlockedByAuthorization) {
-                TopBanner(
-                    contentPadding = Spacing.ScreenContent,
-                    modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
-                ) {
-                    Text(stringResource(R.string.simulation_error_not_authorized))
-                    Button(onClick = { onAction(SimulationAction.OnOpenSetupClick) }) {
-                        Text(stringResource(R.string.simulation_go_to_setup_button))
-                    }
-                }
-            } else {
-                state.errorType?.let { errorType ->
-                    TopBanner(
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
-                    ) {
-                        Text(text = errorType.toMessage())
-                    }
-                }
-            }
-
-            if (showWaypointsUpdatedConfirmation) {
-                LaunchedEffect(Unit) {
-                    delay(WAYPOINTS_UPDATED_CONFIRMATION_DURATION_MILLIS)
-                    onDismissWaypointsUpdatedConfirmation()
-                }
-                ConfirmationPill(
-                    message = stringResource(R.string.simulation_waypoints_updated_message),
-                    modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset),
-                )
-            }
-
-            var isJoystickSpeedDialogOpen by remember { mutableStateOf(false) }
-            var isPlaybackSpeedDialogOpen by remember { mutableStateOf(false) }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
-                modifier = Modifier.align(Alignment.BottomStart).padding(Spacing.ScreenContent),
-            ) {
-                if (state.loadedRoute != null) {
-                    // A route and the joystick are mutually exclusive (engaging one clears the
-                    // other), so only the controls relevant to what's actually loaded are shown.
-                    SpeedSelectorFab(
-                        onClick = { isPlaybackSpeedDialogOpen = true },
-                        contentDescription = stringResource(R.string.simulation_playback_speed_button),
-                    )
-                } else {
-                    if (state.isJoystickVisible) {
-                        SpeedSelectorFab(
-                            onClick = { isJoystickSpeedDialogOpen = true },
-                            contentDescription = stringResource(R.string.simulation_joystick_speed_button),
-                        )
-                    }
-                    FloatingActionButton(onClick = { onAction(SimulationAction.OnToggleJoystick) }) {
-                        Icon(Icons.Filled.SportsEsports, contentDescription = stringResource(R.string.simulation_joystick_label))
-                    }
-                }
-            }
-            if (isPlaybackSpeedDialogOpen) {
-                SpeedSelectorDialog(
-                    title = stringResource(R.string.simulation_playback_speed_dialog_title),
-                    speedLabel = stringResource(R.string.simulation_speed_value_label, state.playbackSpeedKmh.roundToInt()),
-                    confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
-                    speedKmh = state.playbackSpeedKmh,
-                    onSpeedChange = { kmh -> onAction(SimulationAction.OnPlaybackSpeedChange(kmh)) },
-                    onDismiss = { isPlaybackSpeedDialogOpen = false },
-                    speedRangeKmh = SpeedSelectorRangeKmh,
-                )
-            }
-
-            if (state.isJoystickVisible) {
-                Joystick(
-                    onDrag = { bearing -> onAction(SimulationAction.OnJoystickDrag(bearing)) },
-                    onReleased = { onAction(SimulationAction.OnJoystickReleased) },
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.ScreenContent),
-                )
-                if (isJoystickSpeedDialogOpen) {
-                    SpeedSelectorDialog(
-                        title = stringResource(R.string.simulation_joystick_speed_dialog_title),
-                        speedLabel = stringResource(R.string.simulation_speed_value_label, state.joystickSpeedKmh.roundToInt()),
-                        confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
-                        speedKmh = state.joystickSpeedKmh,
-                        onSpeedChange = { kmh -> onAction(SimulationAction.OnJoystickSpeedChange(kmh)) },
-                        onDismiss = { isJoystickSpeedDialogOpen = false },
-                        speedRangeKmh = SpeedSelectorRangeKmh,
-                    )
-                }
-            }
-
-            if (state.loadedRoute != null) {
-                val activeRoute = state.loadedRoute
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(Spacing.ScreenContent),
-                ) {
-                    FloatingActionButton(onClick = { onAction(SimulationAction.OnCancelRouteClick) }) {
-                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_route_button))
-                    }
-                    PlaybackButton(state = state, onAction = onAction)
-                    if (activeRoute.alternateGeometry != null) {
-                        FloatingActionButton(onClick = { onAction(SimulationAction.OnSwitchRouteModeClick) }) {
-                            Icon(
-                                imageVector =
-                                    if (activeRoute.mode == RoutePlaybackMode.GUIDED) {
-                                        Icons.Filled.Signpost
-                                    } else {
-                                        Icons.Filled.Straighten
-                                    },
-                                contentDescription = stringResource(R.string.simulation_switch_route_mode_button),
-                            )
-                        }
-                    }
-                    WaypointEditSection(
-                        loadedRoute = loadedRoute,
-                        distanceTraveledMeters = sessionDistanceTraveledMeters,
-                        editState = editState,
-                        onEditAction = onEditAction,
-                    )
-                }
+                Text(text = errorType.toMessage())
             }
         }
     }
 
+    if (showWaypointsUpdatedConfirmation) {
+        LaunchedEffect(Unit) {
+            delay(WAYPOINTS_UPDATED_CONFIRMATION_DURATION_MILLIS)
+            onDismissWaypointsUpdatedConfirmation()
+        }
+        ConfirmationPill(
+            message = stringResource(R.string.simulation_waypoints_updated_message),
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset),
+        )
+    }
+}
+
+/** Bottom-start FAB column (playback/joystick speed selector, joystick toggle) plus the joystick
+ *  itself and both speed dialogs — grouped together since the dialogs' open/closed state is only
+ *  ever toggled from this column's own FABs. */
+@Composable
+private fun BoxScope.SimulationMovementControls(
+    state: SimulationState,
+    onAction: (SimulationAction) -> Unit,
+) {
+    var isJoystickSpeedDialogOpen by remember { mutableStateOf(false) }
+    var isPlaybackSpeedDialogOpen by remember { mutableStateOf(false) }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
+        modifier = Modifier.align(Alignment.BottomStart).padding(Spacing.ScreenContent),
+    ) {
+        if (state.loadedRoute != null) {
+            // A route and the joystick are mutually exclusive (engaging one clears the
+            // other), so only the controls relevant to what's actually loaded are shown.
+            SpeedSelectorFab(
+                onClick = { isPlaybackSpeedDialogOpen = true },
+                contentDescription = stringResource(R.string.simulation_playback_speed_button),
+            )
+        } else {
+            if (state.isJoystickVisible) {
+                SpeedSelectorFab(
+                    onClick = { isJoystickSpeedDialogOpen = true },
+                    contentDescription = stringResource(R.string.simulation_joystick_speed_button),
+                )
+            }
+            FloatingActionButton(onClick = { onAction(SimulationAction.OnToggleJoystick) }) {
+                Icon(Icons.Filled.SportsEsports, contentDescription = stringResource(R.string.simulation_joystick_label))
+            }
+        }
+    }
+    if (isPlaybackSpeedDialogOpen) {
+        SpeedSelectorDialog(
+            title = stringResource(R.string.simulation_playback_speed_dialog_title),
+            speedLabel = stringResource(R.string.simulation_speed_value_label, state.playbackSpeedKmh.roundToInt()),
+            confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
+            speedKmh = state.playbackSpeedKmh,
+            onSpeedChange = { kmh -> onAction(SimulationAction.OnPlaybackSpeedChange(kmh)) },
+            onDismiss = { isPlaybackSpeedDialogOpen = false },
+            speedRangeKmh = SpeedSelectorRangeKmh,
+        )
+    }
+
+    if (state.isJoystickVisible) {
+        Joystick(
+            onDrag = { bearing -> onAction(SimulationAction.OnJoystickDrag(bearing)) },
+            onReleased = { onAction(SimulationAction.OnJoystickReleased) },
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.ScreenContent),
+        )
+        if (isJoystickSpeedDialogOpen) {
+            SpeedSelectorDialog(
+                title = stringResource(R.string.simulation_joystick_speed_dialog_title),
+                speedLabel = stringResource(R.string.simulation_speed_value_label, state.joystickSpeedKmh.roundToInt()),
+                confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
+                speedKmh = state.joystickSpeedKmh,
+                onSpeedChange = { kmh -> onAction(SimulationAction.OnJoystickSpeedChange(kmh)) },
+                onDismiss = { isJoystickSpeedDialogOpen = false },
+                speedRangeKmh = SpeedSelectorRangeKmh,
+            )
+        }
+    }
+}
+
+/** Bottom-end FAB column: cancel, playback controls, mode-switch (if an alternate geometry is
+ *  available), and the waypoint reorder/edit sheet trigger — only rendered while a route is loaded. */
+@Composable
+private fun BoxScope.SimulationRouteControls(
+    state: SimulationState,
+    sessionDistanceTraveledMeters: Double?,
+    editState: WaypointEditState,
+    onEditAction: (WaypointEditAction) -> Unit,
+    onAction: (SimulationAction) -> Unit,
+) {
+    if (state.loadedRoute == null) return
+    val activeRoute = state.loadedRoute
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
+        modifier = Modifier.align(Alignment.BottomEnd).padding(Spacing.ScreenContent),
+    ) {
+        FloatingActionButton(onClick = { onAction(SimulationAction.OnCancelRouteClick) }) {
+            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_route_button))
+        }
+        PlaybackButton(state = state, onAction = onAction)
+        if (activeRoute.alternateGeometry != null) {
+            FloatingActionButton(onClick = { onAction(SimulationAction.OnSwitchRouteModeClick) }) {
+                Icon(
+                    imageVector =
+                        if (activeRoute.mode == RoutePlaybackMode.GUIDED) {
+                            Icons.Filled.Signpost
+                        } else {
+                            Icons.Filled.Straighten
+                        },
+                    contentDescription = stringResource(R.string.simulation_switch_route_mode_button),
+                )
+            }
+        }
+        WaypointEditSection(
+            loadedRoute = state.loadedRoute,
+            distanceTraveledMeters = sessionDistanceTraveledMeters,
+            editState = editState,
+            onEditAction = onEditAction,
+        )
+    }
+}
+
+/** The screen's modal sheets/dialogs — each gated on its own nullable/boolean state field, shown
+ *  at most one at a time in practice since they correspond to mutually-exclusive user flows. */
+@Composable
+private fun SimulationDialogs(
+    state: SimulationState,
+    onAction: (SimulationAction) -> Unit,
+) {
     val pendingLatitude = state.pendingTeleportLatitude
     val pendingLongitude = state.pendingTeleportLongitude
     if (pendingLatitude != null && pendingLongitude != null) {

@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -149,6 +150,44 @@ fun RouteRequestScreen(
     showWaypointsUpdatedConfirmation: Boolean = false,
     onDismissWaypointsUpdatedConfirmation: () -> Unit = {},
 ) {
+    val cameraTarget = rememberInitialCameraTarget(state)
+    val (markers, polylinePoints) = rememberRouteMarkersAndPolyline(state, onAction)
+
+    Scaffold { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            RouteForgeMap(
+                markers = markers,
+                polylinePoints = polylinePoints,
+                cameraTarget = cameraTarget,
+                onMapTap = { latitude, longitude -> onAction(RouteRequestAction.OnMapTap(latitude, longitude)) },
+                modifier = Modifier.fillMaxSize(),
+            )
+
+            RouteRequestOverlays(
+                state = state,
+                showWaypointsUpdatedConfirmation = showWaypointsUpdatedConfirmation,
+                onDismissWaypointsUpdatedConfirmation = onDismissWaypointsUpdatedConfirmation,
+            )
+
+            RouteRequestLeadingFabs(
+                state = state,
+                onAction = onAction,
+                onImportClick = onImportClick,
+                editState = editState,
+                onEditAction = onEditAction,
+            )
+
+            RouteRequestTrailingFabs(state = state, onAction = onAction)
+        }
+    }
+
+    RouteRequestDialogs(state = state, onAction = onAction)
+}
+
+/** Centers the map on the draft's first waypoint (or the last known real location, if the draft is
+ *  still empty) exactly once — [hasCenteredOnce] stops a later edit from re-centering under the user. */
+@Composable
+private fun rememberInitialCameraTarget(state: RouteRequestState): Pair<Double, Double>? {
     var hasCenteredOnce by remember { mutableStateOf(false) }
     var cameraTarget by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     LaunchedEffect(state.draft.points.size, state.lastKnownLocation) {
@@ -162,7 +201,17 @@ fun RouteRequestScreen(
             hasCenteredOnce = true
         }
     }
+    return cameraTarget
+}
 
+/** Builds the map's markers and polyline, substituting a marker's live drag position into the
+ *  polyline while it's being dragged so the line visibly follows the gesture before [onAction]'s
+ *  [RouteRequestAction.OnMarkerDragged] commits it. */
+@Composable
+private fun rememberRouteMarkersAndPolyline(
+    state: RouteRequestState,
+    onAction: (RouteRequestAction) -> Unit,
+): Pair<List<RouteForgeMapMarker>, List<Pair<Double, Double>>> {
     val markerBackground = MaterialTheme.colorScheme.primary.toArgb()
     val markerText = MaterialTheme.colorScheme.onPrimary.toArgb()
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
@@ -194,103 +243,128 @@ fun RouteRequestScreen(
         } else {
             state.route?.geometry ?: state.previewRoute?.geometry ?: state.draft.points.map { it.latitude to it.longitude }
         }
+    return markers to polylinePoints
+}
 
-    Scaffold { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            RouteForgeMap(
-                markers = markers,
-                polylinePoints = polylinePoints,
-                cameraTarget = cameraTarget,
-                onMapTap = { latitude, longitude -> onAction(RouteRequestAction.OnMapTap(latitude, longitude)) },
-                modifier = Modifier.fillMaxSize(),
-            )
+/** Status pill, error banner, and the transient "waypoints updated" confirmation — the map's
+ *  top-anchored overlays, as opposed to the bottom-anchored FAB columns. */
+@Composable
+private fun BoxScope.RouteRequestOverlays(
+    state: RouteRequestState,
+    showWaypointsUpdatedConfirmation: Boolean,
+    onDismissWaypointsUpdatedConfirmation: () -> Unit,
+) {
+    RouteStatusPill(
+        state = state,
+        modifier = Modifier.align(Alignment.TopCenter).padding(top = Spacing.ScreenContent),
+    )
 
-            RouteStatusPill(
-                state = state,
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = Spacing.ScreenContent),
-            )
-
-            state.errorType?.let { errorType ->
-                TopBanner(
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = 72.dp, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
-                ) {
-                    Text(text = errorType.toMessage())
-                }
-            }
-
-            if (showWaypointsUpdatedConfirmation) {
-                LaunchedEffect(Unit) {
-                    delay(WAYPOINTS_UPDATED_CONFIRMATION_DURATION_MILLIS)
-                    onDismissWaypointsUpdatedConfirmation()
-                }
-                ConfirmationPill(
-                    message = stringResource(R.string.routing_waypoints_updated_message),
-                    modifier = Modifier.align(Alignment.TopCenter).padding(top = 72.dp),
-                )
-            }
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
-                modifier = Modifier.align(Alignment.BottomStart).padding(Spacing.ScreenContent),
-            ) {
-                FloatingActionButton(onClick = onImportClick) {
-                    Icon(Icons.Filled.FileUpload, contentDescription = stringResource(R.string.routing_import_button))
-                }
-                FloatingActionButton(onClick = { onAction(RouteRequestAction.OnOpenFavoritesClick) }) {
-                    Icon(Icons.Filled.Star, contentDescription = stringResource(R.string.routing_add_from_favorites_button))
-                }
-                if (state.draft.canUndo) {
-                    FloatingActionButton(onClick = { onAction(RouteRequestAction.OnUndo) }) {
-                        Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.routing_undo_button))
-                    }
-                }
-                WaypointEditSection(
-                    points = state.draft.points,
-                    chosenMode = state.chosenMode ?: state.route?.mode,
-                    editState = editState,
-                    onEditAction = onEditAction,
-                )
-            }
-
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
-                modifier = Modifier.align(Alignment.BottomEnd).padding(Spacing.ScreenContent),
-            ) {
-                if (state.draft.points.size >= MIN_WAYPOINTS_TO_PLAY) {
-                    if (state.route == null) {
-                        FloatingActionButton(onClick = { onAction(RouteRequestAction.OnSwitchRouteModeClick) }) {
-                            if (state.isComputingPreview) {
-                                CircularProgressIndicator()
-                            } else {
-                                Icon(
-                                    imageVector = if (state.previewMode == RoutePlaybackMode.GUIDED) Icons.Filled.Straighten else Icons.Filled.Signpost,
-                                    contentDescription = stringResource(R.string.routing_switch_route_mode_button),
-                                )
-                            }
-                        }
-                    }
-                    FloatingActionButton(
-                        onClick = { onAction(RouteRequestAction.OnRequestRoute) },
-                    ) {
-                        if (state.isComputing) {
-                            CircularProgressIndicator()
-                        } else {
-                            Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.routing_proceed_button))
-                        }
-                    }
-                    FloatingActionButton(onClick = { onAction(RouteRequestAction.OnSaveRouteClick) }) {
-                        Icon(Icons.Filled.Bookmark, contentDescription = stringResource(R.string.routing_save_route_button))
-                    }
-                }
-            }
+    state.errorType?.let { errorType ->
+        TopBanner(
+            modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 72.dp, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
+        ) {
+            Text(text = errorType.toMessage())
         }
     }
 
+    if (showWaypointsUpdatedConfirmation) {
+        LaunchedEffect(Unit) {
+            delay(WAYPOINTS_UPDATED_CONFIRMATION_DURATION_MILLIS)
+            onDismissWaypointsUpdatedConfirmation()
+        }
+        ConfirmationPill(
+            message = stringResource(R.string.routing_waypoints_updated_message),
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = 72.dp),
+        )
+    }
+}
+
+/** Bottom-start FAB column: import, add-from-favorites, undo (when available), and the waypoint
+ *  reorder/edit sheet trigger. */
+@Composable
+private fun BoxScope.RouteRequestLeadingFabs(
+    state: RouteRequestState,
+    onAction: (RouteRequestAction) -> Unit,
+    onImportClick: () -> Unit,
+    editState: WaypointEditState,
+    onEditAction: (WaypointEditAction) -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
+        modifier = Modifier.align(Alignment.BottomStart).padding(Spacing.ScreenContent),
+    ) {
+        FloatingActionButton(onClick = onImportClick) {
+            Icon(Icons.Filled.FileUpload, contentDescription = stringResource(R.string.routing_import_button))
+        }
+        FloatingActionButton(onClick = { onAction(RouteRequestAction.OnOpenFavoritesClick) }) {
+            Icon(Icons.Filled.Star, contentDescription = stringResource(R.string.routing_add_from_favorites_button))
+        }
+        if (state.draft.canUndo) {
+            FloatingActionButton(onClick = { onAction(RouteRequestAction.OnUndo) }) {
+                Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.routing_undo_button))
+            }
+        }
+        WaypointEditSection(
+            points = state.draft.points,
+            chosenMode = state.chosenMode ?: state.route?.mode,
+            editState = editState,
+            onEditAction = onEditAction,
+        )
+    }
+}
+
+/** Bottom-end FAB column: mode-switch preview, the proceed/compute button, and save-route —
+ *  all gated on there being enough waypoints to play at all. */
+@Composable
+private fun BoxScope.RouteRequestTrailingFabs(
+    state: RouteRequestState,
+    onAction: (RouteRequestAction) -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
+        modifier = Modifier.align(Alignment.BottomEnd).padding(Spacing.ScreenContent),
+    ) {
+        if (state.draft.points.size >= MIN_WAYPOINTS_TO_PLAY) {
+            if (state.route == null) {
+                FloatingActionButton(onClick = { onAction(RouteRequestAction.OnSwitchRouteModeClick) }) {
+                    if (state.isComputingPreview) {
+                        CircularProgressIndicator()
+                    } else {
+                        Icon(
+                            imageVector = if (state.previewMode == RoutePlaybackMode.GUIDED) Icons.Filled.Straighten else Icons.Filled.Signpost,
+                            contentDescription = stringResource(R.string.routing_switch_route_mode_button),
+                        )
+                    }
+                }
+            }
+            FloatingActionButton(
+                onClick = { onAction(RouteRequestAction.OnRequestRoute) },
+            ) {
+                if (state.isComputing) {
+                    CircularProgressIndicator()
+                } else {
+                    Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.routing_proceed_button))
+                }
+            }
+            FloatingActionButton(onClick = { onAction(RouteRequestAction.OnSaveRouteClick) }) {
+                Icon(Icons.Filled.Bookmark, contentDescription = stringResource(R.string.routing_save_route_button))
+            }
+        }
+    }
+}
+
+/** The screen's modal sheets — each gated on its own nullable/boolean state field, shown at most
+ *  one at a time in practice since they correspond to mutually-exclusive user flows. */
+@Composable
+private fun RouteRequestDialogs(
+    state: RouteRequestState,
+    onAction: (RouteRequestAction) -> Unit,
+) {
     state.route?.let { route ->
         var isDismissed by remember(route) { mutableStateOf(false) }
         if (!isDismissed) {
