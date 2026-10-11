@@ -166,7 +166,7 @@ class WaypointEditViewModelTest {
             val twoPointRoute = loadedRoute.copy(points = points.take(2), waypointCumulativeDistances = listOf(0.0, 100.0))
             viewModel.onAction(WaypointEditAction.OnOpen(twoPointRoute, distanceTraveledMeters = null))
 
-            viewModel.onAction(WaypointEditAction.OnDelete("wp0"))
+            viewModel.onAction(WaypointEditAction.OnDelete(0))
 
             assertEquals(2, viewModel.state.value.points.size) // unchanged — rejected before any recompute
         }

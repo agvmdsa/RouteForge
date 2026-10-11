@@ -44,7 +44,7 @@ sealed interface WaypointEditAction {
     data object OnCancelChanges : WaypointEditAction
 
     data class OnDelete(
-        val id: String,
+        val id: Int,
     ) : WaypointEditAction
 
     data object OnDismissMissingRegions : WaypointEditAction

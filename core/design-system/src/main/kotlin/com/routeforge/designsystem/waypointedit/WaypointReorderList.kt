@@ -39,7 +39,7 @@ import kotlin.math.roundToInt
  *  [label] is the already-formatted display text, [isEditable] drives the read-only rendering for
  *  already-passed waypoints during an active run (FR-013). */
 data class WaypointListItem(
-    val id: String,
+    val id: Int,
     val label: String,
     val isEditable: Boolean,
 )
@@ -57,7 +57,7 @@ private const val READ_ONLY_ALPHA = 0.5f
 fun WaypointReorderList(
     items: List<WaypointListItem>,
     onReorder: (fromIndex: Int, toIndex: Int) -> Unit,
-    onDelete: (id: String) -> Unit,
+    onDelete: (id: Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var draggedIndex by remember { mutableStateOf<Int?>(null) }

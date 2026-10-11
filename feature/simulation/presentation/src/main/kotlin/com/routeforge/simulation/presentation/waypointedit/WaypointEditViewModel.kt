@@ -147,9 +147,8 @@ class WaypointEditViewModel(
         commitEdit(_state.value.points, closeOnSuccess = true)
     }
 
-    private fun onDelete(id: String) {
+    private fun onDelete(index: Int) {
         val current = _state.value
-        val index = id.removePrefix("wp").toIntOrNull() ?: return
         if (index < current.firstEditableIndex) return
         val editableCount = current.points.size - current.firstEditableIndex
         if (editableCount <= MIN_EDITABLE_WAYPOINTS) return

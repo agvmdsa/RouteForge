@@ -64,9 +64,8 @@ class WaypointEditViewModel(
             is WaypointEditAction.OnDelete -> {
                 val current = _state.value
                 if (current.points.size <= MIN_WAYPOINTS) return
-                val index = action.id.removePrefix("wp").toIntOrNull() ?: return
                 val points = current.points.toMutableList()
-                points.removeAt(index)
+                points.removeAt(action.id)
                 commitEdit(points)
             }
             WaypointEditAction.OnDismissMissingRegions ->

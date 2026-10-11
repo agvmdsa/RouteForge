@@ -89,7 +89,7 @@ class WaypointEditViewModelTest {
     fun `a delete below the 2-waypoint floor is rejected`() {
         viewModel.onAction(WaypointEditAction.OnOpen(points.take(2), RoutePlaybackMode.FREE_ROAM))
 
-        viewModel.onAction(WaypointEditAction.OnDelete("wp0"))
+        viewModel.onAction(WaypointEditAction.OnDelete(0))
 
         assertEquals(2, viewModel.state.value.points.size)
     }

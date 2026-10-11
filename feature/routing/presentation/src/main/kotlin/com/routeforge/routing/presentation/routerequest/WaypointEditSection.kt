@@ -41,7 +41,7 @@ fun WaypointEditSection(
             items =
                 editState.points.mapIndexed { index, point ->
                     WaypointListItem(
-                        id = "wp$index",
+                        id = index,
                         label = "${index + 1}. ${formatCoordinates(point.latitude, point.longitude)}",
                         isEditable = true,
                     )

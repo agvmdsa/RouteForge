@@ -60,7 +60,7 @@ fun WaypointEditSheet(
     applyChangesLabel: String,
     cancelChangesLabel: String,
     onReorder: (fromIndex: Int, toIndex: Int) -> Unit,
-    onDelete: (id: String) -> Unit,
+    onDelete: (id: Int) -> Unit,
     onApplyChanges: () -> Unit,
     onCancelChanges: () -> Unit,
     onDismiss: () -> Unit,
