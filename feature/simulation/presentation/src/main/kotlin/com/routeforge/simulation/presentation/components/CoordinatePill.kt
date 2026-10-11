@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import com.routeforge.designsystem.components.StatusPill
+import com.routeforge.designsystem.format.formatCoordinates
 import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.domain.model.SimulationSession
 import com.routeforge.simulation.presentation.R
@@ -28,7 +29,7 @@ internal fun CoordinatePill(
     val clipboardManager = LocalClipboardManager.current
     val text =
         when {
-            mockedSession != null -> "%.5f, %.5f".format(mockedSession.latitude, mockedSession.longitude)
+            mockedSession != null -> formatCoordinates(mockedSession.latitude, mockedSession.longitude)
             isSearchingRealLocation && !hasKnownRealLocation -> stringResource(R.string.simulation_status_searching_real_location)
             else -> stringResource(R.string.simulation_status_no_simulation)
         }

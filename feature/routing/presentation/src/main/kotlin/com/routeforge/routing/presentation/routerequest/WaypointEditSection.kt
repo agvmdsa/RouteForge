@@ -9,6 +9,7 @@ import androidx.compose.ui.res.stringResource
 import com.routeforge.coredomain.model.ModeAvailability
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.designsystem.format.formatCoordinates
 import com.routeforge.designsystem.sheets.MissingRegionsWarningSheet
 import com.routeforge.designsystem.waypointedit.WaypointEditSheet
 import com.routeforge.designsystem.waypointedit.WaypointListItem
@@ -41,7 +42,7 @@ fun WaypointEditSection(
                 editState.points.mapIndexed { index, point ->
                     WaypointListItem(
                         id = "wp$index",
-                        label = "${index + 1}. ${"%.5f".format(point.latitude)}, ${"%.5f".format(point.longitude)}",
+                        label = "${index + 1}. ${formatCoordinates(point.latitude, point.longitude)}",
                         isEditable = true,
                     )
                 },

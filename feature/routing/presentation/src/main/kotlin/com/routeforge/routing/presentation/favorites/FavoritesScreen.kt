@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.model.FavoriteWaypoint
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.IconBadge
+import com.routeforge.designsystem.format.formatCoordinates
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.routing.presentation.R
 import org.koin.androidx.compose.koinViewModel
@@ -214,7 +215,7 @@ private fun FavoriteCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    text = "%.5f, %.5f".format(favorite.latitude, favorite.longitude),
+                    text = formatCoordinates(favorite.latitude, favorite.longitude),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 )
