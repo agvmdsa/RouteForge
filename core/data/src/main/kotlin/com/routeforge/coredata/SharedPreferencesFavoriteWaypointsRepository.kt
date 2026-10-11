@@ -41,7 +41,7 @@ class SharedPreferencesFavoriteWaypointsRepository(
         longitude: Double,
     ): FavoriteWaypoint {
         val favorite = FavoriteWaypoint(id = UUID.randomUUID().toString(), name = name, latitude = latitude, longitude = longitude)
-        store.write(store.items.value + favorite)
+        store.add(favorite)
         return favorite
     }
 
@@ -51,14 +51,10 @@ class SharedPreferencesFavoriteWaypointsRepository(
         latitude: Double,
         longitude: Double,
     ) {
-        store.write(
-            store.items.value.map { favorite ->
-                if (favorite.id == id) favorite.copy(name = name, latitude = latitude, longitude = longitude) else favorite
-            },
-        )
+        store.updateWhere(predicate = { it.id == id }, transform = { it.copy(name = name, latitude = latitude, longitude = longitude) })
     }
 
     override fun delete(id: String) {
-        store.write(store.items.value.filterNot { it.id == id })
+        store.removeWhere { it.id == id }
     }
 }

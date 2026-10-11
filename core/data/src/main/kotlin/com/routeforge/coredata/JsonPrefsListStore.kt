@@ -28,11 +28,25 @@ class JsonPrefsListStore<Domain, Record : Any>(
     private val _items = MutableStateFlow(read())
     val items: StateFlow<List<Domain>> = _items.asStateFlow()
 
-    fun write(items: List<Domain>) {
-        _items.value = items
-        val records = items.map(toRecord)
+    /** Replaces the whole list with [transform] applied to the current value, encodes, and
+     *  persists — `@Synchronized` so two near-simultaneous callers (e.g. from different
+     *  coroutines) can't race a read-modify-write and silently lose one's update. */
+    @Synchronized
+    fun update(transform: (List<Domain>) -> List<Domain>) {
+        val newItems = transform(_items.value)
+        _items.value = newItems
+        val records = newItems.map(toRecord)
         prefs.edit().putString(key, json.encodeToString(recordListSerializer, records)).apply()
     }
+
+    fun add(item: Domain) = update { it + item }
+
+    fun removeWhere(predicate: (Domain) -> Boolean) = update { it.filterNot(predicate) }
+
+    fun updateWhere(
+        predicate: (Domain) -> Boolean,
+        transform: (Domain) -> Domain,
+    ) = update { items -> items.map { if (predicate(it)) transform(it) else it } }
 
     private fun read(): List<Domain> {
         val text = prefs.getString(key, null) ?: return emptyList()

@@ -62,7 +62,7 @@ class SharedPreferencesFavoriteRoutesRepository(
         points: List<RoutePoint>,
     ): FavoriteRoute {
         val favoriteRoute = FavoriteRoute(id = UUID.randomUUID().toString(), name = name, points = points)
-        store.write(store.items.value + favoriteRoute)
+        store.add(favoriteRoute)
         return favoriteRoute
     }
 
@@ -70,14 +70,10 @@ class SharedPreferencesFavoriteRoutesRepository(
         id: String,
         name: String,
     ) {
-        store.write(
-            store.items.value.map { favoriteRoute ->
-                if (favoriteRoute.id == id) favoriteRoute.copy(name = name) else favoriteRoute
-            },
-        )
+        store.updateWhere(predicate = { it.id == id }, transform = { it.copy(name = name) })
     }
 
     override fun delete(id: String) {
-        store.write(store.items.value.filterNot { it.id == id })
+        store.removeWhere { it.id == id }
     }
 }
