@@ -1,15 +1,7 @@
 package com.routeforge.addresssearch.domain.usecase
 
-import com.routeforge.coredomain.model.PlaceSearchResult
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-
-private fun place(
-    name: String,
-    latitude: Double,
-    longitude: Double,
-    importance: Double,
-) = PlaceSearchResult(name = name, formattedAddress = name, latitude = latitude, longitude = longitude, importance = importance)
 
 class RankSearchResultsUseCaseTest {
     private val rankSearchResults = RankSearchResultsUseCase()

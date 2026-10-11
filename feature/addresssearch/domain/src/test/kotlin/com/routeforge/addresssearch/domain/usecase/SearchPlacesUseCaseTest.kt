@@ -10,13 +10,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-private fun place(
-    name: String,
-    latitude: Double,
-    longitude: Double,
-    importance: Double = 0.5,
-) = PlaceSearchResult(name = name, formattedAddress = name, latitude = latitude, longitude = longitude, importance = importance)
-
 private class FakeGeocodeClient(
     var result: Result<List<PlaceSearchResult>, DataError.Network> = Result.Success(emptyList()),
 ) : GeocodeClient {
