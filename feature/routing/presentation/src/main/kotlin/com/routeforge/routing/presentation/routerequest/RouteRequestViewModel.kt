@@ -421,14 +421,7 @@ class RouteRequestViewModel(
         alternateGeometry: List<Pair<Double, Double>>,
         alternateDistanceMeters: Double,
     ) {
-        val swapped =
-            route.copy(
-                mode = targetMode,
-                geometry = alternateGeometry,
-                distanceMeters = alternateDistanceMeters,
-                alternateGeometry = route.geometry,
-                alternateDistanceMeters = route.distanceMeters,
-            )
+        val swapped = route.swapToMode(targetMode, alternateGeometry, alternateDistanceMeters)
         _state.update { it.copy(route = swapped, chosenMode = targetMode) }
         lastComputedRouteHolder.set(swapped)
     }

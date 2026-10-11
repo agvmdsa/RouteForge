@@ -19,4 +19,23 @@ data class Route(
     val alternateGeometry: List<Pair<Double, Double>>? = null,
     val alternateDistanceMeters: Double? = null,
     val waypointCumulativeDistances: List<Double> = emptyList(),
-)
+) {
+    /** Swaps the active mode to [targetMode], moving the already-known [geometry]/[distanceMeters]
+     *  in and the current ones out to [alternateGeometry]/[alternateDistanceMeters] — the shared
+     *  shape behind every "switch to the mode I already computed" flow (route planning's preview
+     *  switch, simulation's mid-playback switch). [waypointCumulativeDistances] is always cleared
+     *  since it's tied to whichever geometry was active when computed (see class doc). */
+    fun swapToMode(
+        targetMode: RoutePlaybackMode,
+        geometry: List<Pair<Double, Double>>,
+        distanceMeters: Double,
+    ): Route =
+        copy(
+            mode = targetMode,
+            geometry = geometry,
+            distanceMeters = distanceMeters,
+            alternateGeometry = this.geometry,
+            alternateDistanceMeters = this.distanceMeters,
+            waypointCumulativeDistances = emptyList(),
+        )
+}

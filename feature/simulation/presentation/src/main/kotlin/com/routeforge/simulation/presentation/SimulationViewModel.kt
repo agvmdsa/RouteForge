@@ -246,15 +246,7 @@ class SimulationViewModel(
         val route = _state.value.loadedRoute ?: return
         val alternateGeometry = route.alternateGeometry ?: return
         val alternateDistance = route.alternateDistanceMeters ?: return
-        val swapped =
-            route.copy(
-                mode = targetMode,
-                geometry = alternateGeometry,
-                distanceMeters = alternateDistance,
-                alternateGeometry = route.geometry,
-                alternateDistanceMeters = route.distanceMeters,
-                waypointCumulativeDistances = emptyList(),
-            )
+        val swapped = route.swapToMode(targetMode, alternateGeometry, alternateDistance)
         lastComputedRouteHolder.set(swapped)
         updateActiveRouteUseCase(swapped)
     }
