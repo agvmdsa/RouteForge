@@ -62,6 +62,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 MainTabsScaffold(navController = navController) { paddingValues ->
+                    val goToSimulate = { navController.switchToTab(SimulateTabRoute) }
                     NavHost(
                         navController = navController,
                         startDestination = startDestination,
@@ -86,16 +87,16 @@ class MainActivity : ComponentActivity() {
                                 RegionCoverageMapRoot()
                             }
                         }
-                        navigation<PlanRouteTabRoute>(startDestination = RouteRequestRoute) {
+                        navigation<PlanTabRoute>(startDestination = RouteRequestRoute) {
                             planRouteGraph(
                                 navController = navController,
-                                onGoToSimulate = { navController.switchToTab(SimulateTabRoute) },
+                                onGoToSimulate = goToSimulate,
                             )
                         }
                         navigation<SavedTabRoute>(startDestination = SavedRoute) {
                             savedGraph(
                                 navController = navController,
-                                onGoToSimulate = { navController.switchToTab(SimulateTabRoute) },
+                                onGoToSimulate = goToSimulate,
                             )
                         }
                         navigation<SettingsTabRoute>(startDestination = SettingsRoute) {

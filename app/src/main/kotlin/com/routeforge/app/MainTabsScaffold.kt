@@ -39,7 +39,7 @@ internal enum class AppTab { SIMULATE, PLAN_ROUTE, SAVED, SETTINGS }
 
 private class TabItem(
     val tab: AppTab,
-    val tabRoute: Any,
+    val tabRoute: TabRoute,
     val icon: ImageVector,
     val labelRes: Int,
     val isRootDestination: (NavDestination) -> Boolean,
@@ -78,11 +78,11 @@ private val NavBarEntries: List<NavBarEntry> =
         NavBarEntry.Tab(
             TabItem(
                 tab = AppTab.PLAN_ROUTE,
-                tabRoute = PlanRouteTabRoute,
+                tabRoute = PlanTabRoute,
                 icon = Icons.Filled.EditLocation,
                 labelRes = R.string.tab_plan_route_label,
                 isRootDestination = isRootRoute(RouteRequestRoute::class),
-                isInHierarchy = isInTabHierarchy(PlanRouteTabRoute::class),
+                isInHierarchy = isInTabHierarchy(PlanTabRoute::class),
             ),
         ),
         NavBarEntry.Search,
@@ -113,7 +113,7 @@ private val Tabs: List<TabItem> = NavBarEntries.filterIsInstance<NavBarEntry.Tab
 /** Navigates to [tabRoute] the way every bottom-tab-bar implementation should (research.md Decision 1
  *  for spec 007): pops back to the graph's start with its state saved, then restores the target tab's
  *  own saved state — so each tab remembers exactly where the user left it. */
-internal fun NavController.switchToTab(tabRoute: Any) {
+internal fun NavController.switchToTab(tabRoute: TabRoute) {
     navigate(tabRoute) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
