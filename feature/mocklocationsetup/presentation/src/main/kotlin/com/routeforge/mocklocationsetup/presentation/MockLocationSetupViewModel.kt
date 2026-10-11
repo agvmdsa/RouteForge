@@ -1,5 +1,6 @@
 package com.routeforge.mocklocationsetup.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeforge.mocklocationsetup.domain.DeveloperSettingsDataSource
@@ -12,6 +13,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+private const val TAG = "MockLocationSetupVM"
 
 class MockLocationSetupViewModel(
     private val observeSetupState: ObserveSetupStateUseCase,
@@ -54,6 +57,8 @@ class MockLocationSetupViewModel(
             viewModelScope.launch {
                 _events.send(MockLocationSetupEvent.LaunchDeepLink(intent))
             }
+        } else {
+            Log.w(TAG, "No deep link intent available for $stepId despite its button being shown")
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.routeforge.routing.data
 
+import android.util.Log
 import com.routeforge.routing.domain.BrouterTileGrid
 import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.coredomain.model.Region
@@ -10,6 +11,7 @@ import java.io.File
 import java.io.IOException
 import java.io.InputStream
 
+private const val TAG = "BundledRegionCatalog"
 private const val RD5_EXTENSION = "rd5"
 
 /** A rough average segment size, used only until a tile's real size is known (BRouter's segment
@@ -134,7 +136,8 @@ class BundledRegionCatalog(
             openAsset(assetPath).use { input ->
                 target.outputStream().use { output -> input.copyTo(output) }
             }
-        } catch (_: IOException) {
+        } catch (e: IOException) {
+            Log.w(TAG, "Couldn't copy bundled asset $assetPath to $target", e)
         }
     }
 
