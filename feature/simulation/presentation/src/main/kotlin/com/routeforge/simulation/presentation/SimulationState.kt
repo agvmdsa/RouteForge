@@ -5,6 +5,7 @@ import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.simulation.domain.model.SimulationSession
+import com.routeforge.simulation.domain.model.SpeedPresetType
 
 enum class SimulationErrorType {
     NOT_AUTHORIZED,
@@ -27,13 +28,13 @@ data class SimulationState(
     val isPendingTeleportBlockedOffline: Boolean = false,
     val isPendingCancelMock: Boolean = false,
     val loadedRoute: Route? = null,
-    val playbackSpeedKmh: Float = 80f,
+    val playbackSpeedKmh: Float = SpeedPresetType.CAR.kilometersPerHour.toFloat(),
     val executionModeSelection: ExecutionModeSelection = ExecutionModeSelection.ONCE,
     val executionTimesInput: String = "2",
     val isStartRouteDialogOpen: Boolean = false,
     val isPendingCancelRoute: Boolean = false,
     val isJoystickVisible: Boolean = false,
-    val joystickSpeedKmh: Float = 5f,
+    val joystickSpeedKmh: Float = SpeedPresetType.WALKING.kilometersPerHour.toFloat(),
     val isJoystickInterruptPending: Boolean = false,
     val errorType: SimulationErrorType? = null,
     val isBlockedByAuthorization: Boolean = false,
