@@ -7,11 +7,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.dp
 import com.routeforge.coredomain.model.RequiredRegionsSummary
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
-
-private val ControlsRowSpacing = 8.dp
+import com.routeforge.designsystem.theme.Spacing
 
 /** Shared "missing map data" warning, used wherever a route computation needs offline regions
  *  that aren't fully downloaded yet (Plan Route, Saved Routes export, and spec 008's waypoint-edit
@@ -35,7 +33,7 @@ fun MissingRegionsWarningSheet(
         if (summary.uncoveredWaypointCount > 0 && uncoveredNote != null) {
             Text(text = uncoveredNote, color = MaterialTheme.colorScheme.error)
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
             Button(onClick = onGoToDownloads) { Text(goToDownloadsLabel) }
             TextButton(onClick = onContinueAnyway) { Text(continueAnywayLabel) }
         }

@@ -45,6 +45,7 @@ import com.routeforge.designsystem.map.RouteForgeMapMarkerIcon
 import com.routeforge.designsystem.sheets.AddWaypointConfirmationSheet
 import com.routeforge.designsystem.sheets.MissingRegionsWarningSheet
 import com.routeforge.designsystem.theme.RouteForgeTheme
+import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditAction
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditEvent
@@ -54,8 +55,6 @@ import com.routeforge.routing.presentation.R
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
-private val ScreenContentPadding = 16.dp
-private val ControlsRowSpacing = 8.dp
 private const val JSON_MIME_TYPE = "application/json"
 private const val GPX_MIME_TYPE = "application/gpx+xml"
 private const val WAYPOINTS_UPDATED_CONFIRMATION_DURATION_MILLIS = 2_500L
@@ -208,7 +207,7 @@ fun RouteRequestScreen(
 
             RouteStatusPill(
                 state = state,
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = ScreenContentPadding),
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = Spacing.ScreenContent),
             )
 
             state.errorType?.let { errorType ->
@@ -216,7 +215,7 @@ fun RouteRequestScreen(
                     modifier =
                         Modifier
                             .align(Alignment.TopCenter)
-                            .padding(top = 72.dp, start = ScreenContentPadding, end = ScreenContentPadding),
+                            .padding(top = 72.dp, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
                 ) {
                     Text(text = errorType.toMessage())
                 }
@@ -235,8 +234,8 @@ fun RouteRequestScreen(
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
-                modifier = Modifier.align(Alignment.BottomStart).padding(ScreenContentPadding),
+                verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
+                modifier = Modifier.align(Alignment.BottomStart).padding(Spacing.ScreenContent),
             ) {
                 FloatingActionButton(onClick = onImportClick) {
                     Icon(Icons.Filled.FileUpload, contentDescription = stringResource(R.string.routing_import_button))
@@ -259,8 +258,8 @@ fun RouteRequestScreen(
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
-                modifier = Modifier.align(Alignment.BottomEnd).padding(ScreenContentPadding),
+                verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
+                modifier = Modifier.align(Alignment.BottomEnd).padding(Spacing.ScreenContent),
             ) {
                 if (state.draft.points.size >= MIN_WAYPOINTS_TO_PLAY) {
                     if (state.route == null) {

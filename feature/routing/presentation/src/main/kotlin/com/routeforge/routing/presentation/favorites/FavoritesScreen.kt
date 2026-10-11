@@ -44,11 +44,11 @@ import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.IconBadge
 import com.routeforge.designsystem.format.formatCoordinates
 import com.routeforge.designsystem.theme.RouteForgeTheme
+import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.routing.presentation.R
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-private val ScreenContentPadding = 16.dp
 private val CardSpacing = 12.dp
 private val CardShape = RoundedCornerShape(20.dp)
 private val CardPadding = 16.dp
@@ -82,14 +82,14 @@ fun FavoritesScreen(
                 text = stringResource(R.string.favorites_title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(ScreenContentPadding),
+                modifier = Modifier.padding(Spacing.ScreenContent),
             )
             if (state.favorites.isEmpty()) {
                 EmptyFavoritesContent(modifier = Modifier.weight(1f).fillMaxWidth())
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth().weight(1f),
-                    contentPadding = PaddingValues(horizontal = ScreenContentPadding),
+                    contentPadding = PaddingValues(horizontal = Spacing.ScreenContent),
                     verticalArrangement = Arrangement.spacedBy(CardSpacing),
                 ) {
                     items(state.favorites, key = { it.id }) { favorite ->
@@ -135,7 +135,7 @@ fun FavoritesScreen(
             onDismissRequest = { onAction(FavoritesAction.OnDismissEdit) },
             sheetState = rememberModalBottomSheetState(),
         ) {
-            Column(modifier = Modifier.padding(ScreenContentPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(modifier = Modifier.padding(Spacing.ScreenContent), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.favorites_edit_title), style = MaterialTheme.typography.titleMedium)
                 OutlinedTextField(
                     value = state.editNameInput,

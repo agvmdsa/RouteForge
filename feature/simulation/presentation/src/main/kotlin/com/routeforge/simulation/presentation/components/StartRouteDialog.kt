@@ -24,13 +24,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.simulation.presentation.ExecutionModeSelection
 import com.routeforge.simulation.presentation.R
 import com.routeforge.simulation.presentation.SimulationAction
 import com.routeforge.simulation.presentation.SimulationErrorType
 import com.routeforge.simulation.presentation.SimulationState
 
-private val ControlsRowSpacing = 8.dp
 private val StartDialogOptionSpacing = 12.dp
 private val StartDialogOptionCornerRadius = 16.dp
 private val StartDialogOptionHorizontalPadding = 16.dp
@@ -100,7 +100,7 @@ private fun ExecutionModeOption(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
             modifier =
                 Modifier.padding(
                     horizontal = StartDialogOptionHorizontalPadding,

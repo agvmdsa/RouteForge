@@ -47,18 +47,17 @@ import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.IconBadge
 import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.theme.RouteForgeTheme
+import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.routing.domain.model.RegionUsage
 import com.routeforge.routing.presentation.R
 import org.koin.androidx.compose.koinViewModel
 
-private val ScreenContentPadding = 16.dp
 private val CardSpacing = 12.dp
 private val CardShape = RoundedCornerShape(24.dp)
 private val CardPadding = 20.dp
 private val EmptyStateIconBadgeSize = 72.dp
-private val ControlsRowSpacing = 8.dp
 
 @Composable
 fun RegionCatalogRoot(
@@ -93,8 +92,8 @@ fun RegionCatalogScreen(
                 EmptyRegionsContent(modifier = Modifier.weight(1f).fillMaxWidth())
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxWidth().weight(1f).padding(top = ScreenContentPadding),
-                    contentPadding = PaddingValues(horizontal = ScreenContentPadding),
+                    modifier = Modifier.fillMaxWidth().weight(1f).padding(top = Spacing.ScreenContent),
+                    contentPadding = PaddingValues(horizontal = Spacing.ScreenContent),
                     verticalArrangement = Arrangement.spacedBy(CardSpacing),
                 ) {
                     items(state.regions, key = { it.id }) { region ->
@@ -116,7 +115,7 @@ fun RegionCatalogScreen(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = ScreenContentPadding, vertical = 8.dp),
+                            .padding(horizontal = Spacing.ScreenContent, vertical = 8.dp),
                 ) {
                     Text(
                         text = message,
@@ -133,7 +132,7 @@ fun RegionCatalogScreen(
                 text = stringResource(R.string.region_catalog_attribution),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                modifier = Modifier.fillMaxWidth().padding(ScreenContentPadding),
+                modifier = Modifier.fillMaxWidth().padding(Spacing.ScreenContent),
             )
         }
     }
@@ -162,7 +161,7 @@ private fun CancelDownloadConfirmationSheet(
 ) {
     ConfirmationBottomSheet(title = stringResource(R.string.region_catalog_cancel_download_confirm_title), onDismiss = onDismiss) {
         Text(stringResource(R.string.region_catalog_cancel_download_confirm_message))
-        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
             Button(onClick = onConfirm) { Text(stringResource(R.string.region_catalog_cancel_download_confirm_button)) }
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.region_catalog_cancel_download_dismiss_button)) }
         }
@@ -189,7 +188,7 @@ private fun DeleteRegionConfirmationSheet(
                 color = MaterialTheme.colorScheme.error,
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
             Button(onClick = onConfirm) { Text(stringResource(R.string.region_catalog_delete_confirm_button)) }
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.region_catalog_delete_dismiss_button)) }
         }
@@ -264,7 +263,7 @@ private fun RegionCard(
                         )
                     }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
                     if (region.status == RegionStatus.NOT_DOWNLOADED || region.status == RegionStatus.PARTIALLY_DOWNLOADED) {
                         Button(onClick = onDownloadClick, enabled = isDownloadButtonEnabled) {
                             Text(stringResource(R.string.region_catalog_download_button))

@@ -27,10 +27,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.designsystem.theme.RouteForgeTheme
+import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.routing.presentation.R
 import org.koin.androidx.compose.koinViewModel
 
-private val ScreenContentPadding = 16.dp
 private val SectionSpacing = 16.dp
 private val CardShape = RoundedCornerShape(24.dp)
 private val CardPadding = 20.dp
@@ -66,7 +66,7 @@ fun SettingsScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(ScreenContentPadding),
+                    .padding(Spacing.ScreenContent),
             verticalArrangement = Arrangement.spacedBy(SectionSpacing),
         ) {
             Text(

@@ -28,9 +28,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.routeforge.coredomain.model.ModeAvailability
-
-private val SheetContentPadding = 16.dp
-private val ControlsRowSpacing = 8.dp
+import com.routeforge.designsystem.theme.Spacing
 private const val DEFAULT_SHEET_HEIGHT_FRACTION = 0.5f
 /** A fixed estimate, not measured — reserved in [listHeight] up front, the instant
  *  [hasUnappliedReorder] turns true, rather than discovered reactively via [onSizeChanged] after
@@ -80,13 +78,13 @@ fun WaypointEditSheet(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(SheetContentPadding),
+                        modifier = Modifier.padding(Spacing.ScreenContent),
                     )
                     if (inactiveModeAvailability == ModeAvailability.UNAVAILABLE_PENDING_RETRY) {
                         Text(
                             text = inactiveModeUnavailableMessage,
                             color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(horizontal = SheetContentPadding),
+                            modifier = Modifier.padding(horizontal = Spacing.ScreenContent),
                         )
                     }
                 }
@@ -98,8 +96,8 @@ fun WaypointEditSheet(
                 )
                 if (hasUnappliedReorder) {
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
-                        modifier = Modifier.fillMaxWidth().height(ApplyChangesRowHeight).padding(SheetContentPadding),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
+                        modifier = Modifier.fillMaxWidth().height(ApplyChangesRowHeight).padding(Spacing.ScreenContent),
                     ) {
                         Button(onClick = onApplyChanges) {
                             Icon(Icons.Filled.Check, contentDescription = null)

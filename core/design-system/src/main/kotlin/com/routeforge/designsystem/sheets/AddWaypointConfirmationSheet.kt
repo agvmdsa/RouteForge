@@ -11,10 +11,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
-
-private val ControlsRowSpacing = 8.dp
+import com.routeforge.designsystem.theme.Spacing
 
 /** Shared add-waypoint confirmation, used identically on Plan Route and Simulate's waypoint-edit
  *  surfaces (FR-006 of spec 008) — takes pre-formatted strings rather than owning its own string
@@ -48,7 +46,7 @@ fun AddWaypointConfirmationSheet(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
             Button(onClick = onConfirm, enabled = !isSaveAsFavoriteChecked || favoriteNameInput.isNotBlank()) {
                 Text(confirmLabel)
             }

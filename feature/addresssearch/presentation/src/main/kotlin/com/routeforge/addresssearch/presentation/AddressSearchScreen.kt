@@ -36,11 +36,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
+import com.routeforge.designsystem.theme.Spacing
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-private val ScreenContentPadding = 16.dp
-private val ControlsRowSpacing = 8.dp
 private val SubmitIndicatorSize = 24.dp
 private const val RESULTS_HEIGHT_FRACTION = 0.75f
 
@@ -79,7 +78,7 @@ fun AddressSearchScreen(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onNavigateBack, sheetState = sheetState) {
-        Column(modifier = Modifier.fillMaxWidth().padding(ScreenContentPadding)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(Spacing.ScreenContent)) {
             OutlinedTextField(
                 value = state.query,
                 onValueChange = { onAction(AddressSearchAction.OnQueryChange(it)) },
@@ -100,17 +99,17 @@ fun AddressSearchScreen(
             )
 
             if (state.hasSearched) {
-                Spacer(modifier = Modifier.height(ControlsRowSpacing))
+                Spacer(modifier = Modifier.height(Spacing.ControlsRow))
                 when {
                     state.errorType != null ->
                         Text(
                             stringResource(R.string.address_search_error_message),
-                            modifier = Modifier.padding(top = ScreenContentPadding),
+                            modifier = Modifier.padding(top = Spacing.ScreenContent),
                         )
                     state.results.isEmpty() ->
                         Text(
                             stringResource(R.string.address_search_no_results_message),
-                            modifier = Modifier.padding(top = ScreenContentPadding),
+                            modifier = Modifier.padding(top = Spacing.ScreenContent),
                         )
                     else ->
                         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
@@ -181,7 +180,7 @@ private fun FavoriteNameSheet(
             label = { Text(stringResource(R.string.address_search_favorite_name_label)) },
             modifier = Modifier.fillMaxWidth(),
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
             Button(onClick = onConfirm, enabled = nameInput.isNotBlank()) {
                 Text(stringResource(R.string.address_search_favorite_save_button))
             }

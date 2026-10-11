@@ -30,12 +30,11 @@ import androidx.compose.ui.unit.dp
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
+import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.coredomain.model.RouteOptions
 import com.routeforge.routing.presentation.R
 
-private val ScreenContentPadding = 16.dp
-private val ControlsRowSpacing = 8.dp
 private val SwitchModeSpinnerSize = 24.dp
 
 @Composable
@@ -46,7 +45,7 @@ internal fun ModeChoiceSheet(
 ) {
     val sheetState = rememberModalBottomSheetState()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(modifier = Modifier.padding(ScreenContentPadding), verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+        Column(modifier = Modifier.padding(Spacing.ScreenContent), verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
             Text(stringResource(R.string.routing_choose_mode_label), style = MaterialTheme.typography.titleMedium)
             if (options.guided != null) {
                 Button(onClick = { onChoose(RoutePlaybackMode.GUIDED) }, modifier = Modifier.fillMaxWidth()) {
@@ -72,7 +71,7 @@ internal fun RouteReadySheet(
 ) {
     val sheetState = rememberModalBottomSheetState()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(modifier = Modifier.padding(ScreenContentPadding), verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+        Column(modifier = Modifier.padding(Spacing.ScreenContent), verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
             Text(
                 text =
                     stringResource(
@@ -83,7 +82,7 @@ internal fun RouteReadySheet(
                     ),
                 style = MaterialTheme.typography.titleMedium,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
                 TextButton(onClick = { onExport(RouteFileFormat.JSON) }) {
                     Icon(Icons.Filled.FileDownload, contentDescription = null)
                     Text(stringResource(R.string.routing_export_json_button))
@@ -124,9 +123,9 @@ internal fun EditWaypointSheet(
 ) {
     val sheetState = rememberModalBottomSheetState()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
-        Column(modifier = Modifier.padding(ScreenContentPadding), verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+        Column(modifier = Modifier.padding(Spacing.ScreenContent), verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
             Text(stringResource(R.string.routing_edit_waypoint_title), style = MaterialTheme.typography.titleMedium)
-            Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
                 OutlinedTextField(
                     value = latitude,
                     onValueChange = onLatitudeChange,
@@ -140,7 +139,7 @@ internal fun EditWaypointSheet(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
                 Button(onClick = onConfirm) { Text(stringResource(R.string.routing_save_button)) }
                 TextButton(onClick = onDelete) {
                     Icon(Icons.Filled.Delete, contentDescription = null)
@@ -168,7 +167,7 @@ internal fun SaveRouteSheet(
             label = { Text(stringResource(R.string.routing_route_name_label)) },
             modifier = Modifier.fillMaxWidth(),
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(ControlsRowSpacing)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
             Button(onClick = onConfirm, enabled = nameInput.isNotBlank()) {
                 Text(stringResource(R.string.routing_save_route_confirm_button))
             }

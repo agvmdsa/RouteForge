@@ -46,6 +46,7 @@ import com.routeforge.designsystem.map.RouteForgeMapMarkerIcon
 import com.routeforge.designsystem.speed.SpeedSelectorDialog
 import com.routeforge.designsystem.speed.SpeedSelectorFab
 import com.routeforge.designsystem.theme.RouteForgeTheme
+import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.simulation.domain.RouteProgressCalculator
 import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.presentation.components.CancelMockConfirmationSheet
@@ -66,8 +67,6 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
-private val ScreenContentPadding = 16.dp
-private val ControlsRowSpacing = 8.dp
 private val BannerTopOffset = 72.dp
 private const val WAYPOINTS_UPDATED_CONFIRMATION_DURATION_MILLIS = 2_500L
 private const val MIN_SPEED_KMH = 0f
@@ -271,7 +270,7 @@ fun SimulationScreen(
                     Modifier
                         .align(Alignment.TopCenter)
                         .fillMaxWidth()
-                        .padding(top = ScreenContentPadding, start = ScreenContentPadding, end = ScreenContentPadding),
+                        .padding(top = Spacing.ScreenContent, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
                 contentAlignment = Alignment.Center,
             ) {
                 CoordinatePill(
@@ -284,8 +283,8 @@ fun SimulationScreen(
 
             if (state.isBlockedByAuthorization) {
                 TopBanner(
-                    contentPadding = ScreenContentPadding,
-                    modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset, start = ScreenContentPadding, end = ScreenContentPadding),
+                    contentPadding = Spacing.ScreenContent,
+                    modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
                 ) {
                     Text(stringResource(R.string.simulation_error_not_authorized))
                     Button(onClick = { onAction(SimulationAction.OnOpenSetupClick) }) {
@@ -295,7 +294,7 @@ fun SimulationScreen(
             } else {
                 state.errorType?.let { errorType ->
                     TopBanner(
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset, start = ScreenContentPadding, end = ScreenContentPadding),
+                        modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
                     ) {
                         Text(text = errorType.toMessage())
                     }
@@ -317,8 +316,8 @@ fun SimulationScreen(
             var isPlaybackSpeedDialogOpen by remember { mutableStateOf(false) }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
-                modifier = Modifier.align(Alignment.BottomStart).padding(ScreenContentPadding),
+                verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
+                modifier = Modifier.align(Alignment.BottomStart).padding(Spacing.ScreenContent),
             ) {
                 if (state.loadedRoute != null) {
                     // A route and the joystick are mutually exclusive (engaging one clears the
@@ -355,7 +354,7 @@ fun SimulationScreen(
                 Joystick(
                     onDrag = { bearing -> onAction(SimulationAction.OnJoystickDrag(bearing)) },
                     onReleased = { onAction(SimulationAction.OnJoystickReleased) },
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = ScreenContentPadding),
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.ScreenContent),
                 )
                 if (isJoystickSpeedDialogOpen) {
                     SpeedSelectorDialog(
@@ -374,8 +373,8 @@ fun SimulationScreen(
                 val activeRoute = state.loadedRoute
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(ControlsRowSpacing),
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(ScreenContentPadding),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(Spacing.ScreenContent),
                 ) {
                     FloatingActionButton(onClick = { onAction(SimulationAction.OnCancelRouteClick) }) {
                         Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_route_button))

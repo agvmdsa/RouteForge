@@ -54,12 +54,12 @@ import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.IconBadge
 import com.routeforge.designsystem.sheets.MissingRegionsWarningSheet
 import com.routeforge.designsystem.theme.RouteForgeTheme
+import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.presentation.R
 import com.routeforge.routing.presentation.routerequest.ModeChoiceSheet
 import org.koin.androidx.compose.koinViewModel
 
-private val ScreenContentPadding = 16.dp
 private val CardSpacing = 12.dp
 private val CardShape = RoundedCornerShape(20.dp)
 private val CardPadding = 16.dp
@@ -127,14 +127,14 @@ fun SavedRoutesScreen(
                 text = stringResource(R.string.saved_routes_title),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(ScreenContentPadding),
+                modifier = Modifier.padding(Spacing.ScreenContent),
             )
             if (state.routes.isEmpty()) {
                 EmptySavedRoutesContent(modifier = Modifier.weight(1f).fillMaxWidth())
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxWidth().weight(1f),
-                    contentPadding = PaddingValues(horizontal = ScreenContentPadding),
+                    contentPadding = PaddingValues(horizontal = Spacing.ScreenContent),
                     verticalArrangement = Arrangement.spacedBy(CardSpacing),
                 ) {
                     items(state.routes, key = { it.id }) { route ->
@@ -189,7 +189,7 @@ fun SavedRoutesScreen(
             onDismissRequest = { onAction(SavedRoutesAction.OnDismissEdit) },
             sheetState = rememberModalBottomSheetState(),
         ) {
-            Column(modifier = Modifier.padding(ScreenContentPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(modifier = Modifier.padding(Spacing.ScreenContent), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.saved_routes_edit_title), style = MaterialTheme.typography.titleMedium)
                 OutlinedTextField(
                     value = state.editNameInput,

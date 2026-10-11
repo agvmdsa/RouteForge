@@ -11,8 +11,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.routeforge.designsystem.theme.Spacing
 
-private val SheetContentPadding = 16.dp
 private val SheetContentSpacing = 12.dp
 
 /** A bottom sheet for "are you sure" style prompts — title up top, then a caller-provided body
@@ -30,7 +30,7 @@ fun ConfirmationBottomSheet(
     val sheetState = rememberModalBottomSheetState()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
-            modifier = Modifier.padding(SheetContentPadding),
+            modifier = Modifier.padding(Spacing.ScreenContent),
             verticalArrangement = Arrangement.spacedBy(SheetContentSpacing),
         ) {
             Text(title, style = MaterialTheme.typography.titleMedium)
