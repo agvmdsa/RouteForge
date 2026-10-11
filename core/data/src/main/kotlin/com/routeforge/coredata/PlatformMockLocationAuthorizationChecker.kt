@@ -11,7 +11,7 @@ class PlatformMockLocationAuthorizationChecker(
     private val context: Context,
 ) : MockLocationAuthorizationChecker {
     override fun isAuthorized(): Boolean {
-        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val locationManager = context.getSystemService(LocationManager::class.java)
         return try {
             addMockLocationProbeProvider(locationManager)
             locationManager.removeTestProvider(MOCK_LOCATION_PROBE_PROVIDER)

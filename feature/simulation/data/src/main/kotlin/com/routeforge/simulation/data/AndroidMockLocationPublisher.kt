@@ -13,7 +13,7 @@ class AndroidMockLocationPublisher(
     private val context: Context,
 ) : MockLocationPublisher {
     private val locationManager: LocationManager
-        get() = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        get() = context.getSystemService(LocationManager::class.java)
 
     private var providersRegistered = false
 
