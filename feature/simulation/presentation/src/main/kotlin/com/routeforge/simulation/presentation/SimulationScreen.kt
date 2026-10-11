@@ -5,10 +5,8 @@ import android.graphics.Color as AndroidColor
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -40,6 +38,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.designsystem.components.ConfirmationPill
+import com.routeforge.designsystem.components.FabColumn
 import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapMarker
@@ -390,11 +389,7 @@ private fun BoxScope.SimulationMovementControls(
 ) {
     var isJoystickSpeedDialogOpen by remember { mutableStateOf(false) }
     var isPlaybackSpeedDialogOpen by remember { mutableStateOf(false) }
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
-        modifier = Modifier.align(Alignment.BottomStart).padding(Spacing.ScreenContent),
-    ) {
+    FabColumn(alignment = Alignment.BottomStart) {
         if (state.loadedRoute != null) {
             // A route and the joystick are mutually exclusive (engaging one clears the
             // other), so only the controls relevant to what's actually loaded are shown.
@@ -458,11 +453,7 @@ private fun BoxScope.SimulationRouteControls(
 ) {
     if (state.loadedRoute == null) return
     val activeRoute = state.loadedRoute
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
-        modifier = Modifier.align(Alignment.BottomEnd).padding(Spacing.ScreenContent),
-    ) {
+    FabColumn(alignment = Alignment.BottomEnd) {
         FloatingActionButton(onClick = { onAction(SimulationAction.OnCancelRouteClick) }) {
             Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_route_button))
         }

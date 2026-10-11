@@ -3,10 +3,8 @@ package com.routeforge.routing.presentation.routerequest
 import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -39,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.designsystem.components.ConfirmationPill
+import com.routeforge.designsystem.components.FabColumn
 import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapMarker
@@ -292,11 +291,7 @@ private fun BoxScope.RouteRequestLeadingFabs(
     editState: WaypointEditState,
     onEditAction: (WaypointEditAction) -> Unit,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
-        modifier = Modifier.align(Alignment.BottomStart).padding(Spacing.ScreenContent),
-    ) {
+    FabColumn(alignment = Alignment.BottomStart) {
         FloatingActionButton(onClick = onImportClick) {
             Icon(Icons.Filled.FileUpload, contentDescription = stringResource(R.string.routing_import_button))
         }
@@ -324,11 +319,7 @@ private fun BoxScope.RouteRequestTrailingFabs(
     state: RouteRequestState,
     onAction: (RouteRequestAction) -> Unit,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
-        modifier = Modifier.align(Alignment.BottomEnd).padding(Spacing.ScreenContent),
-    ) {
+    FabColumn(alignment = Alignment.BottomEnd) {
         if (state.draft.points.size >= MIN_WAYPOINTS_TO_PLAY) {
             if (state.route == null) {
                 FloatingActionButton(onClick = { onAction(RouteRequestAction.OnSwitchRouteModeClick) }) {
