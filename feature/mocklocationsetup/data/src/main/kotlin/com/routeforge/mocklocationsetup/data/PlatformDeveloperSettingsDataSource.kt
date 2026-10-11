@@ -25,7 +25,7 @@ class PlatformDeveloperSettingsDataSource(
     }
 
     override fun isDeveloperOptionsRestrictedByPolicy(): Boolean {
-        val userManager = context.getSystemService(Context.USER_SERVICE) as UserManager
+        val userManager = context.getSystemService(UserManager::class.java)
         return userManager.hasUserRestriction(UserManager.DISALLOW_DEBUGGING_FEATURES)
     }
 
