@@ -32,7 +32,7 @@ import kotlinx.coroutines.launch
 private const val DEFAULT_TICK_INTERVAL_MILLIS = 100L
 private const val DEFAULT_COMPLETION_AUTO_STOP_DELAY_MILLIS = 5_000L
 
-class SimulationControllerImpl(
+internal class SimulationControllerImpl(
     private val mockLocationPublisher: MockLocationPublisher,
     private val mockLocationAuthorizationChecker: MockLocationAuthorizationChecker,
     private val lastKnownRealLocationHolder: LastKnownRealLocationHolder = LastKnownRealLocationHolder(),

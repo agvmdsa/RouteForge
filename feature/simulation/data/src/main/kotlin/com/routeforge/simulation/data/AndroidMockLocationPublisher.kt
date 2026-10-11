@@ -9,7 +9,7 @@ import com.routeforge.simulation.domain.MockLocationPublisher
 
 private val mockProviders = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
 
-class AndroidMockLocationPublisher(
+internal class AndroidMockLocationPublisher(
     private val context: Context,
 ) : MockLocationPublisher {
     private val locationManager: LocationManager

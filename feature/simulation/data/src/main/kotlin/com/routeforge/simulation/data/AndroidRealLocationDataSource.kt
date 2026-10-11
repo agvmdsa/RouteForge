@@ -22,7 +22,7 @@ private const val LOCATION_UPDATE_INTERVAL_MILLIS = 5_000L
  *  based) is raced alongside it so a fix is still possible indoors or without a SIM. */
 private val realLocationProviders = listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
 
-class AndroidRealLocationDataSource(
+internal class AndroidRealLocationDataSource(
     private val context: Context,
 ) : RealLocationDataSource {
     override fun observeLocation(): Flow<RealLocationUpdate> =

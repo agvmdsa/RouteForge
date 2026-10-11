@@ -66,11 +66,11 @@ class BundledRegionCatalog(
             !file.exists() || file.delete()
         }
 
-    fun markDownloading(regionId: String) {
+    internal fun markDownloading(regionId: String) {
         downloadingRegionIds.add(regionId)
     }
 
-    fun markDownloadFinished(regionId: String) {
+    internal fun markDownloadFinished(regionId: String) {
         downloadingRegionIds.remove(regionId)
     }
 

@@ -4,7 +4,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.provider.Settings
 
-fun resolveSettingsAction(
+internal fun resolveSettingsAction(
     primaryAction: String,
     isActionResolvable: (String) -> Boolean,
 ): String = if (isActionResolvable(primaryAction)) primaryAction else Settings.ACTION_SETTINGS
