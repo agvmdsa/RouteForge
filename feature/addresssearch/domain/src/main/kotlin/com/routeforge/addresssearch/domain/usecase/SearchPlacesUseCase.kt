@@ -1,12 +1,11 @@
 package com.routeforge.addresssearch.domain.usecase
 
 import com.routeforge.addresssearch.domain.GeocodeClient
+import com.routeforge.addresssearch.domain.MAX_SEARCH_RESULTS
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.model.PlaceSearchResult
-
-private const val MAX_RESULTS = 10
 
 /** Orchestrates a search: calls [GeocodeClient], then ranks via [RankSearchResultsUseCase] using the
  *  user's current real location if known, else [fallbackReferenceLatitude]/[fallbackReferenceLongitude]
@@ -28,7 +27,7 @@ class SearchPlacesUseCase(
                 val referenceLatitude = realLocation?.latitude ?: fallbackReferenceLatitude
                 val referenceLongitude = realLocation?.longitude ?: fallbackReferenceLongitude
                 val ranked = rankSearchResults(result.data, referenceLatitude, referenceLongitude)
-                Result.Success(ranked.take(MAX_RESULTS))
+                Result.Success(ranked.take(MAX_SEARCH_RESULTS))
             }
             is Result.Error -> result
         }

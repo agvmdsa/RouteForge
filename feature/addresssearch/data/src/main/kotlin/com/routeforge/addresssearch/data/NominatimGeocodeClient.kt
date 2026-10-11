@@ -2,6 +2,7 @@ package com.routeforge.addresssearch.data
 
 import android.util.Log
 import com.routeforge.addresssearch.domain.GeocodeClient
+import com.routeforge.addresssearch.domain.MAX_SEARCH_RESULTS
 import com.routeforge.coredata.toNetworkError
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
@@ -20,7 +21,6 @@ import java.net.UnknownHostException
 
 private const val TAG = "NominatimGeocodeClient"
 private const val SEARCH_URL = "https://nominatim.openstreetmap.org/search"
-private const val REQUEST_LIMIT = 10
 
 class NominatimGeocodeClient(
     private val httpClient: HttpClient,
@@ -31,7 +31,7 @@ class NominatimGeocodeClient(
                 httpClient.get(SEARCH_URL) {
                     parameter("q", query)
                     parameter("format", "jsonv2")
-                    parameter("limit", REQUEST_LIMIT)
+                    parameter("limit", MAX_SEARCH_RESULTS)
                 }
             if (!response.status.isSuccess()) {
                 Log.w(TAG, "Nominatim returned ${response.status}")
