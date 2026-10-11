@@ -1,16 +1,16 @@
 package com.routeforge.addresssearch.domain.usecase
 
 import com.routeforge.addresssearch.domain.GeocodeClient
-import com.routeforge.addresssearch.domain.MAX_SEARCH_RESULTS
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.model.PlaceSearchResult
 
-/** Orchestrates a search: calls [GeocodeClient], then ranks via [RankSearchResultsUseCase] using the
- *  user's current real location if known, else [fallbackReferenceLatitude]/[fallbackReferenceLongitude]
- *  (the caller's current map center), else no reference point at all (research.md Decision 5). Caps
- *  the result count so a broad query doesn't flood the list. */
+/** Orchestrates a search: calls [GeocodeClient] (which already caps the result count at
+ *  [com.routeforge.addresssearch.domain.MAX_SEARCH_RESULTS]), then ranks via [RankSearchResultsUseCase]
+ *  using the user's current real location if known, else [fallbackReferenceLatitude]/
+ *  [fallbackReferenceLongitude] (the caller's current map center), else no reference point at all
+ *  (research.md Decision 5). */
 class SearchPlacesUseCase(
     private val geocodeClient: GeocodeClient,
     private val rankSearchResults: RankSearchResultsUseCase,
@@ -26,8 +26,7 @@ class SearchPlacesUseCase(
                 val realLocation = lastKnownRealLocationHolder.location.value
                 val referenceLatitude = realLocation?.latitude ?: fallbackReferenceLatitude
                 val referenceLongitude = realLocation?.longitude ?: fallbackReferenceLongitude
-                val ranked = rankSearchResults(result.data, referenceLatitude, referenceLongitude)
-                Result.Success(ranked.take(MAX_SEARCH_RESULTS))
+                Result.Success(rankSearchResults(result.data, referenceLatitude, referenceLongitude))
             }
             is Result.Error -> result
         }

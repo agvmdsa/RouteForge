@@ -71,16 +71,6 @@ class SearchPlacesUseCaseTest {
         }
 
     @Test
-    fun `caps the ranked results at 10`() =
-        runTest {
-            geocodeClient.result = Result.Success(List(15) { place("Place $it", latitude = it.toDouble(), longitude = it.toDouble()) })
-
-            val result = useCase("query", fallbackReferenceLatitude = null, fallbackReferenceLongitude = null)
-
-            assertEquals(10, (result as Result.Success).data.size)
-        }
-
-    @Test
     fun `passes a geocode failure straight through`() =
         runTest {
             geocodeClient.result = Result.Error(DataError.Network.NO_INTERNET)

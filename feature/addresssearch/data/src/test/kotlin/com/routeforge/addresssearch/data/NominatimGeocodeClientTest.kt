@@ -1,5 +1,6 @@
 package com.routeforge.addresssearch.data
 
+import com.routeforge.addresssearch.domain.MAX_SEARCH_RESULTS
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
 import io.ktor.client.HttpClient
@@ -53,6 +54,22 @@ class NominatimGeocodeClientTest {
             val result = client.search("asdkjhaskjdh")
 
             assertEquals(Result.Success(emptyList<Any>()), result)
+        }
+
+    @Test
+    fun `requests exactly MAX_SEARCH_RESULTS results from Nominatim`() =
+        runTest {
+            var requestedLimit: String? = null
+            val engine =
+                MockEngine { request ->
+                    requestedLimit = request.url.parameters["limit"]
+                    respond(content = "[]", status = HttpStatusCode.OK, headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+                }
+            val client = NominatimGeocodeClient(mockClient(engine))
+
+            client.search("anything")
+
+            assertEquals(MAX_SEARCH_RESULTS.toString(), requestedLimit)
         }
 
     @Test
