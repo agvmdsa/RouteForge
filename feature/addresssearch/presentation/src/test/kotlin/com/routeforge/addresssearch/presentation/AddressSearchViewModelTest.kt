@@ -80,7 +80,7 @@ class AddressSearchViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel(sourceContext: SearchSourceContext = SearchSourceContext.OTHER): AddressSearchViewModel =
+    private fun createViewModel(sourceContext: SearchSourceContext = SearchSourceContext.TELEPORT_OR_FAVORITE): AddressSearchViewModel =
         AddressSearchViewModel(
             sourceContext = sourceContext,
             referenceLatitude = null,
@@ -141,7 +141,7 @@ class AddressSearchViewModelTest {
             viewModel.onAction(AddressSearchAction.OnSelectResult(0))
 
             assertEquals(result, pendingSearchWaypointHolder.selected.value)
-            assertNull(viewModel.state.value.choiceForResult)
+            assertNull(viewModel.state.value.pendingChoiceResult)
         }
 
     @Test
@@ -149,13 +149,13 @@ class AddressSearchViewModelTest {
         runTest {
             val result = place()
             geocodeClient.result = Result.Success(listOf(result))
-            val viewModel = createViewModel(sourceContext = SearchSourceContext.OTHER)
+            val viewModel = createViewModel(sourceContext = SearchSourceContext.TELEPORT_OR_FAVORITE)
             viewModel.onAction(AddressSearchAction.OnQueryChange("query"))
             viewModel.onAction(AddressSearchAction.OnSubmit)
 
             viewModel.onAction(AddressSearchAction.OnSelectResult(0))
 
-            assertEquals(result, viewModel.state.value.choiceForResult)
+            assertEquals(result, viewModel.state.value.pendingChoiceResult)
             assertNull(pendingSearchWaypointHolder.selected.value)
         }
 
@@ -166,7 +166,7 @@ class AddressSearchViewModelTest {
 
             viewModel.onAction(AddressSearchAction.OnSelectResult(0))
 
-            assertNull(viewModel.state.value.choiceForResult)
+            assertNull(viewModel.state.value.pendingChoiceResult)
         }
 
     @Test

@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 enum class SearchSourceContext {
     PLAN_ROUTE,
-    OTHER,
+    TELEPORT_OR_FAVORITE,
 }
 
 /** The address-search screen's navigation route — a top-level destination (not nested inside any

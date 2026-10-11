@@ -129,7 +129,7 @@ fun AddressSearchScreen(
         }
     }
 
-    val choiceResult = state.choiceForResult
+    val choiceResult = state.pendingChoiceResult
     if (choiceResult != null) {
         if (!state.isNamingFavorite) {
             TeleportOrFavoriteChoiceSheet(

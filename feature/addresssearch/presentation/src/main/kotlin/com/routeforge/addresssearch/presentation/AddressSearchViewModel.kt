@@ -42,11 +42,11 @@ class AddressSearchViewModel(
             is AddressSearchAction.OnQueryChange -> _state.update { it.copy(query = action.value) }
             AddressSearchAction.OnSubmit -> submit()
             is AddressSearchAction.OnSelectResult -> selectResult(action.index)
-            AddressSearchAction.OnDismissChoice -> _state.update { it.copy(choiceForResult = null) }
+            AddressSearchAction.OnDismissChoice -> _state.update { it.copy(pendingChoiceResult = null) }
             AddressSearchAction.OnChooseTeleport -> chooseTeleport()
             AddressSearchAction.OnChooseSaveAsFavorite ->
                 _state.update {
-                    it.copy(isNamingFavorite = true, favoriteNameInput = it.choiceForResult?.name.orEmpty())
+                    it.copy(isNamingFavorite = true, favoriteNameInput = it.pendingChoiceResult?.name.orEmpty())
                 }
             is AddressSearchAction.OnFavoriteNameChange -> _state.update { it.copy(favoriteNameInput = action.value) }
             AddressSearchAction.OnConfirmFavoriteName -> confirmFavoriteName()
@@ -87,18 +87,18 @@ class AddressSearchViewModel(
             pendingSearchWaypointHolder.set(result)
             viewModelScope.launch { _events.send(AddressSearchEvent.NavigateBack) }
         } else {
-            _state.update { it.copy(choiceForResult = result) }
+            _state.update { it.copy(pendingChoiceResult = result) }
         }
     }
 
     private fun chooseTeleport() {
-        val result = _state.value.choiceForResult ?: return
+        val result = _state.value.pendingChoiceResult ?: return
         pendingTeleportTargetHolder.set(RoutePoint(latitude = result.latitude, longitude = result.longitude))
         viewModelScope.launch { _events.send(AddressSearchEvent.NavigateBack) }
     }
 
     private fun confirmFavoriteName() {
-        val result = _state.value.choiceForResult ?: return
+        val result = _state.value.pendingChoiceResult ?: return
         val name = _state.value.favoriteNameInput
         if (name.isBlank()) return
         favoriteWaypointsRepository.add(name, result.latitude, result.longitude)
