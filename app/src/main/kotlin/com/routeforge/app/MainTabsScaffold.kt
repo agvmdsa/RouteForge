@@ -30,7 +30,14 @@ import com.routeforge.routing.presentation.saved.SavedRoute
 import com.routeforge.routing.presentation.settings.SettingsRoute
 import com.routeforge.simulation.presentation.SimulationRoute
 
+/** Identifies a tab independently of its nav route type, so comparisons (e.g. "is the active tab
+ *  Plan Route?") are a safe, exhaustive-checkable `==` on an enum rather than `===` on [TabItem.tabRoute],
+ *  which only worked because every route happened to be a `data object` singleton — a non-obvious
+ *  invariant a future parameterized route would silently break. */
+internal enum class AppTab { SIMULATE, PLAN_ROUTE, SAVED, SETTINGS }
+
 private class TabItem(
+    val tab: AppTab,
     val tabRoute: Any,
     val icon: ImageVector,
     val labelRes: Int,
@@ -41,6 +48,7 @@ private class TabItem(
 private val TabItems =
     listOf(
         TabItem(
+            tab = AppTab.SIMULATE,
             tabRoute = SimulateTabRoute,
             icon = Icons.Filled.MyLocation,
             labelRes = R.string.tab_simulate_label,
@@ -48,6 +56,7 @@ private val TabItems =
             isInHierarchy = { it.hierarchy.any { d -> d.hasRoute(SimulateTabRoute::class) } },
         ),
         TabItem(
+            tab = AppTab.PLAN_ROUTE,
             tabRoute = PlanRouteTabRoute,
             icon = Icons.Filled.EditLocation,
             labelRes = R.string.tab_plan_route_label,
@@ -55,6 +64,7 @@ private val TabItems =
             isInHierarchy = { it.hierarchy.any { d -> d.hasRoute(PlanRouteTabRoute::class) } },
         ),
         TabItem(
+            tab = AppTab.SAVED,
             tabRoute = SavedTabRoute,
             icon = Icons.Filled.Bookmark,
             labelRes = R.string.tab_saved_label,
@@ -62,6 +72,7 @@ private val TabItems =
             isInHierarchy = { it.hierarchy.any { d -> d.hasRoute(SavedTabRoute::class) } },
         ),
         TabItem(
+            tab = AppTab.SETTINGS,
             tabRoute = SettingsTabRoute,
             icon = Icons.Filled.Settings,
             labelRes = R.string.tab_settings_label,
@@ -100,7 +111,7 @@ fun MainTabsScaffold(
     val currentDestination = navController.currentBackStackEntryAsState().value?.destination
     val activeRootTab = currentDestination?.let { destination -> TabItems.firstOrNull { it.isRootDestination(destination) } }
 
-    BackHandler(enabled = activeRootTab != null && activeRootTab.tabRoute !== SimulateTabRoute) {
+    BackHandler(enabled = activeRootTab != null && activeRootTab.tab != AppTab.SIMULATE) {
         navController.switchToTab(SimulateTabRoute)
     }
 
@@ -125,7 +136,7 @@ fun MainTabsScaffold(
                         selected = false,
                         onClick = {
                             val sourceContext =
-                                if (activeRootTab?.tabRoute === PlanRouteTabRoute) SearchSourceContext.PLAN_ROUTE else SearchSourceContext.OTHER
+                                if (activeRootTab?.tab == AppTab.PLAN_ROUTE) SearchSourceContext.PLAN_ROUTE else SearchSourceContext.OTHER
                             navController.navigate(AddressSearchRoute(sourceContext = sourceContext))
                         },
                         icon = { Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.tab_search_label)) },
