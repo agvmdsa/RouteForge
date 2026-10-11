@@ -19,5 +19,5 @@ data class Region(
 
     /** Estimated download size for only the missing tiles, assuming an even split of [approximateSizeBytes] across [tileIds]. */
     val estimatedMissingBytes: Long
-        get() = if (tileIds.isEmpty() || missingTileCount <= 0) 0L else (approximateSizeBytes / tileIds.size) * missingTileCount
+        get() = if (tileIds.isEmpty() || missingTileCount <= 0) 0L else approximateSizeBytes * missingTileCount / tileIds.size
 }
