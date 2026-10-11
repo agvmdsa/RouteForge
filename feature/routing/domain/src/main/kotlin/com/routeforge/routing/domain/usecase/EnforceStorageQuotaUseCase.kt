@@ -3,6 +3,7 @@ package com.routeforge.routing.domain.usecase
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.RegionCatalog
+import com.routeforge.coredomain.RegionDeletionResult
 import com.routeforge.coredomain.RegionUsageTracker
 import com.routeforge.routing.domain.StorageQuotaStore
 import com.routeforge.coredomain.model.RegionStatus
@@ -38,7 +39,7 @@ class EnforceStorageQuotaUseCase(
         for (region in candidates) {
             if (totalBytes <= quotaBytes) break
             val freedBytes = regionCatalog.actualSizeOnDiskBytes(region)
-            if (regionCatalog.deleteRegion(region)) {
+            if (regionCatalog.deleteRegion(region) == RegionDeletionResult.FULLY_DELETED) {
                 regionUsageTracker.clear(region.id)
                 totalBytes -= freedBytes
             }

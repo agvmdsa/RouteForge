@@ -1,6 +1,7 @@
 package com.routeforge.coredomain
 
 import com.routeforge.coredomain.RegionCatalog
+import com.routeforge.coredomain.RegionDeletionResult
 
 import com.routeforge.coredomain.model.Region
 
@@ -22,11 +23,11 @@ class FakeRegionCatalog(
 
     override fun actualSizeOnDiskBytes(region: Region): Long = sizesOnDiskBytes[region.id] ?: 0L
 
-    override fun deleteRegion(region: Region): Boolean {
-        if (region.id in regionIdsThatFailToDelete) return false
+    override fun deleteRegion(region: Region): RegionDeletionResult {
+        if (region.id in regionIdsThatFailToDelete) return RegionDeletionResult.PARTIALLY_DELETED
         deletedRegionIds.add(region.id)
         regions = regions.filterNot { it.id == region.id }
         sizesOnDiskBytes = sizesOnDiskBytes - region.id
-        return true
+        return RegionDeletionResult.FULLY_DELETED
     }
 }

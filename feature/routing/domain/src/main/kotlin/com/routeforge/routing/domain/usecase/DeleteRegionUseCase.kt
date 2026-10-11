@@ -1,6 +1,7 @@
 package com.routeforge.routing.domain.usecase
 
 import com.routeforge.coredomain.RegionCatalog
+import com.routeforge.coredomain.RegionDeletionResult
 import com.routeforge.coredomain.RegionUsageTracker
 import com.routeforge.coredomain.model.Region
 
@@ -12,7 +13,7 @@ class DeleteRegionUseCase(
     private val regionUsageTracker: RegionUsageTracker,
 ) {
     operator fun invoke(region: Region): Boolean {
-        val deleted = regionCatalog.deleteRegion(region)
+        val deleted = regionCatalog.deleteRegion(region) == RegionDeletionResult.FULLY_DELETED
         if (deleted) regionUsageTracker.clear(region.id)
         return deleted
     }

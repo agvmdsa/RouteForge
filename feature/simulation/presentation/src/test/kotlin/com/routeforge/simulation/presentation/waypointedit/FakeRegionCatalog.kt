@@ -1,6 +1,7 @@
 package com.routeforge.simulation.presentation.waypointedit
 
 import com.routeforge.coredomain.RegionCatalog
+import com.routeforge.coredomain.RegionDeletionResult
 import com.routeforge.coredomain.model.Region
 
 class FakeRegionCatalog(
@@ -17,8 +18,8 @@ class FakeRegionCatalog(
 
     override fun actualSizeOnDiskBytes(region: Region): Long = 0L
 
-    override fun deleteRegion(region: Region): Boolean {
+    override fun deleteRegion(region: Region): RegionDeletionResult {
         regions = regions.filterNot { it.id == region.id }
-        return true
+        return RegionDeletionResult.FULLY_DELETED
     }
 }

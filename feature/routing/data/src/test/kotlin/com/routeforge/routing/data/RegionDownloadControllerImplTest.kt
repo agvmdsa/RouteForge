@@ -6,6 +6,7 @@ import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.RegionCatalog
+import com.routeforge.coredomain.RegionDeletionResult
 import com.routeforge.routing.domain.RegionDownloadEvent
 import com.routeforge.routing.domain.RegionDownloader
 import com.routeforge.coredomain.RegionUsageTracker
@@ -80,9 +81,9 @@ private class FakeRegionCatalog : RegionCatalog {
 
     override fun actualSizeOnDiskBytes(region: Region): Long = 0L
 
-    override fun deleteRegion(region: Region): Boolean {
+    override fun deleteRegion(region: Region): RegionDeletionResult {
         deleteRegionCalls.add(region)
-        return true
+        return RegionDeletionResult.FULLY_DELETED
     }
 }
 

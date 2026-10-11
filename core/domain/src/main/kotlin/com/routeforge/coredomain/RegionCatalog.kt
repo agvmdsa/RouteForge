@@ -2,6 +2,8 @@ package com.routeforge.coredomain
 
 import com.routeforge.coredomain.model.Region
 
+enum class RegionDeletionResult { FULLY_DELETED, PARTIALLY_DELETED }
+
 interface RegionCatalog {
     fun listRegions(): List<Region>
 
@@ -18,8 +20,9 @@ interface RegionCatalog {
      *  independent of [Region.approximateSizeBytes]'s manifest estimate. */
     fun actualSizeOnDiskBytes(region: Region): Long
 
-    /** Deletes [region]'s tile files from disk. Returns true only if every tile file was either
-     *  already absent or successfully deleted; false if at least one could not be removed (the
-     *  caller is expected to skip and move on rather than treat this as fatal, per FR-012). */
-    fun deleteRegion(region: Region): Boolean
+    /** Deletes [region]'s tile files from disk. [RegionDeletionResult.FULLY_DELETED] only if every
+     *  tile file was either already absent or successfully deleted; [RegionDeletionResult.PARTIALLY_DELETED]
+     *  if at least one could not be removed (the caller is expected to skip and move on rather than
+     *  treat this as fatal, per FR-012). */
+    fun deleteRegion(region: Region): RegionDeletionResult
 }

@@ -3,6 +3,7 @@ package com.routeforge.routing.data
 import android.util.Log
 import com.routeforge.routing.domain.BrouterTileGrid
 import com.routeforge.coredomain.RegionCatalog
+import com.routeforge.coredomain.RegionDeletionResult
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import kotlinx.serialization.decodeFromString
@@ -62,10 +63,11 @@ class BundledRegionCatalog(
     override fun actualSizeOnDiskBytes(region: Region): Long =
         region.tileIds.sumOf { fileName -> File(segmentDirectory, fileName).let { if (it.exists()) it.length() else 0L } }
 
-    override fun deleteRegion(region: Region): Boolean =
-        region.tileIds.all { fileName ->
-            val file = File(segmentDirectory, fileName)
-            !file.exists() || file.delete()
+    override fun deleteRegion(region: Region): RegionDeletionResult =
+        if (region.tileIds.all { fileName -> val file = File(segmentDirectory, fileName); !file.exists() || file.delete() }) {
+            RegionDeletionResult.FULLY_DELETED
+        } else {
+            RegionDeletionResult.PARTIALLY_DELETED
         }
 
     internal fun markDownloading(regionId: String) {
