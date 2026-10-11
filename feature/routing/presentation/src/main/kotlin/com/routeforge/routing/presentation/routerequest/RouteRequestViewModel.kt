@@ -18,15 +18,10 @@ import com.routeforge.routing.domain.model.RouteFileFailure
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.coredomain.model.RouteOptions
 import com.routeforge.coredomain.model.autoResolved
-import com.routeforge.routing.domain.usecase.AddWaypointUseCase
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
-import com.routeforge.routing.domain.usecase.DeleteWaypointUseCase
-import com.routeforge.routing.domain.usecase.EditWaypointUseCase
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
-import com.routeforge.routing.domain.usecase.MoveWaypointUseCase
 import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
-import com.routeforge.routing.domain.usecase.UndoRouteDraftUseCase
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -53,11 +48,6 @@ class RouteRequestViewModel(
     private val favoriteRoutesRepository: FavoriteRoutesRepository,
     private val selectedFavoriteWaypointHolder: SelectedFavoriteWaypointHolder,
     private val pendingSearchWaypointHolder: PendingSearchWaypointHolder,
-    private val addWaypoint: AddWaypointUseCase = AddWaypointUseCase(),
-    private val moveWaypoint: MoveWaypointUseCase = MoveWaypointUseCase(),
-    private val editWaypoint: EditWaypointUseCase = EditWaypointUseCase(),
-    private val deleteWaypoint: DeleteWaypointUseCase = DeleteWaypointUseCase(),
-    private val undoRouteDraft: UndoRouteDraftUseCase = UndoRouteDraftUseCase(),
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val _state = MutableStateFlow(RouteRequestState(lastKnownLocation = lastKnownRealLocationHolder.location.value))
@@ -70,7 +60,7 @@ class RouteRequestViewModel(
         selectedFavoriteWaypointHolder.selected
             .onEach { point ->
                 if (point != null) {
-                    mutateDraft { addWaypoint(it, point) }
+                    mutateDraft { it.add(point) }
                     selectedFavoriteWaypointHolder.clear()
                 }
             }.launchIn(viewModelScope)
@@ -96,7 +86,7 @@ class RouteRequestViewModel(
                 _state.update { it.copy(pendingAddLatitude = action.latitude, pendingAddLongitude = action.longitude) }
             is RouteRequestAction.OnMarkerDragged ->
                 mutateDraft {
-                    moveWaypoint(it, action.index, RoutePoint(latitude = action.latitude, longitude = action.longitude))
+                    it.update(action.index, RoutePoint(latitude = action.latitude, longitude = action.longitude))
                 }
             is RouteRequestAction.OnMarkerClick -> openEditDialog(action.index)
             is RouteRequestAction.OnEditLatitudeChange -> _state.update { it.copy(editLatitudeInput = action.value) }
@@ -104,7 +94,7 @@ class RouteRequestViewModel(
             RouteRequestAction.OnConfirmEdit -> confirmEdit()
             RouteRequestAction.OnDeleteEditingWaypoint -> deleteEditingWaypoint()
             RouteRequestAction.OnDismissEdit -> _state.update { it.copy(editingIndex = null) }
-            RouteRequestAction.OnUndo -> mutateDraft { undoRouteDraft(it) }
+            RouteRequestAction.OnUndo -> mutateDraft { it.undo() }
             RouteRequestAction.OnConfirmAddWaypoint -> confirmAddWaypoint()
             RouteRequestAction.OnDismissAddWaypoint -> dismissAddWaypoint()
             RouteRequestAction.OnToggleSaveAsFavorite ->
@@ -157,7 +147,7 @@ class RouteRequestViewModel(
         val longitude = _state.value.pendingAddLongitude
         if (latitude == null || longitude == null) return
         if (_state.value.isSaveAsFavoriteChecked && _state.value.favoriteNameInput.isBlank()) return
-        mutateDraft { addWaypoint(it, RoutePoint(latitude = latitude, longitude = longitude)) }
+        mutateDraft { it.add(RoutePoint(latitude = latitude, longitude = longitude)) }
         if (_state.value.isSaveAsFavoriteChecked) {
             favoriteWaypointsRepository.add(_state.value.favoriteNameInput, latitude, longitude)
         }
@@ -243,13 +233,13 @@ class RouteRequestViewModel(
             _state.update { it.copy(errorType = RouteRequestError.INVALID_EDIT_COORDINATES) }
             return
         }
-        mutateDraft { editWaypoint(it, index, RoutePoint(latitude = latitude, longitude = longitude)) }
+        mutateDraft { it.update(index, RoutePoint(latitude = latitude, longitude = longitude)) }
         _state.update { it.copy(editingIndex = null) }
     }
 
     private fun deleteEditingWaypoint() {
         val index = _state.value.editingIndex ?: return
-        mutateDraft { deleteWaypoint(it, index) }
+        mutateDraft { it.delete(index) }
         _state.update { it.copy(editingIndex = null) }
     }
 
