@@ -22,10 +22,8 @@ import com.routeforge.mocklocationsetup.domain.usecase.ObserveSetupStateUseCase
 import com.routeforge.mocklocationsetup.presentation.MockLocationSetupRoute
 import com.routeforge.mocklocationsetup.presentation.mockLocationSetupGraph
 import com.routeforge.routing.presentation.planRouteGraph
-import com.routeforge.routing.presentation.regioncatalog.RegionCatalogRoot
+import com.routeforge.routing.presentation.regionCatalogGraph
 import com.routeforge.routing.presentation.regioncatalog.RegionCatalogRoute
-import com.routeforge.routing.presentation.regioncoveragemap.RegionCoverageMapRoot
-import com.routeforge.routing.presentation.regioncoveragemap.RegionCoverageMapRoute
 import com.routeforge.routing.presentation.routerequest.RouteRequestRoute
 import com.routeforge.routing.presentation.saved.SavedRoute
 import com.routeforge.routing.presentation.savedGraph
@@ -80,12 +78,7 @@ class MainActivity : ComponentActivity() {
                                 onOpenSetup = { navController.navigate(MockLocationSetupRoute) },
                                 onOpenRegionCatalog = { navController.navigate(RegionCatalogRoute) },
                             )
-                            composable<RegionCatalogRoute> {
-                                RegionCatalogRoot(onOpenCoverageMap = { navController.navigate(RegionCoverageMapRoute) })
-                            }
-                            composable<RegionCoverageMapRoute> {
-                                RegionCoverageMapRoot()
-                            }
+                            regionCatalogGraph(navController)
                         }
                         navigation<PlanTabRoute>(startDestination = RouteRequestRoute) {
                             planRouteGraph(

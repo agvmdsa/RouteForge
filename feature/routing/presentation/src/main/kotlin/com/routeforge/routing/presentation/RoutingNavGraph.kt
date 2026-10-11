@@ -17,6 +17,21 @@ import com.routeforge.routing.presentation.saved.SavedRoute
 import com.routeforge.routing.presentation.settings.SettingsRoot
 import com.routeforge.routing.presentation.settings.SettingsRoute
 
+/** [RegionCatalogRoute]/[RegionCoverageMapRoute] — declared once here and reused by every tab
+ *  that can open the catalog ([planRouteGraph], [savedGraph], [settingsGraph], and the Simulate
+ *  tab's own graph in the app module). Each caller still gets its own independent destination
+ *  instance nested under its own tab's graph, since a saved route, a saved location, or Settings
+ *  can all open the catalog from a regions-missing warning or a direct link — nesting it under
+ *  whichever tab opened it is what keeps the back button returning to that same tab. */
+fun NavGraphBuilder.regionCatalogGraph(navController: NavController) {
+    composable<RegionCatalogRoute> {
+        RegionCatalogRoot(onOpenCoverageMap = { navController.navigate(RegionCoverageMapRoute) })
+    }
+    composable<RegionCoverageMapRoute> {
+        RegionCoverageMapRoot()
+    }
+}
+
 /** The Plan Route tab's own nested graph: its root screen plus every sub-screen reachable from it. */
 fun NavGraphBuilder.planRouteGraph(
     navController: NavController,
@@ -29,21 +44,15 @@ fun NavGraphBuilder.planRouteGraph(
             onOpenFavorites = { navController.navigate(FavoritesRoute(isPickerMode = true)) },
         )
     }
-    composable<RegionCatalogRoute> {
-        RegionCatalogRoot(onOpenCoverageMap = { navController.navigate(RegionCoverageMapRoute) })
-    }
-    composable<RegionCoverageMapRoute> {
-        RegionCoverageMapRoot()
-    }
+    regionCatalogGraph(navController)
     composable<FavoritesRoute> { backStackEntry ->
         val route = backStackEntry.toRoute<FavoritesRoute>()
         FavoritesRoot(isPickerMode = route.isPickerMode, onDone = { navController.popBackStack() })
     }
 }
 
-/** The Saved tab's own nested graph. `RegionCatalogRoute`/`RegionCoverageMapRoute` are declared here
- *  too (an independent instance from [planRouteGraph]'s and [settingsGraph]'s) since using a saved
- *  route that needs regions not yet downloaded can open the catalog from within this tab as well. */
+/** The Saved tab's own nested graph. See [regionCatalogGraph] for why it's reused rather than
+ *  shared across tabs. */
 fun NavGraphBuilder.savedGraph(
     navController: NavController,
     onGoToSimulate: () -> Unit,
@@ -54,12 +63,7 @@ fun NavGraphBuilder.savedGraph(
             onOpenRegionCatalog = { navController.navigate(RegionCatalogRoute) },
         )
     }
-    composable<RegionCatalogRoute> {
-        RegionCatalogRoot(onOpenCoverageMap = { navController.navigate(RegionCoverageMapRoute) })
-    }
-    composable<RegionCoverageMapRoute> {
-        RegionCoverageMapRoot()
-    }
+    regionCatalogGraph(navController)
 }
 
 /** The Settings tab's own nested graph. */
@@ -67,10 +71,5 @@ fun NavGraphBuilder.settingsGraph(navController: NavController) {
     composable<SettingsRoute> {
         SettingsRoot(onManageDownloadsClick = { navController.navigate(RegionCatalogRoute) })
     }
-    composable<RegionCatalogRoute> {
-        RegionCatalogRoot(onOpenCoverageMap = { navController.navigate(RegionCoverageMapRoute) })
-    }
-    composable<RegionCoverageMapRoute> {
-        RegionCoverageMapRoot()
-    }
+    regionCatalogGraph(navController)
 }
