@@ -123,6 +123,18 @@ fun AddressSearchScreen(
         }
     }
 
+    AddressSearchDialogs(state = state, onAction = onAction)
+}
+
+/** The screen's modal sheets — the teleport/favorite choice, then (once that choice is "save as
+ *  favorite") the name-entry sheet — gated on [AddressSearchState.pendingChoiceResult], matching
+ *  [com.routeforge.routing.presentation.routerequest.RouteRequestDialogs]'s precedent of keeping a
+ *  screen's modal sheets as one composable, separate from its always-visible content. */
+@Composable
+private fun AddressSearchDialogs(
+    state: AddressSearchState,
+    onAction: (AddressSearchAction) -> Unit,
+) {
     val choiceResult = state.pendingChoiceResult
     if (choiceResult != null) {
         if (!state.isNamingFavorite) {
