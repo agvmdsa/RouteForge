@@ -1,7 +1,7 @@
 package com.routeforge.mocklocationsetup.presentation
 
 import android.content.Intent
-import com.routeforge.mocklocationsetup.domain.DeveloperSettingsDataSource
+import com.routeforge.mocklocationsetup.domain.MockLocationSetupStateSource
 import com.routeforge.mocklocationsetup.domain.usecase.ObserveSetupStateUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -17,7 +17,7 @@ private class FakeDataSource(
     var developerOptionsEnabled: Boolean = false,
     var appSelectedAsMockLocationProvider: Boolean = false,
     var restrictedByPolicy: Boolean = false,
-) : DeveloperSettingsDataSource {
+) : MockLocationSetupStateSource {
     override fun isDeveloperOptionsEnabled(): Boolean = developerOptionsEnabled
 
     override fun isAppSelectedAsMockLocationProvider(): Boolean = appSelectedAsMockLocationProvider

@@ -3,7 +3,7 @@ package com.routeforge.mocklocationsetup.presentation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.routeforge.mocklocationsetup.domain.DeveloperSettingsDataSource
+import com.routeforge.mocklocationsetup.domain.MockLocationSetupStateSource
 import com.routeforge.mocklocationsetup.domain.model.SetupStep
 import com.routeforge.mocklocationsetup.domain.model.SetupStepId
 import com.routeforge.mocklocationsetup.domain.usecase.ObserveSetupStateUseCase
@@ -18,7 +18,7 @@ private const val TAG = "MockLocationSetupVM"
 
 class MockLocationSetupViewModel(
     private val observeSetupState: ObserveSetupStateUseCase,
-    private val developerSettingsDataSource: DeveloperSettingsDataSource,
+    private val mockLocationSetupStateSource: MockLocationSetupStateSource,
 ) : ViewModel() {
     private val _state = MutableStateFlow(MockLocationSetupState())
     val state = _state.asStateFlow()
@@ -50,8 +50,8 @@ class MockLocationSetupViewModel(
     private fun launchDeepLink(stepId: SetupStepId) {
         val intent =
             when (stepId) {
-                SetupStepId.ENABLE_DEVELOPER_OPTIONS -> developerSettingsDataSource.developerOptionsDeepLinkIntent()
-                SetupStepId.SELECT_MOCK_LOCATION_APP -> developerSettingsDataSource.mockLocationAppDeepLinkIntent()
+                SetupStepId.ENABLE_DEVELOPER_OPTIONS -> mockLocationSetupStateSource.developerOptionsDeepLinkIntent()
+                SetupStepId.SELECT_MOCK_LOCATION_APP -> mockLocationSetupStateSource.mockLocationAppDeepLinkIntent()
             }
         if (intent != null) {
             viewModelScope.launch {

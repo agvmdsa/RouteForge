@@ -5,13 +5,13 @@ import android.content.Intent
 import android.os.UserManager
 import android.provider.Settings
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
-import com.routeforge.mocklocationsetup.domain.DeveloperSettingsDataSource
+import com.routeforge.mocklocationsetup.domain.MockLocationSetupStateSource
 
-class PlatformDeveloperSettingsDataSource(
+class PlatformMockLocationSetupStateSource(
     private val context: Context,
     private val deepLinkIntentFactory: SetupDeepLinkIntentFactory,
     private val mockLocationAuthorizationChecker: MockLocationAuthorizationChecker,
-) : DeveloperSettingsDataSource {
+) : MockLocationSetupStateSource {
     override fun isDeveloperOptionsEnabled(): Boolean =
         Settings.Secure.getInt(
             context.contentResolver,

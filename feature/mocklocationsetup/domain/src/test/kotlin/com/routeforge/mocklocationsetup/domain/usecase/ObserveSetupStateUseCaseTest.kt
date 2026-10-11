@@ -1,6 +1,6 @@
 package com.routeforge.mocklocationsetup.domain.usecase
 
-import com.routeforge.mocklocationsetup.domain.FakeDeveloperSettingsDataSource
+import com.routeforge.mocklocationsetup.domain.FakeMockLocationSetupStateSource
 import com.routeforge.mocklocationsetup.domain.model.SetupStepId
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -10,7 +10,7 @@ class ObserveSetupStateUseCaseTest {
     @Test
     fun `both steps pending when neither check passes`() {
         val dataSource =
-            FakeDeveloperSettingsDataSource(
+            FakeMockLocationSetupStateSource(
                 developerOptionsEnabled = false,
                 appSelectedAsMockLocationProvider = false,
             )
@@ -28,7 +28,7 @@ class ObserveSetupStateUseCaseTest {
     @Test
     fun `pending steps empty and ready when both checks pass`() {
         val dataSource =
-            FakeDeveloperSettingsDataSource(
+            FakeMockLocationSetupStateSource(
                 developerOptionsEnabled = true,
                 appSelectedAsMockLocationProvider = true,
             )
@@ -43,7 +43,7 @@ class ObserveSetupStateUseCaseTest {
     @Test
     fun `only select mock location app step when developer options already enabled`() {
         val dataSource =
-            FakeDeveloperSettingsDataSource(
+            FakeMockLocationSetupStateSource(
                 developerOptionsEnabled = true,
                 appSelectedAsMockLocationProvider = false,
             )
@@ -60,7 +60,7 @@ class ObserveSetupStateUseCaseTest {
     @Test
     fun `only select mock location app step reappears when a different app is later selected`() {
         val dataSource =
-            FakeDeveloperSettingsDataSource(
+            FakeMockLocationSetupStateSource(
                 developerOptionsEnabled = true,
                 appSelectedAsMockLocationProvider = false,
             )
@@ -77,7 +77,7 @@ class ObserveSetupStateUseCaseTest {
     @Test
     fun `both steps reappear starting with enable developer options when developer options is later disabled`() {
         val dataSource =
-            FakeDeveloperSettingsDataSource(
+            FakeMockLocationSetupStateSource(
                 developerOptionsEnabled = false,
                 appSelectedAsMockLocationProvider = false,
             )
@@ -94,7 +94,7 @@ class ObserveSetupStateUseCaseTest {
     @Test
     fun `blocked by policy short-circuits to the policy-restricted state`() {
         val dataSource =
-            FakeDeveloperSettingsDataSource(
+            FakeMockLocationSetupStateSource(
                 developerOptionsEnabled = false,
                 appSelectedAsMockLocationProvider = false,
                 restrictedByPolicy = true,

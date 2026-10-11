@@ -1,6 +1,6 @@
 package com.routeforge.mocklocationsetup.domain.usecase
 
-import com.routeforge.mocklocationsetup.domain.DeveloperSettingsDataSource
+import com.routeforge.mocklocationsetup.domain.MockLocationSetupStateSource
 import com.routeforge.mocklocationsetup.domain.model.SetupState
 import com.routeforge.mocklocationsetup.domain.model.SetupStep
 import com.routeforge.mocklocationsetup.domain.model.SetupStepId
@@ -19,7 +19,7 @@ private data class SetupStepDefinition(
 )
 
 class ObserveSetupStateUseCase(
-    private val dataSource: DeveloperSettingsDataSource,
+    private val dataSource: MockLocationSetupStateSource,
 ) {
     operator fun invoke(): SetupState {
         if (dataSource.isDeveloperOptionsRestrictedByPolicy()) {
