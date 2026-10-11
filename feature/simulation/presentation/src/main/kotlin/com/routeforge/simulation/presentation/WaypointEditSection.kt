@@ -50,7 +50,13 @@ fun WaypointEditSection(
             inactiveModeUnavailableMessage =
                 stringResource(
                     R.string.simulation_mode_temporarily_unavailable,
-                    if (loadedRoute?.mode == RoutePlaybackMode.GUIDED) "Free-roam" else "Guided",
+                    stringResource(
+                        if (loadedRoute?.mode == RoutePlaybackMode.GUIDED) {
+                            R.string.simulation_mode_name_free_roam
+                        } else {
+                            R.string.simulation_mode_name_guided
+                        },
+                    ),
                 ),
             onReorder = { from, to -> onEditAction(WaypointEditAction.OnReorder(from, to)) },
             onDelete = { id -> onEditAction(WaypointEditAction.OnDelete(id)) },
