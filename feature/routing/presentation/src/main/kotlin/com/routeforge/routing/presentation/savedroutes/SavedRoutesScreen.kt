@@ -52,6 +52,7 @@ import com.routeforge.coredomain.model.FavoriteRoute
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.IconBadge
+import com.routeforge.designsystem.components.TwoButtonConfirmationSheet
 import com.routeforge.designsystem.sheets.MissingRegionsWarningSheet
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.designsystem.theme.Spacing
@@ -211,17 +212,13 @@ fun SavedRoutesScreen(
     }
 
     if (state.pendingDeleteId != null) {
-        ConfirmationBottomSheet(
+        TwoButtonConfirmationSheet(
             title = stringResource(R.string.saved_routes_delete_confirm_title),
+            confirmLabel = stringResource(R.string.routing_delete_button),
+            dismissLabel = stringResource(R.string.routing_cancel_button),
+            onConfirm = { onAction(SavedRoutesAction.OnConfirmDelete) },
             onDismiss = { onAction(SavedRoutesAction.OnDismissDelete) },
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { onAction(SavedRoutesAction.OnConfirmDelete) }) { Text(stringResource(R.string.routing_delete_button)) }
-                TextButton(onClick = { onAction(SavedRoutesAction.OnDismissDelete) }) {
-                    Text(stringResource(R.string.routing_cancel_button))
-                }
-            }
-        }
+        )
     }
 
     if (state.pendingExportRouteId != null) {

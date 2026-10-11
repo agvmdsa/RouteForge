@@ -40,8 +40,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.model.FavoriteWaypoint
-import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.IconBadge
+import com.routeforge.designsystem.components.TwoButtonConfirmationSheet
 import com.routeforge.designsystem.format.formatCoordinates
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.designsystem.theme.Spacing
@@ -108,26 +108,23 @@ fun FavoritesScreen(
     }
 
     state.pendingTeleportFavorite?.let { favorite ->
-        ConfirmationBottomSheet(
+        TwoButtonConfirmationSheet(
             title = stringResource(R.string.favorites_mock_here_confirm_title, favorite.name),
+            message = stringResource(R.string.favorites_mock_here_confirm_message),
+            confirmLabel = stringResource(R.string.favorites_mock_here_confirm_button),
+            dismissLabel = stringResource(R.string.favorites_mock_here_cancel_button),
+            onConfirm = { onAction(FavoritesAction.OnConfirmMockHere) },
             onDismiss = { onAction(FavoritesAction.OnDismissMockHere) },
-        ) {
-            Text(stringResource(R.string.favorites_mock_here_confirm_message))
-            if (state.isPendingTeleportBlockedOffline) {
-                Text(
-                    text = stringResource(R.string.favorites_mock_here_blocked_offline_message),
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { onAction(FavoritesAction.OnConfirmMockHere) }, enabled = !state.isPendingTeleportBlockedOffline) {
-                    Text(stringResource(R.string.favorites_mock_here_confirm_button))
+            confirmEnabled = !state.isPendingTeleportBlockedOffline,
+            extraContent = {
+                if (state.isPendingTeleportBlockedOffline) {
+                    Text(
+                        text = stringResource(R.string.favorites_mock_here_blocked_offline_message),
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
-                TextButton(onClick = { onAction(FavoritesAction.OnDismissMockHere) }) {
-                    Text(stringResource(R.string.favorites_mock_here_cancel_button))
-                }
-            }
-        }
+            },
+        )
     }
 
     if (state.editingId != null) {
@@ -169,16 +166,14 @@ fun FavoritesScreen(
     }
 
     if (state.pendingDeleteId != null) {
-        ConfirmationBottomSheet(
+        TwoButtonConfirmationSheet(
             title = stringResource(R.string.favorites_delete_confirm_title),
+            message = stringResource(R.string.favorites_delete_confirm_message),
+            confirmLabel = stringResource(R.string.routing_delete_button),
+            dismissLabel = stringResource(R.string.routing_cancel_button),
+            onConfirm = { onAction(FavoritesAction.OnConfirmDelete) },
             onDismiss = { onAction(FavoritesAction.OnDismissDelete) },
-        ) {
-            Text(stringResource(R.string.favorites_delete_confirm_message))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { onAction(FavoritesAction.OnConfirmDelete) }) { Text(stringResource(R.string.routing_delete_button)) }
-                TextButton(onClick = { onAction(FavoritesAction.OnDismissDelete) }) { Text(stringResource(R.string.routing_cancel_button)) }
-            }
-        }
+        )
     }
 }
 

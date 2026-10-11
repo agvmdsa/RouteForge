@@ -1,40 +1,12 @@
 package com.routeforge.simulation.presentation.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.routeforge.coredomain.model.RoutePlaybackMode
-import com.routeforge.designsystem.components.ConfirmationBottomSheet
-import com.routeforge.designsystem.theme.Spacing
+import com.routeforge.designsystem.components.TwoButtonConfirmationSheet
 import com.routeforge.simulation.presentation.R
-
-/** The shared shape behind every confirmation sheet below: a message, an optional bit of extra
- *  content (e.g. a warning line), and a confirm/dismiss button pair. */
-@Composable
-private fun TwoButtonConfirmationSheet(
-    title: String,
-    message: String,
-    confirmLabel: String,
-    dismissLabel: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-    confirmEnabled: Boolean = true,
-    extraContent: @Composable () -> Unit = {},
-) {
-    ConfirmationBottomSheet(title = title, onDismiss = onDismiss) {
-        Text(message)
-        extraContent()
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow)) {
-            Button(onClick = onConfirm, enabled = confirmEnabled) { Text(confirmLabel) }
-            TextButton(onClick = onDismiss) { Text(dismissLabel) }
-        }
-    }
-}
 
 @Composable
 internal fun TeleportConfirmationSheet(
