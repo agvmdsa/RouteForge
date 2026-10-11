@@ -1,23 +1,27 @@
 package com.routeforge.routing.data
 
+import android.util.Log
+import com.routeforge.coredata.toNetworkError
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.EmptyResult
 import com.routeforge.coredomain.Result
 import com.routeforge.routing.domain.RegionDownloader
 import com.routeforge.coredomain.model.Region
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.onDownload
 import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsChannel
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readAvailable
 import kotlinx.coroutines.CancellationException
 import java.io.File
 import java.io.IOException
+import java.net.UnknownHostException
 
+private const val TAG = "HttpRegionDownloader"
 private const val SEGMENT_BASE_URL = "https://brouter.de/brouter/segments4/"
 private const val DOWNLOAD_BUFFER_SIZE_BYTES = 8 * 1024
 
@@ -79,11 +83,25 @@ class HttpRegionDownloader(
                         Result.Error(response.status.toNetworkError())
                     }
                 }
-        } catch (e: IOException) {
+        } catch (e: HttpRequestTimeoutException) {
+            // Must be caught before CancellationException below — Ktor's HttpTimeout plugin throws
+            // a subclass of it, which would otherwise be silently rethrown as a plain cancellation
+            // instead of surfacing as a visible, accurate error.
+            Log.w(TAG, "Tile download timed out", e)
+            Result.Error(DataError.Network.REQUEST_TIMEOUT)
+        } catch (e: UnknownHostException) {
+            // The one case that genuinely means "no network/DNS" — distinct from any other
+            // IOException (connection reset, SSL handshake, etc.), which isn't actually a
+            // lack-of-internet problem.
+            Log.w(TAG, "Couldn't resolve the download host", e)
             Result.Error(DataError.Network.NO_INTERNET)
+        } catch (e: IOException) {
+            Log.w(TAG, "Tile download failed", e)
+            Result.Error(DataError.Network.UNKNOWN)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
+            Log.w(TAG, "Unexpected tile download failure", e)
             Result.Error(DataError.Network.UNKNOWN)
         }
 
@@ -104,16 +122,3 @@ class HttpRegionDownloader(
         }
     }
 }
-
-private fun HttpStatusCode.toNetworkError(): DataError.Network =
-    when (value) {
-        401 -> DataError.Network.UNAUTHORIZED
-        403 -> DataError.Network.FORBIDDEN
-        404 -> DataError.Network.NOT_FOUND
-        408 -> DataError.Network.REQUEST_TIMEOUT
-        409 -> DataError.Network.CONFLICT
-        413 -> DataError.Network.PAYLOAD_TOO_LARGE
-        429 -> DataError.Network.TOO_MANY_REQUESTS
-        in 500..599 -> DataError.Network.SERVER_ERROR
-        else -> DataError.Network.UNKNOWN
-    }

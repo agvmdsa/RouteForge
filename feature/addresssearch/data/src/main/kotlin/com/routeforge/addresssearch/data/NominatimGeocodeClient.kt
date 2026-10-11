@@ -2,6 +2,7 @@ package com.routeforge.addresssearch.data
 
 import android.util.Log
 import com.routeforge.addresssearch.domain.GeocodeClient
+import com.routeforge.coredata.toNetworkError
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.model.PlaceSearchResult
@@ -10,7 +11,6 @@ import io.ktor.client.call.body
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.isSuccess
 import io.ktor.serialization.JsonConvertException
 import kotlinx.coroutines.CancellationException
@@ -73,11 +73,3 @@ class NominatimGeocodeClient(
             Result.Error(DataError.Network.UNKNOWN)
         }
 }
-
-private fun HttpStatusCode.toNetworkError(): DataError.Network =
-    when (value) {
-        408 -> DataError.Network.REQUEST_TIMEOUT
-        429 -> DataError.Network.TOO_MANY_REQUESTS
-        in 500..599 -> DataError.Network.SERVER_ERROR
-        else -> DataError.Network.UNKNOWN
-    }
