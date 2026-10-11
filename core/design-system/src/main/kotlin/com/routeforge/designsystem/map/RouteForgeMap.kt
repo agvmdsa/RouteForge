@@ -141,6 +141,19 @@ private data class RouteForgeMapComponents(
     val traveledOverlay: Polyline,
 )
 
+/** [RouteForgeMapMarker] minus its onClick/onDrag/onDragEnd closures — used as a [LaunchedEffect]
+ *  key instead of the marker itself, since those closures get a new identity on every
+ *  recomposition (e.g. from a caller-side `onAction` reference changing), which would make the
+ *  whole marker's own equals() unstable for this purpose. */
+private data class MarkerStableKey(
+    val id: Any,
+    val latitude: Double,
+    val longitude: Double,
+    val icon: RouteForgeMapMarkerIcon,
+    val draggable: Boolean,
+    val rotationDegrees: Float,
+)
+
 private fun buildMapComponents(
     context: Context,
     onTap: (Double, Double) -> Unit,
@@ -237,7 +250,8 @@ fun RouteForgeMap(
     // identity on every recomposition, e.g. from a caller-side `onAction` reference changing) —
     // otherwise every recomposition during an active drag (onDrag fires continuously) would tear
     // down and rebuild every Marker, including the one the user's finger is still on.
-    val markersKey = markers.map { listOf(it.id, it.latitude, it.longitude, it.icon, it.draggable, it.rotationDegrees) }
+    val markersKey =
+        markers.map { MarkerStableKey(it.id, it.latitude, it.longitude, it.icon, it.draggable, it.rotationDegrees) }
     LaunchedEffect(markersKey) {
         val mapView = components.mapView
         mapView.overlays.removeAll { it is Marker }
