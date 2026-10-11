@@ -29,6 +29,7 @@ import com.routeforge.routing.presentation.routerequest.RouteRequestRoute
 import com.routeforge.routing.presentation.saved.SavedRoute
 import com.routeforge.routing.presentation.settings.SettingsRoute
 import com.routeforge.simulation.presentation.SimulationRoute
+import kotlin.reflect.KClass
 
 /** Identifies a tab independently of its nav route type, so comparisons (e.g. "is the active tab
  *  Plan Route?") are a safe, exhaustive-checkable `==` on an enum rather than `===` on [TabItem.tabRoute],
@@ -45,41 +46,67 @@ private class TabItem(
     val isInHierarchy: (NavDestination) -> Boolean,
 )
 
-private val TabItems =
+private fun isInTabHierarchy(tabRouteClass: KClass<*>): (NavDestination) -> Boolean =
+    { it.hierarchy.any { destination -> destination.hasRoute(tabRouteClass) } }
+
+/** One row of the bottom bar, in display order — a real tab, or the non-tab search action sitting
+ *  between them. Rendering a single ordered list like this (rather than splicing the search item
+ *  between `TabItems.take(2)`/`drop(2)`) means the search icon's position is explicit data, not an
+ *  index convention a future 5th tab could silently misplace. */
+private sealed interface NavBarEntry {
+    data class Tab(
+        val item: TabItem,
+    ) : NavBarEntry
+
+    data object Search : NavBarEntry
+}
+
+private val NavBarEntries: List<NavBarEntry> =
     listOf(
-        TabItem(
-            tab = AppTab.SIMULATE,
-            tabRoute = SimulateTabRoute,
-            icon = Icons.Filled.MyLocation,
-            labelRes = R.string.tab_simulate_label,
-            isRootDestination = { it.hasRoute(SimulationRoute::class) },
-            isInHierarchy = { it.hierarchy.any { d -> d.hasRoute(SimulateTabRoute::class) } },
+        NavBarEntry.Tab(
+            TabItem(
+                tab = AppTab.SIMULATE,
+                tabRoute = SimulateTabRoute,
+                icon = Icons.Filled.MyLocation,
+                labelRes = R.string.tab_simulate_label,
+                isRootDestination = { it.hasRoute(SimulationRoute::class) },
+                isInHierarchy = isInTabHierarchy(SimulateTabRoute::class),
+            ),
         ),
-        TabItem(
-            tab = AppTab.PLAN_ROUTE,
-            tabRoute = PlanRouteTabRoute,
-            icon = Icons.Filled.EditLocation,
-            labelRes = R.string.tab_plan_route_label,
-            isRootDestination = { it.hasRoute(RouteRequestRoute::class) },
-            isInHierarchy = { it.hierarchy.any { d -> d.hasRoute(PlanRouteTabRoute::class) } },
+        NavBarEntry.Tab(
+            TabItem(
+                tab = AppTab.PLAN_ROUTE,
+                tabRoute = PlanRouteTabRoute,
+                icon = Icons.Filled.EditLocation,
+                labelRes = R.string.tab_plan_route_label,
+                isRootDestination = { it.hasRoute(RouteRequestRoute::class) },
+                isInHierarchy = isInTabHierarchy(PlanRouteTabRoute::class),
+            ),
         ),
-        TabItem(
-            tab = AppTab.SAVED,
-            tabRoute = SavedTabRoute,
-            icon = Icons.Filled.Bookmark,
-            labelRes = R.string.tab_saved_label,
-            isRootDestination = { it.hasRoute(SavedRoute::class) },
-            isInHierarchy = { it.hierarchy.any { d -> d.hasRoute(SavedTabRoute::class) } },
+        NavBarEntry.Search,
+        NavBarEntry.Tab(
+            TabItem(
+                tab = AppTab.SAVED,
+                tabRoute = SavedTabRoute,
+                icon = Icons.Filled.Bookmark,
+                labelRes = R.string.tab_saved_label,
+                isRootDestination = { it.hasRoute(SavedRoute::class) },
+                isInHierarchy = isInTabHierarchy(SavedTabRoute::class),
+            ),
         ),
-        TabItem(
-            tab = AppTab.SETTINGS,
-            tabRoute = SettingsTabRoute,
-            icon = Icons.Filled.Settings,
-            labelRes = R.string.tab_settings_label,
-            isRootDestination = { it.hasRoute(SettingsRoute::class) },
-            isInHierarchy = { it.hierarchy.any { d -> d.hasRoute(SettingsTabRoute::class) } },
+        NavBarEntry.Tab(
+            TabItem(
+                tab = AppTab.SETTINGS,
+                tabRoute = SettingsTabRoute,
+                icon = Icons.Filled.Settings,
+                labelRes = R.string.tab_settings_label,
+                isRootDestination = { it.hasRoute(SettingsRoute::class) },
+                isInHierarchy = isInTabHierarchy(SettingsTabRoute::class),
+            ),
         ),
     )
+
+private val Tabs: List<TabItem> = NavBarEntries.filterIsInstance<NavBarEntry.Tab>().map { it.item }
 
 /** Navigates to [tabRoute] the way every bottom-tab-bar implementation should (research.md Decision 1
  *  for spec 007): pops back to the graph's start with its state saved, then restores the target tab's
@@ -109,7 +136,7 @@ fun MainTabsScaffold(
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val currentDestination = navController.currentBackStackEntryAsState().value?.destination
-    val activeRootTab = currentDestination?.let { destination -> TabItems.firstOrNull { it.isRootDestination(destination) } }
+    val activeRootTab = currentDestination?.let { destination -> Tabs.firstOrNull { it.isRootDestination(destination) } }
 
     BackHandler(enabled = activeRootTab != null && activeRootTab.tab != AppTab.SIMULATE) {
         navController.switchToTab(SimulateTabRoute)
@@ -124,31 +151,27 @@ fun MainTabsScaffold(
                 // gesture navigation and a taller one under 3-button navigation. Adding another
                 // windowInsetsPadding around this would double-count that inset.
                 ShortNavigationBar {
-                    TabItems.take(2).forEach { tab ->
-                        ShortNavigationBarItem(
-                            selected = currentDestination != null && tab.isInHierarchy(currentDestination),
-                            onClick = { navController.switchToTab(tab.tabRoute) },
-                            icon = { Icon(tab.icon, contentDescription = null) },
-                            label = { Text(stringResource(tab.labelRes)) },
-                        )
-                    }
-                    ShortNavigationBarItem(
-                        selected = false,
-                        onClick = {
-                            val sourceContext =
-                                if (activeRootTab?.tab == AppTab.PLAN_ROUTE) SearchSourceContext.PLAN_ROUTE else SearchSourceContext.OTHER
-                            navController.navigate(AddressSearchRoute(sourceContext = sourceContext))
-                        },
-                        icon = { Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.tab_search_label)) },
-                        label = { Text(stringResource(R.string.tab_search_label)) },
-                    )
-                    TabItems.drop(2).forEach { tab ->
-                        ShortNavigationBarItem(
-                            selected = currentDestination != null && tab.isInHierarchy(currentDestination),
-                            onClick = { navController.switchToTab(tab.tabRoute) },
-                            icon = { Icon(tab.icon, contentDescription = null) },
-                            label = { Text(stringResource(tab.labelRes)) },
-                        )
+                    NavBarEntries.forEach { entry ->
+                        when (entry) {
+                            is NavBarEntry.Tab ->
+                                ShortNavigationBarItem(
+                                    selected = currentDestination != null && entry.item.isInHierarchy(currentDestination),
+                                    onClick = { navController.switchToTab(entry.item.tabRoute) },
+                                    icon = { Icon(entry.item.icon, contentDescription = null) },
+                                    label = { Text(stringResource(entry.item.labelRes)) },
+                                )
+                            NavBarEntry.Search ->
+                                ShortNavigationBarItem(
+                                    selected = false,
+                                    onClick = {
+                                        val sourceContext =
+                                            if (activeRootTab?.tab == AppTab.PLAN_ROUTE) SearchSourceContext.PLAN_ROUTE else SearchSourceContext.OTHER
+                                        navController.navigate(AddressSearchRoute(sourceContext = sourceContext))
+                                    },
+                                    icon = { Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.tab_search_label)) },
+                                    label = { Text(stringResource(R.string.tab_search_label)) },
+                                )
+                        }
                     }
                 }
             }
