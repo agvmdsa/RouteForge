@@ -46,6 +46,8 @@ private class TabItem(
     val isInHierarchy: (NavDestination) -> Boolean,
 )
 
+private fun isRootRoute(routeClass: KClass<*>): (NavDestination) -> Boolean = { it.hasRoute(routeClass) }
+
 private fun isInTabHierarchy(tabRouteClass: KClass<*>): (NavDestination) -> Boolean =
     { it.hierarchy.any { destination -> destination.hasRoute(tabRouteClass) } }
 
@@ -69,7 +71,7 @@ private val NavBarEntries: List<NavBarEntry> =
                 tabRoute = SimulateTabRoute,
                 icon = Icons.Filled.MyLocation,
                 labelRes = R.string.tab_simulate_label,
-                isRootDestination = { it.hasRoute(SimulationRoute::class) },
+                isRootDestination = isRootRoute(SimulationRoute::class),
                 isInHierarchy = isInTabHierarchy(SimulateTabRoute::class),
             ),
         ),
@@ -79,7 +81,7 @@ private val NavBarEntries: List<NavBarEntry> =
                 tabRoute = PlanRouteTabRoute,
                 icon = Icons.Filled.EditLocation,
                 labelRes = R.string.tab_plan_route_label,
-                isRootDestination = { it.hasRoute(RouteRequestRoute::class) },
+                isRootDestination = isRootRoute(RouteRequestRoute::class),
                 isInHierarchy = isInTabHierarchy(PlanRouteTabRoute::class),
             ),
         ),
@@ -90,7 +92,7 @@ private val NavBarEntries: List<NavBarEntry> =
                 tabRoute = SavedTabRoute,
                 icon = Icons.Filled.Bookmark,
                 labelRes = R.string.tab_saved_label,
-                isRootDestination = { it.hasRoute(SavedRoute::class) },
+                isRootDestination = isRootRoute(SavedRoute::class),
                 isInHierarchy = isInTabHierarchy(SavedTabRoute::class),
             ),
         ),
@@ -100,7 +102,7 @@ private val NavBarEntries: List<NavBarEntry> =
                 tabRoute = SettingsTabRoute,
                 icon = Icons.Filled.Settings,
                 labelRes = R.string.tab_settings_label,
-                isRootDestination = { it.hasRoute(SettingsRoute::class) },
+                isRootDestination = isRootRoute(SettingsRoute::class),
                 isInHierarchy = isInTabHierarchy(SettingsTabRoute::class),
             ),
         ),
