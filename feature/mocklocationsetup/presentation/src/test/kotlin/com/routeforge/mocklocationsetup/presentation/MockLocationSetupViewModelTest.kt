@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-private class FakeDataSource(
+private class FakeMockLocationSetupStateSource(
     var developerOptionsEnabled: Boolean = false,
     var appSelectedAsMockLocationProvider: Boolean = false,
     var restrictedByPolicy: Boolean = false,
@@ -44,7 +44,7 @@ class MockLocationSetupViewModelTest {
 
     @Test
     fun `initial load reflects the current pending steps`() {
-        val dataSource = FakeDataSource(developerOptionsEnabled = false)
+        val dataSource = FakeMockLocationSetupStateSource(developerOptionsEnabled = false)
         val viewModel = MockLocationSetupViewModel(ObserveSetupStateUseCase(dataSource), dataSource)
 
         assertTrue(!viewModel.state.value.isReady)
@@ -53,7 +53,7 @@ class MockLocationSetupViewModelTest {
 
     @Test
     fun `refresh on resume advances state from pending to ready`() {
-        val dataSource = FakeDataSource(developerOptionsEnabled = false)
+        val dataSource = FakeMockLocationSetupStateSource(developerOptionsEnabled = false)
         val viewModel = MockLocationSetupViewModel(ObserveSetupStateUseCase(dataSource), dataSource)
 
         assertTrue(!viewModel.state.value.isReady)
@@ -68,7 +68,7 @@ class MockLocationSetupViewModelTest {
     @Test
     fun `refresh regresses state from ready back to pending when setup drifts`() {
         val dataSource =
-            FakeDataSource(
+            FakeMockLocationSetupStateSource(
                 developerOptionsEnabled = true,
                 appSelectedAsMockLocationProvider = true,
             )
