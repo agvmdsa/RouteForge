@@ -1,17 +1,20 @@
 package com.routeforge.coredata
 
 import android.content.Context
+import android.util.Log
 import com.routeforge.coredomain.FavoriteRoutesRepository
 import com.routeforge.coredomain.model.FavoriteRoute
 import com.routeforge.coredomain.model.RoutePoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
+private const val TAG = "FavoriteRoutesRepo"
 private const val PREFS_NAME = "routeforge_favorite_routes"
 private const val KEY_FAVORITE_ROUTES_JSON = "favorite_routes_json"
 
@@ -71,7 +74,13 @@ class SharedPreferencesFavoriteRoutesRepository(
 
     private fun readFavoriteRoutes(): List<FavoriteRoute> {
         val text = prefs.getString(KEY_FAVORITE_ROUTES_JSON, null) ?: return emptyList()
-        val records = json.decodeFromString<List<FavoriteRouteRecord>>(text)
+        val records =
+            try {
+                json.decodeFromString<List<FavoriteRouteRecord>>(text)
+            } catch (e: SerializationException) {
+                Log.w(TAG, "Discarding corrupted favorite routes prefs entry", e)
+                return emptyList()
+            }
         return records.map { it.toDomain() }
     }
 
