@@ -8,6 +8,7 @@ import io.ktor.http.HttpStatusCode
  *  `HttpRegionDownloader` and `NominatimGeocodeClient` once independently did. */
 fun HttpStatusCode.toNetworkError(): DataError.Network =
     when (value) {
+        400 -> DataError.Network.BAD_REQUEST
         401 -> DataError.Network.UNAUTHORIZED
         403 -> DataError.Network.FORBIDDEN
         404 -> DataError.Network.NOT_FOUND
@@ -15,6 +16,7 @@ fun HttpStatusCode.toNetworkError(): DataError.Network =
         409 -> DataError.Network.CONFLICT
         413 -> DataError.Network.PAYLOAD_TOO_LARGE
         429 -> DataError.Network.TOO_MANY_REQUESTS
+        503 -> DataError.Network.SERVICE_UNAVAILABLE
         in 500..599 -> DataError.Network.SERVER_ERROR
         else -> DataError.Network.UNKNOWN
     }
