@@ -32,10 +32,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
+import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.designsystem.theme.Spacing
 import org.koin.androidx.compose.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -112,18 +114,11 @@ fun AddressSearchScreen(
                             modifier = Modifier.padding(top = Spacing.ScreenContent),
                         )
                     else ->
-                        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                            val resultsHeight = maxHeight * RESULTS_HEIGHT_FRACTION
-                            LazyColumn(modifier = Modifier.fillMaxWidth().height(resultsHeight)) {
-                                itemsIndexed(state.results) { index, result ->
-                                    ListItem(
-                                        headlineContent = { Text(result.name) },
-                                        supportingContent = { Text(result.formattedAddress) },
-                                        modifier = Modifier.clickable { onAction(AddressSearchAction.OnSelectResult(index)) },
-                                    )
-                                }
-                            }
-                        }
+                        AddressSearchResultsList(
+                            results = state.results,
+                            onSelectResult = { index -> onAction(AddressSearchAction.OnSelectResult(index)) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
                 }
             }
         }
@@ -145,6 +140,30 @@ fun AddressSearchScreen(
                 onConfirm = { onAction(AddressSearchAction.OnConfirmFavoriteName) },
                 onDismiss = { onAction(AddressSearchAction.OnDismissFavoriteName) },
             )
+        }
+    }
+}
+
+/** The search results, scrollable, capped at [RESULTS_HEIGHT_FRACTION] of the sheet's available
+ *  height — split out from [AddressSearchScreen] so it's independently previewable/testable,
+ *  matching [com.routeforge.designsystem.waypointedit.WaypointReorderList]'s precedent of keeping
+ *  a sheet's scrollable list as its own composable. */
+@Composable
+private fun AddressSearchResultsList(
+    results: List<PlaceSearchResult>,
+    onSelectResult: (index: Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BoxWithConstraints(modifier = modifier) {
+        val resultsHeight = maxHeight * RESULTS_HEIGHT_FRACTION
+        LazyColumn(modifier = Modifier.fillMaxWidth().height(resultsHeight)) {
+            itemsIndexed(results) { index, result ->
+                ListItem(
+                    headlineContent = { Text(result.name) },
+                    supportingContent = { Text(result.formattedAddress) },
+                    modifier = Modifier.clickable { onSelectResult(index) },
+                )
+            }
         }
     }
 }
@@ -186,5 +205,58 @@ private fun FavoriteNameSheet(
             }
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.address_search_cancel_button)) }
         }
+    }
+}
+
+@Preview
+@Composable
+private fun AddressSearchScreenEmptyPreview() {
+    RouteForgeTheme {
+        AddressSearchScreen(state = AddressSearchState(), onAction = {}, onNavigateBack = {})
+    }
+}
+
+@Preview
+@Composable
+private fun AddressSearchScreenResultsPreview() {
+    RouteForgeTheme {
+        AddressSearchScreen(
+            state =
+                AddressSearchState(
+                    query = "Coffee",
+                    hasSearched = true,
+                    results =
+                        listOf(
+                            PlaceSearchResult(
+                                name = "Example Cafe",
+                                formattedAddress = "123 Example St, Sample City",
+                                latitude = 1.0,
+                                longitude = 1.0,
+                                importance = 0.5,
+                            ),
+                            PlaceSearchResult(
+                                name = "Another Cafe",
+                                formattedAddress = "456 Sample Ave, Sample City",
+                                latitude = 2.0,
+                                longitude = 2.0,
+                                importance = 0.4,
+                            ),
+                        ),
+                ),
+            onAction = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun AddressSearchScreenNoResultsPreview() {
+    RouteForgeTheme {
+        AddressSearchScreen(
+            state = AddressSearchState(query = "Nowhere", hasSearched = true),
+            onAction = {},
+            onNavigateBack = {},
+        )
     }
 }
