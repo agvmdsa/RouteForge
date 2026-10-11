@@ -11,13 +11,17 @@ import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.model.FavoriteWaypoint
 import com.routeforge.coredomain.model.PlaceSearchResult
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
@@ -37,7 +41,13 @@ private fun place(
 private class FakeGeocodeClient(
     var result: Result<List<PlaceSearchResult>, DataError.Network> = Result.Success(listOf(place())),
 ) : GeocodeClient {
-    override suspend fun search(query: String): Result<List<PlaceSearchResult>, DataError.Network> = result
+    /** Queued responses that only resolve when the test completes them — lets a test hold a
+     *  search suspended mid-flight instead of [search] returning [result] immediately. Falls back
+     *  to [result] once empty, so every other test (which never touches this) is unaffected. */
+    val queuedResponses = mutableListOf<CompletableDeferred<Result<List<PlaceSearchResult>, DataError.Network>>>()
+
+    override suspend fun search(query: String): Result<List<PlaceSearchResult>, DataError.Network> =
+        if (queuedResponses.isNotEmpty()) queuedResponses.removeAt(0).await() else result
 }
 
 private class FakeFavoriteWaypointsRepository : FavoriteWaypointsRepository {
@@ -129,6 +139,35 @@ class AddressSearchViewModelTest {
 
             assertEquals(AddressSearchError.NETWORK_FAILURE, viewModel.state.value.errorType)
             assertTrue(viewModel.state.value.results.isEmpty())
+        }
+
+    /** FR-005: a stale search response must never land after a newer query's results —
+     *  [StandardTestDispatcher] (not this class's usual [UnconfinedTestDispatcher]) so both
+     *  searches' suspension points are reached under this test's own explicit control, proving
+     *  the first search is genuinely cancelled while in-flight rather than merely losing a race. */
+    @Test
+    fun `submitting a new search cancels a still-pending prior one`() =
+        runTest {
+            Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+            val staleResponse = CompletableDeferred<Result<List<PlaceSearchResult>, DataError.Network>>()
+            val freshResponse = CompletableDeferred<Result<List<PlaceSearchResult>, DataError.Network>>()
+            geocodeClient.queuedResponses += staleResponse
+            geocodeClient.queuedResponses += freshResponse
+            val viewModel = createViewModel()
+
+            viewModel.onAction(AddressSearchAction.OnQueryChange("stale query"))
+            viewModel.onAction(AddressSearchAction.OnSubmit)
+            runCurrent()
+            viewModel.onAction(AddressSearchAction.OnQueryChange("fresh query"))
+            viewModel.onAction(AddressSearchAction.OnSubmit)
+            runCurrent()
+
+            val freshResult = place(name = "Fresh")
+            staleResponse.complete(Result.Success(listOf(place(name = "Stale"))))
+            freshResponse.complete(Result.Success(listOf(freshResult)))
+            advanceUntilIdle()
+
+            assertEquals(listOf(freshResult), viewModel.state.value.results)
         }
 
     @Test
