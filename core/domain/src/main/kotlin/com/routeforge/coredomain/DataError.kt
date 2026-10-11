@@ -1,6 +1,6 @@
 package com.routeforge.coredomain
 
-sealed interface DataError : Error {
+sealed interface DataError : DomainError {
     enum class Network : DataError {
         BAD_REQUEST,
         REQUEST_TIMEOUT,

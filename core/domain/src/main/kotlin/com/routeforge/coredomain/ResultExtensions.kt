@@ -1,12 +1,12 @@
 package com.routeforge.coredomain
 
-inline fun <T, E : Error, R> Result<T, E>.map(map: (T) -> R): Result<R, E> =
+inline fun <T, E : DomainError, R> Result<T, E>.map(map: (T) -> R): Result<R, E> =
     when (this) {
         is Result.Error -> Result.Error(error)
         is Result.Success -> Result.Success(map(data))
     }
 
-inline fun <T, E : Error> Result<T, E>.onSuccess(action: (T) -> Unit): Result<T, E> =
+inline fun <T, E : DomainError> Result<T, E>.onSuccess(action: (T) -> Unit): Result<T, E> =
     when (this) {
         is Result.Error -> this
         is Result.Success -> {
@@ -15,7 +15,7 @@ inline fun <T, E : Error> Result<T, E>.onSuccess(action: (T) -> Unit): Result<T,
         }
     }
 
-inline fun <T, E : Error> Result<T, E>.onFailure(action: (E) -> Unit): Result<T, E> =
+inline fun <T, E : DomainError> Result<T, E>.onFailure(action: (E) -> Unit): Result<T, E> =
     when (this) {
         is Result.Error -> {
             action(error)
@@ -24,4 +24,4 @@ inline fun <T, E : Error> Result<T, E>.onFailure(action: (E) -> Unit): Result<T,
         is Result.Success -> this
     }
 
-fun <T, E : Error> Result<T, E>.asEmptyResult(): EmptyResult<E> = map { }
+fun <T, E : DomainError> Result<T, E>.asEmptyResult(): EmptyResult<E> = map { }

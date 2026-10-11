@@ -1,3 +1,3 @@
 package com.routeforge.coredomain
 
-interface Error
+interface DomainError

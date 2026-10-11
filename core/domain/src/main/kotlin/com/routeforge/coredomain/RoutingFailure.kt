@@ -1,9 +1,8 @@
 package com.routeforge.coredomain
 
-import com.routeforge.coredomain.Error
 import com.routeforge.coredomain.model.RoutePoint
 
-sealed interface RoutingFailure : Error {
+sealed interface RoutingFailure : DomainError {
     data class PointNotRoutable(
         val point: RoutePoint,
     ) : RoutingFailure
