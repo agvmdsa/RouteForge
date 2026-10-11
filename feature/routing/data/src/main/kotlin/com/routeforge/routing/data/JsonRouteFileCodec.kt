@@ -6,13 +6,11 @@ import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.RouteFileCodec
 import com.routeforge.routing.domain.model.RouteDraft
 import com.routeforge.routing.domain.model.RouteFileFailure
+import com.routeforge.routing.domain.model.hasValidCoordinates
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-
-private val LATITUDE_RANGE = -90.0..90.0
-private val LONGITUDE_RANGE = -180.0..180.0
 
 @Serializable
 private data class RouteFileJson(
@@ -45,14 +43,11 @@ class JsonRouteFileCodec : RouteFileCodec {
 
         val points = mutableListOf<RoutePoint>()
         for (waypoint in parsed.waypoints) {
-            if (waypoint.latitude !in LATITUDE_RANGE || waypoint.longitude !in LONGITUDE_RANGE) {
-                return Result.Error(
-                    RouteFileFailure.CoordinateOutOfRange(
-                        RoutePoint(latitude = waypoint.latitude, longitude = waypoint.longitude),
-                    ),
-                )
+            val point = RoutePoint(latitude = waypoint.latitude, longitude = waypoint.longitude)
+            if (!point.hasValidCoordinates()) {
+                return Result.Error(RouteFileFailure.CoordinateOutOfRange(point))
             }
-            points.add(RoutePoint(latitude = waypoint.latitude, longitude = waypoint.longitude))
+            points.add(point)
         }
         return Result.Success(RouteDraft(points = points))
     }

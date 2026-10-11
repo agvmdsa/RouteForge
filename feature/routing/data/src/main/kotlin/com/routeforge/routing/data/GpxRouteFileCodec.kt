@@ -6,9 +6,7 @@ import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.RouteFileCodec
 import com.routeforge.routing.domain.model.RouteDraft
 import com.routeforge.routing.domain.model.RouteFileFailure
-
-private val LATITUDE_RANGE = -90.0..90.0
-private val LONGITUDE_RANGE = -180.0..180.0
+import com.routeforge.routing.domain.model.hasValidCoordinates
 
 // Matches a self-contained trkpt/rtept/wpt element and captures its attribute string, so
 // lat/lon can be read regardless of attribute order.
@@ -41,7 +39,7 @@ class GpxRouteFileCodec : RouteFileCodec {
             if (latitude == null || longitude == null) {
                 return Result.Error(RouteFileFailure.Malformed)
             }
-            if (latitude !in LATITUDE_RANGE || longitude !in LONGITUDE_RANGE) {
+            if (!RoutePoint(latitude, longitude).hasValidCoordinates()) {
                 return Result.Error(RouteFileFailure.CoordinateOutOfRange(RoutePoint(latitude, longitude)))
             }
             points.add(RoutePoint(latitude = latitude, longitude = longitude))
