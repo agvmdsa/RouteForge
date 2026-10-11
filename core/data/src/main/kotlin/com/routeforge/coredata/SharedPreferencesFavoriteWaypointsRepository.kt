@@ -1,19 +1,13 @@
 package com.routeforge.coredata
 
 import android.content.Context
-import android.util.Log
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.model.FavoriteWaypoint
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.builtins.ListSerializer
 import java.util.UUID
 
-private const val TAG = "FavoriteWaypointsRepo"
 private const val PREFS_NAME = "routeforge_favorite_waypoints"
 private const val KEY_FAVORITES_JSON = "favorites_json"
 
@@ -26,13 +20,20 @@ private data class FavoriteWaypointRecord(
 )
 
 class SharedPreferencesFavoriteWaypointsRepository(
-    private val context: Context,
+    context: Context,
 ) : FavoriteWaypointsRepository {
-    private val json = Json { ignoreUnknownKeys = true }
-    private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    private val _favorites = MutableStateFlow(readFavorites())
+    private val store =
+        JsonPrefsListStore(
+            context = context,
+            prefsName = PREFS_NAME,
+            key = KEY_FAVORITES_JSON,
+            recordListSerializer = ListSerializer(FavoriteWaypointRecord.serializer()),
+            toRecord = { FavoriteWaypointRecord(it.id, it.name, it.latitude, it.longitude) },
+            toDomain = { FavoriteWaypoint(it.id, it.name, it.latitude, it.longitude) },
+            tag = "FavoriteWaypointsRepo",
+        )
 
-    override fun observeFavorites(): StateFlow<List<FavoriteWaypoint>> = _favorites
+    override fun observeFavorites(): StateFlow<List<FavoriteWaypoint>> = store.items
 
     override fun add(
         name: String,
@@ -40,7 +41,7 @@ class SharedPreferencesFavoriteWaypointsRepository(
         longitude: Double,
     ): FavoriteWaypoint {
         val favorite = FavoriteWaypoint(id = UUID.randomUUID().toString(), name = name, latitude = latitude, longitude = longitude)
-        writeFavorites(_favorites.value + favorite)
+        store.write(store.items.value + favorite)
         return favorite
     }
 
@@ -50,32 +51,14 @@ class SharedPreferencesFavoriteWaypointsRepository(
         latitude: Double,
         longitude: Double,
     ) {
-        writeFavorites(
-            _favorites.value.map { favorite ->
+        store.write(
+            store.items.value.map { favorite ->
                 if (favorite.id == id) favorite.copy(name = name, latitude = latitude, longitude = longitude) else favorite
             },
         )
     }
 
     override fun delete(id: String) {
-        writeFavorites(_favorites.value.filterNot { it.id == id })
-    }
-
-    private fun writeFavorites(favorites: List<FavoriteWaypoint>) {
-        _favorites.value = favorites
-        val records = favorites.map { FavoriteWaypointRecord(it.id, it.name, it.latitude, it.longitude) }
-        prefs.edit().putString(KEY_FAVORITES_JSON, json.encodeToString(records)).apply()
-    }
-
-    private fun readFavorites(): List<FavoriteWaypoint> {
-        val text = prefs.getString(KEY_FAVORITES_JSON, null) ?: return emptyList()
-        val records =
-            try {
-                json.decodeFromString<List<FavoriteWaypointRecord>>(text)
-            } catch (e: SerializationException) {
-                Log.w(TAG, "Discarding corrupted favorites prefs entry", e)
-                return emptyList()
-            }
-        return records.map { FavoriteWaypoint(it.id, it.name, it.latitude, it.longitude) }
+        store.write(store.items.value.filterNot { it.id == id })
     }
 }
