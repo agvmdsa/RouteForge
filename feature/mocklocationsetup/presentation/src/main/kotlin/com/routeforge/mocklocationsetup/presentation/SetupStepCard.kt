@@ -34,6 +34,18 @@ private val SectionSpacing = 32.dp
 private val CardPadding = 24.dp
 private val CardShape = RoundedCornerShape(24.dp)
 private val StepIconBadgeSize = 44.dp
+private val HeaderElementSpacing = 24.dp
+private val HeaderTextSpacing = 8.dp
+private val ProgressRowSpacing = 12.dp
+private val ProgressBarHeight = 8.dp
+private val StepHeaderSpacing = 16.dp
+private val StepSectionSpacing = 16.dp
+private val ExplanationToInstructionsSpacing = 12.dp
+private val InstructionsPanelShape = RoundedCornerShape(16.dp)
+private val InstructionsPanelPadding = 16.dp
+private val DeepLinkButtonTopSpacing = 20.dp
+private val ButtonIconSpacing = 8.dp
+private val ButtonIconSize = 18.dp
 
 @Composable
 internal fun SetupHeader(
@@ -42,23 +54,23 @@ internal fun SetupHeader(
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = SectionSpacing)) {
         IconBadge(icon = Icons.Filled.MyLocation, size = IconBadgeSize)
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(HeaderElementSpacing))
         Text(
             text = stringResource(R.string.setup_header_title),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onBackground,
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(HeaderTextSpacing))
         Text(
             text = stringResource(R.string.setup_header_subtitle),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
         )
-        Spacer(modifier = Modifier.height(24.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Spacer(modifier = Modifier.height(HeaderElementSpacing))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ProgressRowSpacing)) {
             LinearProgressIndicator(
                 progress = { if (totalSteps == 0) 1f else completedSteps.toFloat() / totalSteps },
-                modifier = Modifier.weight(1f).height(8.dp),
+                modifier = Modifier.weight(1f).height(ProgressBarHeight),
                 strokeCap = StrokeCap.Round,
             )
             Text(
@@ -82,7 +94,7 @@ internal fun SetupStepCard(
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(modifier = Modifier.padding(CardPadding)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(StepHeaderSpacing)) {
                 IconBadge(icon = step.id.toIcon(), size = StepIconBadgeSize)
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
@@ -97,15 +109,15 @@ internal fun SetupStepCard(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(StepSectionSpacing))
             Text(
                 text = step.explanation,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(ExplanationToInstructionsSpacing))
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = InstructionsPanelShape,
                 color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.fillMaxWidth(),
             ) {
@@ -113,21 +125,21 @@ internal fun SetupStepCard(
                     text = step.instructions,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(InstructionsPanelPadding),
                 )
             }
             if (step.canDeepLink) {
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(DeepLinkButtonTopSpacing))
                 Button(
                     onClick = { onAction(MockLocationSetupAction.OnDeepLinkClick(step.id)) },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(stringResource(R.string.setup_open_settings_button))
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(ButtonIconSpacing))
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(ButtonIconSize),
                     )
                 }
             }
