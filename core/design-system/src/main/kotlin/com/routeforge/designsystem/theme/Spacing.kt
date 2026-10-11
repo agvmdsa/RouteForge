@@ -11,4 +11,8 @@ object Spacing {
 
     /** Horizontal gap between buttons/icons in a row of controls. */
     val ControlsRow = 8.dp
+
+    /** Vertical offset clearing a screen's top-anchored status pill, for whatever banner/toast
+     *  needs to sit just below it without overlapping. */
+    val BannerTopOffset = 72.dp
 }

@@ -32,12 +32,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.model.RoutePlaybackMode
-import com.routeforge.designsystem.components.ConfirmationPill
+import com.routeforge.designsystem.components.AutoDismissConfirmationPill
 import com.routeforge.designsystem.components.FabColumn
 import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.map.RouteForgeMap
@@ -64,11 +63,8 @@ import com.routeforge.simulation.presentation.waypointedit.WaypointEditEvent
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditState
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditViewModel
 import kotlin.math.roundToInt
-import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
-private val BannerTopOffset = 72.dp
-private const val WAYPOINTS_UPDATED_CONFIRMATION_DURATION_MILLIS = 2_500L
 private const val MIN_SPEED_KMH = 0f
 private const val MAX_SPEED_KMH = 150f
 private val SpeedSelectorRangeKmh = MIN_SPEED_KMH..MAX_SPEED_KMH
@@ -350,7 +346,7 @@ private fun BoxScope.SimulationTopOverlays(
     if (state.isBlockedByAuthorization) {
         TopBanner(
             contentPadding = Spacing.ScreenContent,
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
+            modifier = Modifier.align(Alignment.TopCenter).padding(top = Spacing.BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
         ) {
             Text(stringResource(R.string.simulation_error_not_authorized))
             Button(onClick = { onAction(SimulationAction.OnOpenSetupClick) }) {
@@ -360,23 +356,19 @@ private fun BoxScope.SimulationTopOverlays(
     } else {
         state.errorType?.let { errorType ->
             TopBanner(
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = Spacing.BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
             ) {
                 Text(text = errorType.toMessage())
             }
         }
     }
 
-    if (showWaypointsUpdatedConfirmation) {
-        LaunchedEffect(Unit) {
-            delay(WAYPOINTS_UPDATED_CONFIRMATION_DURATION_MILLIS)
-            onDismissWaypointsUpdatedConfirmation()
-        }
-        ConfirmationPill(
-            message = stringResource(R.string.simulation_waypoints_updated_message),
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = BannerTopOffset),
-        )
-    }
+    AutoDismissConfirmationPill(
+        message = stringResource(R.string.simulation_waypoints_updated_message),
+        isVisible = showWaypointsUpdatedConfirmation,
+        onDismiss = onDismissWaypointsUpdatedConfirmation,
+        modifier = Modifier.align(Alignment.TopCenter).padding(top = Spacing.BannerTopOffset),
+    )
 }
 
 /** Bottom-start FAB column (playback/joystick speed selector, joystick toggle) plus the joystick

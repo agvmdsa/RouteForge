@@ -33,10 +33,9 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.model.RoutePlaybackMode
-import com.routeforge.designsystem.components.ConfirmationPill
+import com.routeforge.designsystem.components.AutoDismissConfirmationPill
 import com.routeforge.designsystem.components.FabColumn
 import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.map.RouteForgeMap
@@ -52,12 +51,10 @@ import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEdi
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditState
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditViewModel
 import com.routeforge.routing.presentation.R
-import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
 private const val JSON_MIME_TYPE = "application/json"
 private const val GPX_MIME_TYPE = "application/gpx+xml"
-private const val WAYPOINTS_UPDATED_CONFIRMATION_DURATION_MILLIS = 2_500L
 
 @Composable
 fun RouteRequestRoot(
@@ -263,22 +260,18 @@ private fun BoxScope.RouteRequestOverlays(
             modifier =
                 Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 72.dp, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
+                    .padding(top = Spacing.BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
         ) {
             Text(text = errorType.toMessage())
         }
     }
 
-    if (showWaypointsUpdatedConfirmation) {
-        LaunchedEffect(Unit) {
-            delay(WAYPOINTS_UPDATED_CONFIRMATION_DURATION_MILLIS)
-            onDismissWaypointsUpdatedConfirmation()
-        }
-        ConfirmationPill(
-            message = stringResource(R.string.routing_waypoints_updated_message),
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = 72.dp),
-        )
-    }
+    AutoDismissConfirmationPill(
+        message = stringResource(R.string.routing_waypoints_updated_message),
+        isVisible = showWaypointsUpdatedConfirmation,
+        onDismiss = onDismissWaypointsUpdatedConfirmation,
+        modifier = Modifier.align(Alignment.TopCenter).padding(top = Spacing.BannerTopOffset),
+    )
 }
 
 /** Bottom-start FAB column: import, add-from-favorites, undo (when available), and the waypoint
