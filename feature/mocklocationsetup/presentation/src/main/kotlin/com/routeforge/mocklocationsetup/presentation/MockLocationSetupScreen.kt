@@ -20,6 +20,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -108,22 +110,29 @@ private fun PendingStepsContent(
 }
 
 @Composable
-private fun ReadyContent(modifier: Modifier = Modifier) {
+private fun StatusMessageContent(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+    iconTint: Color = MaterialTheme.colorScheme.primary,
+    iconContainerColor: Color = MaterialTheme.colorScheme.primaryContainer,
+) {
     Column(
         modifier = modifier.fillMaxSize().padding(ScreenPadding),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        IconBadge(icon = Icons.Filled.CheckCircle, size = IconBadgeSize)
+        IconBadge(icon = icon, size = IconBadgeSize, tint = iconTint, containerColor = iconContainerColor)
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = stringResource(R.string.setup_ready_title),
+            text = title,
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onBackground,
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = stringResource(R.string.setup_ready_subtitle),
+            text = subtitle,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
         )
@@ -131,31 +140,25 @@ private fun ReadyContent(modifier: Modifier = Modifier) {
 }
 
 @Composable
+private fun ReadyContent(modifier: Modifier = Modifier) {
+    StatusMessageContent(
+        icon = Icons.Filled.CheckCircle,
+        title = stringResource(R.string.setup_ready_title),
+        subtitle = stringResource(R.string.setup_ready_subtitle),
+        modifier = modifier,
+    )
+}
+
+@Composable
 private fun PolicyBlockedContent(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier.fillMaxSize().padding(ScreenPadding),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        IconBadge(
-            icon = Icons.Filled.Block,
-            size = IconBadgeSize,
-            tint = MaterialTheme.colorScheme.error,
-            containerColor = MaterialTheme.colorScheme.errorContainer,
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(
-            text = stringResource(R.string.setup_blocked_title),
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.setup_blocked_message),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-        )
-    }
+    StatusMessageContent(
+        icon = Icons.Filled.Block,
+        title = stringResource(R.string.setup_blocked_title),
+        subtitle = stringResource(R.string.setup_blocked_message),
+        modifier = modifier,
+        iconTint = MaterialTheme.colorScheme.error,
+        iconContainerColor = MaterialTheme.colorScheme.errorContainer,
+    )
 }
 
 @Preview
