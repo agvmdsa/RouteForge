@@ -12,8 +12,10 @@ import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.model.FavoriteWaypoint
 import com.routeforge.coredomain.model.PlaceSearchResult
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -137,11 +139,13 @@ class AddressSearchViewModelTest {
             val viewModel = createViewModel(sourceContext = SearchSourceContext.PLAN_ROUTE)
             viewModel.onAction(AddressSearchAction.OnQueryChange("query"))
             viewModel.onAction(AddressSearchAction.OnSubmit)
+            val eventDeferred = async { viewModel.events.first() }
 
             viewModel.onAction(AddressSearchAction.OnSelectResult(0))
 
             assertEquals(result, pendingSearchWaypointHolder.selected.value)
             assertNull(viewModel.state.value.pendingChoiceResult)
+            assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
         }
 
     @Test
@@ -178,11 +182,13 @@ class AddressSearchViewModelTest {
             viewModel.onAction(AddressSearchAction.OnQueryChange("query"))
             viewModel.onAction(AddressSearchAction.OnSubmit)
             viewModel.onAction(AddressSearchAction.OnSelectResult(0))
+            val eventDeferred = async { viewModel.events.first() }
 
             viewModel.onAction(AddressSearchAction.OnChooseTeleport)
 
             assertEquals(10.0, pendingTeleportTargetHolder.target.value?.latitude)
             assertEquals(20.0, pendingTeleportTargetHolder.target.value?.longitude)
+            assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
         }
 
     @Test
@@ -213,9 +219,11 @@ class AddressSearchViewModelTest {
             viewModel.onAction(AddressSearchAction.OnSelectResult(0))
             viewModel.onAction(AddressSearchAction.OnChooseSaveAsFavorite)
             viewModel.onAction(AddressSearchAction.OnFavoriteNameChange("Home"))
+            val eventDeferred = async { viewModel.events.first() }
 
             viewModel.onAction(AddressSearchAction.OnConfirmFavoriteName)
 
             assertEquals(listOf(Triple("Home", 5.0, 6.0)), favoriteWaypointsRepository.added)
+            assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
         }
 }
