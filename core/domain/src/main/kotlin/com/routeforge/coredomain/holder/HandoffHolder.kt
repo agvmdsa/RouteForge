@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
  *  (e.g. [SelectedFavoriteWaypointHolder] and [PendingTeleportTargetHolder] are both built on
  *  `HandoffHolder<RoutePoint?>`, but mean different things and must resolve to different
  *  singletons). */
-class HandoffHolder<T>(initial: T) {
+internal class HandoffHolder<T>(initial: T) {
     private val _value = MutableStateFlow(initial)
     val value: StateFlow<T> = _value.asStateFlow()
 
