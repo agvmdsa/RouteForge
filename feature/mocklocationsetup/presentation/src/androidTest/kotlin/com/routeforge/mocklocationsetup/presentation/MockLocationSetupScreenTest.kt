@@ -1,5 +1,6 @@
 package com.routeforge.mocklocationsetup.presentation
 
+import android.content.Intent
 import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -25,14 +26,14 @@ class MockLocationSetupScreenTest {
                                     title = "Enable Developer Options",
                                     explanation = "e",
                                     instructions = "i",
-                                    canDeepLink = true,
+                                    deepLinkIntent = Intent(Intent.ACTION_MAIN),
                                 ),
                                 SetupStepUi(
                                     id = SetupStepId.SELECT_MOCK_LOCATION_APP,
                                     title = "Select mock location app",
                                     explanation = "e",
                                     instructions = "i",
-                                    canDeepLink = true,
+                                    deepLinkIntent = Intent(Intent.ACTION_MAIN),
                                 ),
                             ),
                     ),
@@ -57,7 +58,7 @@ class MockLocationSetupScreenTest {
                                     title = "Select mock location app",
                                     explanation = "e",
                                     instructions = "i",
-                                    canDeepLink = true,
+                                    deepLinkIntent = Intent(Intent.ACTION_MAIN),
                                 ),
                             ),
                     ),

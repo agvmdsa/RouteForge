@@ -1,21 +1,22 @@
 package com.routeforge.mocklocationsetup.domain.usecase
 
+import android.content.Intent
 import com.routeforge.mocklocationsetup.domain.MockLocationSetupStateSource
 import com.routeforge.mocklocationsetup.domain.model.SetupState
 import com.routeforge.mocklocationsetup.domain.model.SetupStep
 import com.routeforge.mocklocationsetup.domain.model.SetupStepId
 
 /** One row of the setup checklist: [isPending] decides whether the step still needs to run,
- *  [hasDeepLink] whether a direct-to-settings shortcut exists. Collapsing both of today's steps
- *  into this shape (rather than one hand-copied if-block per step) means a third step is one more
- *  list entry, not a second copy-pasted block. */
+ *  [deepLinkIntent] resolves the direct-to-settings shortcut (if any). Collapsing both of today's
+ *  steps into this shape (rather than one hand-copied if-block per step) means a third step is
+ *  one more list entry, not a second copy-pasted block. */
 private data class SetupStepDefinition(
     val id: SetupStepId,
     val title: String,
     val explanation: String,
     val instructions: String,
     val isPending: () -> Boolean,
-    val hasDeepLink: () -> Boolean,
+    val deepLinkIntent: () -> Intent?,
 )
 
 class ObserveSetupStateUseCase(
@@ -39,7 +40,7 @@ class ObserveSetupStateUseCase(
                         "Open About Phone and tap the Build Number entry 7 times " +
                             "until you see \"You are now a developer\".",
                     isPending = { !dataSource.isDeveloperOptionsEnabled() },
-                    hasDeepLink = { dataSource.developerOptionsDeepLinkIntent() != null },
+                    deepLinkIntent = { dataSource.developerOptionsDeepLinkIntent() },
                 ),
                 SetupStepDefinition(
                     id = SetupStepId.SELECT_MOCK_LOCATION_APP,
@@ -52,7 +53,7 @@ class ObserveSetupStateUseCase(
                         "Open Developer Options, find \"Select mock location app\", " +
                             "and choose RouteForge.",
                     isPending = { !dataSource.isAppSelectedAsMockLocationProvider() },
-                    hasDeepLink = { dataSource.mockLocationAppDeepLinkIntent() != null },
+                    deepLinkIntent = { dataSource.mockLocationAppDeepLinkIntent() },
                 ),
             )
 
@@ -63,7 +64,7 @@ class ObserveSetupStateUseCase(
                     title = definition.title,
                     explanation = definition.explanation,
                     instructions = definition.instructions,
-                    canDeepLink = definition.hasDeepLink(),
+                    deepLinkIntent = definition.deepLinkIntent(),
                 )
             }
 

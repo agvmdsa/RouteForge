@@ -1,5 +1,6 @@
 package com.routeforge.mocklocationsetup.presentation
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -174,7 +175,7 @@ private fun MockLocationSetupScreenPendingPreview() {
                                 title = "Enable Developer Options",
                                 explanation = "Explanation",
                                 instructions = "Instructions",
-                                canDeepLink = true,
+                                deepLinkIntent = Intent(Intent.ACTION_MAIN),
                             ),
                         ),
                 ),

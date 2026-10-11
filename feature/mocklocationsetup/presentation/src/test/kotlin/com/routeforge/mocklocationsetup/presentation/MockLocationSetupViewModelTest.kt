@@ -4,8 +4,11 @@ import android.content.Intent
 import com.routeforge.mocklocationsetup.domain.MockLocationSetupStateSource
 import com.routeforge.mocklocationsetup.domain.usecase.ObserveSetupStateUseCase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -17,6 +20,8 @@ private class FakeMockLocationSetupStateSource(
     var developerOptionsEnabled: Boolean = false,
     var appSelectedAsMockLocationProvider: Boolean = false,
     var restrictedByPolicy: Boolean = false,
+    var developerOptionsDeepLink: Intent? = null,
+    var mockLocationAppDeepLink: Intent? = null,
 ) : MockLocationSetupStateSource {
     override fun isDeveloperOptionsEnabled(): Boolean = developerOptionsEnabled
 
@@ -24,9 +29,9 @@ private class FakeMockLocationSetupStateSource(
 
     override fun isDeveloperOptionsRestrictedByPolicy(): Boolean = restrictedByPolicy
 
-    override fun developerOptionsDeepLinkIntent(): Intent? = null
+    override fun developerOptionsDeepLinkIntent(): Intent? = developerOptionsDeepLink
 
-    override fun mockLocationAppDeepLinkIntent(): Intent? = null
+    override fun mockLocationAppDeepLinkIntent(): Intent? = mockLocationAppDeepLink
 }
 
 class MockLocationSetupViewModelTest {
@@ -45,7 +50,7 @@ class MockLocationSetupViewModelTest {
     @Test
     fun `initial load reflects the current pending steps`() {
         val dataSource = FakeMockLocationSetupStateSource(developerOptionsEnabled = false)
-        val viewModel = MockLocationSetupViewModel(ObserveSetupStateUseCase(dataSource), dataSource)
+        val viewModel = MockLocationSetupViewModel(ObserveSetupStateUseCase(dataSource))
 
         assertTrue(!viewModel.state.value.isReady)
         assertEquals(2, viewModel.state.value.pendingSteps.size)
@@ -54,7 +59,7 @@ class MockLocationSetupViewModelTest {
     @Test
     fun `refresh on resume advances state from pending to ready`() {
         val dataSource = FakeMockLocationSetupStateSource(developerOptionsEnabled = false)
-        val viewModel = MockLocationSetupViewModel(ObserveSetupStateUseCase(dataSource), dataSource)
+        val viewModel = MockLocationSetupViewModel(ObserveSetupStateUseCase(dataSource))
 
         assertTrue(!viewModel.state.value.isReady)
 
@@ -72,7 +77,7 @@ class MockLocationSetupViewModelTest {
                 developerOptionsEnabled = true,
                 appSelectedAsMockLocationProvider = true,
             )
-        val viewModel = MockLocationSetupViewModel(ObserveSetupStateUseCase(dataSource), dataSource)
+        val viewModel = MockLocationSetupViewModel(ObserveSetupStateUseCase(dataSource))
 
         assertTrue(viewModel.state.value.isReady)
 
@@ -82,4 +87,17 @@ class MockLocationSetupViewModelTest {
         assertTrue(!viewModel.state.value.isReady)
         assertEquals(1, viewModel.state.value.pendingSteps.size)
     }
+
+    @Test
+    fun `clicking a step's deep-link button emits LaunchDeepLink with that exact intent`() =
+        runTest {
+            val intent = Intent("fake-action")
+            val dataSource = FakeMockLocationSetupStateSource(developerOptionsDeepLink = intent)
+            val viewModel = MockLocationSetupViewModel(ObserveSetupStateUseCase(dataSource))
+            val eventDeferred = async { viewModel.events.first() }
+
+            viewModel.onAction(MockLocationSetupAction.OnDeepLinkClick(intent))
+
+            assertEquals(MockLocationSetupEvent.LaunchDeepLink(intent), eventDeferred.await())
+        }
 }

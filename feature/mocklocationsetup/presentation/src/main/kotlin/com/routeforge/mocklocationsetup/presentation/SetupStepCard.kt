@@ -128,10 +128,11 @@ internal fun SetupStepCard(
                     modifier = Modifier.padding(InstructionsPanelPadding),
                 )
             }
-            if (step.canDeepLink) {
+            val deepLinkIntent = step.deepLinkIntent
+            if (deepLinkIntent != null) {
                 Spacer(modifier = Modifier.height(DeepLinkButtonTopSpacing))
                 Button(
-                    onClick = { onAction(MockLocationSetupAction.OnDeepLinkClick(step.id)) },
+                    onClick = { onAction(MockLocationSetupAction.OnDeepLinkClick(deepLinkIntent)) },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(stringResource(R.string.setup_open_settings_button))

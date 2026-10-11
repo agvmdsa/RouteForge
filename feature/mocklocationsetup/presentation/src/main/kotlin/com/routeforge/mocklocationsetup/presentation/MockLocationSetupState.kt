@@ -1,5 +1,6 @@
 package com.routeforge.mocklocationsetup.presentation
 
+import android.content.Intent
 import com.routeforge.mocklocationsetup.domain.model.SetupStepId
 
 data class MockLocationSetupState(
@@ -13,5 +14,5 @@ data class SetupStepUi(
     val title: String,
     val explanation: String,
     val instructions: String,
-    val canDeepLink: Boolean,
+    val deepLinkIntent: Intent?,
 )
