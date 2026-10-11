@@ -37,7 +37,15 @@ class NominatimGeocodeClient(
                 Result.Error(response.status.toNetworkError())
             } else {
                 val dtos = response.body<List<NominatimResultDto>>()
-                Result.Success(dtos.mapNotNull { it.toPlaceSearchResult() })
+                val results =
+                    dtos.mapNotNull { dto ->
+                        val result = dto.toPlaceSearchResult()
+                        if (result == null) {
+                            Log.w(TAG, "Skipping result with unparseable coordinates: lat=${dto.lat} lon=${dto.lon}")
+                        }
+                        result
+                    }
+                Result.Success(results)
             }
         } catch (e: HttpRequestTimeoutException) {
             // Must be caught before CancellationException below — Ktor's HttpTimeout plugin throws
