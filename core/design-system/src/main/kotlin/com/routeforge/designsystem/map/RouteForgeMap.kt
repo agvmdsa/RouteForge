@@ -26,6 +26,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.routeforge.designsystem.theme.MapColors
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -41,7 +42,6 @@ private const val OSMDROID_PREFS_NAME = "osmdroid_config_routeforge"
 private const val DEFAULT_MAP_ZOOM = 15.0
 private const val FALLBACK_WORLD_MAP_ZOOM = 3.0
 private const val ROUTE_LINE_WIDTH_PX = 6f
-private const val ROUTE_LINE_COLOR = 0xFF7C4DFF.toInt()
 private const val TRAVELED_LINE_ALPHA = 55
 private const val ARROW_BORDER_WIDTH_FRACTION = 0.06f
 private const val REGION_OVERLAY_OUTLINE_WIDTH_PX = 3f
@@ -211,7 +211,7 @@ fun RouteForgeMap(
     val density = LocalDensity.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnTap by rememberUpdatedState(onMapTap)
-    val routeColorArgb = ROUTE_LINE_COLOR
+    val routeColorArgb = MapColors.RouteLine.toArgb()
     val regionFillColorArgb = MaterialTheme.colorScheme.primary.copy(alpha = REGION_OVERLAY_FILL_ALPHA).toArgb()
 
     val components =
