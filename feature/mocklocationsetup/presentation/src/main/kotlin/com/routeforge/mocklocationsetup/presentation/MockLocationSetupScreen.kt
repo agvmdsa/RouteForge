@@ -37,7 +37,6 @@ import org.koin.androidx.compose.koinViewModel
 private val ScreenPadding = 24.dp
 private val CardSpacing = 16.dp
 internal val IconBadgeSize = 72.dp
-internal val TotalSetupSteps = SetupStepId.entries.size
 
 @Composable
 fun MockLocationSetupRoot(
@@ -94,14 +93,14 @@ private fun PendingStepsContent(
     onAction: (MockLocationSetupAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val completedSteps = TotalSetupSteps - steps.size
+    val completedSteps = SetupStepId.Count - steps.size
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(CardSpacing),
     ) {
         item {
-            SetupHeader(completedSteps = completedSteps, totalSteps = TotalSetupSteps)
+            SetupHeader(completedSteps = completedSteps, totalSteps = SetupStepId.Count)
         }
         items(steps, key = { it.id }) { step ->
             SetupStepCard(step = step, onAction = onAction)

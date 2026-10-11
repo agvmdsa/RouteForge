@@ -98,7 +98,7 @@ internal fun SetupStepCard(
                 IconBadge(icon = step.id.toIcon(), size = StepIconBadgeSize)
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = stringResource(R.string.setup_step_number_label, stepNumber, TotalSetupSteps),
+                        text = stringResource(R.string.setup_step_number_label, stepNumber, SetupStepId.Count),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                     )
