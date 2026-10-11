@@ -13,10 +13,10 @@ package com.routeforge.coredomain.model
  *  waypoints are editable." */
 data class Route(
     val points: List<RoutePoint>,
-    val geometry: List<Pair<Double, Double>>,
+    val geometry: List<LatLng>,
     val distanceMeters: Double,
     val mode: RoutePlaybackMode = RoutePlaybackMode.GUIDED,
-    val alternateGeometry: List<Pair<Double, Double>>? = null,
+    val alternateGeometry: List<LatLng>? = null,
     val alternateDistanceMeters: Double? = null,
     val waypointCumulativeDistances: List<Double> = emptyList(),
 ) {
@@ -27,7 +27,7 @@ data class Route(
      *  since it's tied to whichever geometry was active when computed (see class doc). */
     fun swapToMode(
         targetMode: RoutePlaybackMode,
-        geometry: List<Pair<Double, Double>>,
+        geometry: List<LatLng>,
         distanceMeters: Double,
     ): Route =
         copy(

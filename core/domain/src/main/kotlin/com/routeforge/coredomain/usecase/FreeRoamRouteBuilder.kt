@@ -1,6 +1,7 @@
 package com.routeforge.coredomain.usecase
 
 import com.routeforge.coredomain.GeoMath
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
@@ -11,7 +12,7 @@ import com.routeforge.coredomain.model.RoutePoint
  */
 class FreeRoamRouteBuilder {
     fun build(points: List<RoutePoint>): Route {
-        val geometry = points.map { it.latitude to it.longitude }
+        val geometry = points.map { LatLng(it.latitude, it.longitude) }
         val segmentDistances =
             geometry
                 .zipWithNext { (lat1, lon1), (lat2, lon2) -> GeoMath.haversineMeters(lat1, lon1, lat2, lon2) }

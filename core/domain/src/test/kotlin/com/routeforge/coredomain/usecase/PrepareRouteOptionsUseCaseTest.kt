@@ -26,7 +26,7 @@ class PrepareRouteOptionsUseCaseTest {
         routingEngine.computePathResult =
             com.routeforge.coredomain.model.Route(
                 points = listOf(start, end),
-                geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
+                geometry = listOf(com.routeforge.coredomain.model.LatLng(1.0, 1.0), com.routeforge.coredomain.model.LatLng(2.0, 2.0)),
                 distanceMeters = 150.0,
             )
 
@@ -62,7 +62,7 @@ class PrepareRouteOptionsUseCaseTest {
         routingEngine.computePathResult =
             com.routeforge.coredomain.model.Route(
                 points = listOf(start, end),
-                geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
+                geometry = listOf(com.routeforge.coredomain.model.LatLng(1.0, 1.0), com.routeforge.coredomain.model.LatLng(2.0, 2.0)),
                 distanceMeters = 150.0,
             )
 

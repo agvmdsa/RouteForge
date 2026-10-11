@@ -1,6 +1,7 @@
 package com.routeforge.coredomain.usecase
 
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.FakeRegionCatalog
@@ -41,7 +42,7 @@ class ComputeRouteUseCaseTest {
         val expectedRoute =
             Route(
                 points = listOf(start, end),
-                geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
+                geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)),
                 distanceMeters = 150.0,
             )
         routingEngine.computePathResult = expectedRoute
@@ -83,7 +84,7 @@ class ComputeRouteUseCaseTest {
         val expectedRoute =
             Route(
                 points = requestedPoints,
-                geometry = requestedPoints.map { it.latitude to it.longitude },
+                geometry = requestedPoints.map { LatLng(it.latitude, it.longitude) },
                 distanceMeters = 500.0,
             )
         routingEngine.computePathResult = expectedRoute

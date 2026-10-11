@@ -5,6 +5,7 @@ import btools.router.OsmNodeNamed
 import btools.router.OsmTrack
 import btools.router.RoutingContext
 import com.routeforge.coredomain.GeoMath
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.RoutingEngine
@@ -42,7 +43,7 @@ class BrouterRoutingEngine(
         val waypoints = points.mapIndexed { index, point -> toOsmNodeNamed(point, "wp$index") }
         val track = runEngine(waypoints) ?: return null
 
-        val geometry = track.nodes.map { decodeLatitude(it.getILat()) to decodeLongitude(it.getILon()) }
+        val geometry = track.nodes.map { LatLng(decodeLatitude(it.getILat()), decodeLongitude(it.getILon())) }
         return Route(
             points = points,
             geometry = geometry,
@@ -62,7 +63,7 @@ class BrouterRoutingEngine(
     private fun computeWaypointCumulativeDistances(
         track: OsmTrack,
         waypointCount: Int,
-        geometry: List<Pair<Double, Double>>,
+        geometry: List<LatLng>,
     ): List<Double> {
         val trackIndexByWaypointName =
             geometry.indices

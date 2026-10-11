@@ -1,5 +1,6 @@
 package com.routeforge.routing.presentation.routerequest.waypointedit
 
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.model.Route
@@ -73,7 +74,7 @@ class WaypointEditViewModelTest {
     fun `a successful reorder updates the working list and emits Committed only once applied`() =
         runTest {
             routingEngine.computePathResult =
-                Route(points = points, geometry = points.map { it.latitude to it.longitude }, distanceMeters = 1.0)
+                Route(points = points, geometry = points.map { LatLng(it.latitude, it.longitude) }, distanceMeters = 1.0)
             viewModel.onAction(WaypointEditAction.OnOpen(points, RoutePlaybackMode.FREE_ROAM))
             viewModel.onAction(WaypointEditAction.OnReorder(fromIndex = 0, toIndex = 2))
             val eventDeferred = async { viewModel.events.first() }

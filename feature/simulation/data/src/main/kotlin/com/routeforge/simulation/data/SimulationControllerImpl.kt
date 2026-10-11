@@ -6,6 +6,7 @@ import com.routeforge.coredomain.GeoMath
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.simulation.domain.ExecutionModeFailure
 import com.routeforge.simulation.domain.JoystickStartFailure
@@ -71,13 +72,13 @@ internal class SimulationControllerImpl(
         speedSetting: SpeedSetting,
         executionMode: ExecutionMode,
     ) {
-        val start = route.geometry.firstOrNull() ?: (0.0 to 0.0)
+        val start = route.geometry.firstOrNull() ?: LatLng(0.0, 0.0)
         startSession(
             SimulationSession(
                 mode = SimulationMode.ROUTE,
                 status = SimulationStatus.RUNNING,
-                latitude = start.first,
-                longitude = start.second,
+                latitude = start.latitude,
+                longitude = start.longitude,
                 bearingDegrees = 0f,
                 speedMetersPerSecond = speedSetting.metersPerSecond,
                 route = route,

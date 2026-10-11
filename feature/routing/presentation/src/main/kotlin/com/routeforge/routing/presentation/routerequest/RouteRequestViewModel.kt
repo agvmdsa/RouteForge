@@ -10,6 +10,7 @@ import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
@@ -418,7 +419,7 @@ class RouteRequestViewModel(
     private fun applyModeSwitch(
         route: Route,
         targetMode: RoutePlaybackMode,
-        alternateGeometry: List<Pair<Double, Double>>,
+        alternateGeometry: List<LatLng>,
         alternateDistanceMeters: Double,
     ) {
         val swapped = route.swapToMode(targetMode, alternateGeometry, alternateDistanceMeters)

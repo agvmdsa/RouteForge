@@ -2,6 +2,7 @@ package com.routeforge.routing.presentation.savedroutes
 
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.FavoriteRoute
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
@@ -166,7 +167,7 @@ class SavedRoutesViewModelTest {
     @Test
     fun `using a route where both modes are viable asks the user to choose`() {
         routingEngine.snappableLatitudes = setOf(1.0, 2.0)
-        routingEngine.computePathResult = Route(points = samplePoints, geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 100.0)
+        routingEngine.computePathResult = Route(points = samplePoints, geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 100.0)
         val viewModel = createViewModel()
 
         viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
@@ -178,7 +179,7 @@ class SavedRoutesViewModelTest {
     @Test
     fun `dismissing the mode choice (tap-outside, back, or swipe) clears it instead of leaving the sheet stuck`() {
         routingEngine.snappableLatitudes = setOf(1.0, 2.0)
-        routingEngine.computePathResult = Route(points = samplePoints, geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 100.0)
+        routingEngine.computePathResult = Route(points = samplePoints, geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 100.0)
         val viewModel = createViewModel()
         viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
         assertNotNull(viewModel.state.value.routeOptions)
@@ -194,7 +195,7 @@ class SavedRoutesViewModelTest {
         runTest(dispatcher) {
             routingEngine.snappableLatitudes = setOf(1.0, 2.0)
             routingEngine.computePathResult =
-                Route(points = samplePoints, geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 100.0)
+                Route(points = samplePoints, geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 100.0)
             val viewModel = createViewModel()
             viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
 
@@ -210,7 +211,7 @@ class SavedRoutesViewModelTest {
         runTest(dispatcher) {
             routingEngine.snappableLatitudes = setOf(1.0, 2.0)
             routingEngine.computePathResult =
-                Route(points = samplePoints, geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 100.0)
+                Route(points = samplePoints, geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 100.0)
             val viewModel = createViewModel()
             viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
             val freeRoam = viewModel.state.value.routeOptions?.freeRoam

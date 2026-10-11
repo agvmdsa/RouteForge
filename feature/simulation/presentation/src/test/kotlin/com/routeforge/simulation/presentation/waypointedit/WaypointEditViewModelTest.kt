@@ -1,5 +1,6 @@
 package com.routeforge.simulation.presentation.waypointedit
 
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.model.Route
@@ -52,7 +53,7 @@ class WaypointEditViewModelTest {
     private val loadedRoute =
         Route(
             points = points,
-            geometry = points.map { it.latitude to it.longitude },
+            geometry = points.map { LatLng(it.latitude, it.longitude) },
             distanceMeters = 200.0,
             mode = RoutePlaybackMode.FREE_ROAM,
             waypointCumulativeDistances = listOf(0.0, 100.0, 200.0),
@@ -61,7 +62,7 @@ class WaypointEditViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
-        routingEngine.computePathResult = Route(points = points, geometry = points.map { it.latitude to it.longitude }, distanceMeters = 1.0)
+        routingEngine.computePathResult = Route(points = points, geometry = points.map { LatLng(it.latitude, it.longitude) }, distanceMeters = 1.0)
     }
 
     @AfterEach

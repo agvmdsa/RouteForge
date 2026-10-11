@@ -6,6 +6,7 @@ import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
@@ -471,7 +472,7 @@ class RouteRequestViewModelTest {
         routingEngine.computePathResult =
             Route(
                 points = listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)),
-                geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
+                geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)),
                 distanceMeters = 100.0,
             )
         val viewModel = createViewModel()
@@ -491,7 +492,7 @@ class RouteRequestViewModelTest {
         routingEngine.computePathResult =
             Route(
                 points = listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)),
-                geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
+                geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)),
                 distanceMeters = 100.0,
             )
         val viewModel = createViewModel()
@@ -512,7 +513,7 @@ class RouteRequestViewModelTest {
         routingEngine.computePathResult =
             Route(
                 points = listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)),
-                geometry = listOf(1.0 to 1.0, 2.0 to 2.0),
+                geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)),
                 distanceMeters = 100.0,
             )
         val viewModel = createViewModel()
@@ -570,7 +571,7 @@ class RouteRequestViewModelTest {
     fun `requesting a route again after finalizing one recomputes and finalizes again`() {
         routingEngine.snappableLatitudes = setOf(1.0, 2.0)
         routingEngine.computePathResult =
-            Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
+            Route(points = emptyList(), geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 10.0)
         val viewModel = createViewModel()
         viewModel.tapTwoPoints()
         viewModel.onAction(RouteRequestAction.OnRequestRoute)
@@ -615,7 +616,7 @@ class RouteRequestViewModelTest {
     fun `exporting a finalized route serializes it through the matching codec`() {
         routingEngine.snappableLatitudes = setOf(1.0, 2.0)
         routingEngine.computePathResult =
-            Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
+            Route(points = emptyList(), geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 10.0)
         val viewModel = createViewModel()
         viewModel.tapTwoPoints()
         viewModel.onAction(RouteRequestAction.OnRequestRoute)
@@ -630,7 +631,7 @@ class RouteRequestViewModelTest {
     fun `requesting a route finalizes it but does not navigate away by itself`() {
         routingEngine.snappableLatitudes = setOf(1.0, 2.0)
         routingEngine.computePathResult =
-            Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
+            Route(points = emptyList(), geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 10.0)
         val viewModel = createViewModel()
         viewModel.tapTwoPoints()
 
@@ -644,7 +645,7 @@ class RouteRequestViewModelTest {
         runTest(dispatcher) {
             routingEngine.snappableLatitudes = setOf(1.0, 2.0)
             routingEngine.computePathResult =
-                Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
+                Route(points = emptyList(), geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 10.0)
             val viewModel = createViewModel()
             viewModel.tapTwoPoints()
             viewModel.onAction(RouteRequestAction.OnRequestRoute)
@@ -661,7 +662,7 @@ class RouteRequestViewModelTest {
         runTest(dispatcher) {
             routingEngine.snappableLatitudes = setOf(1.0, 2.0)
             routingEngine.computePathResult =
-                Route(points = emptyList(), geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 10.0)
+                Route(points = emptyList(), geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 10.0)
             val viewModel = createViewModel()
             viewModel.tapTwoPoints()
             viewModel.onAction(RouteRequestAction.OnRequestRoute)

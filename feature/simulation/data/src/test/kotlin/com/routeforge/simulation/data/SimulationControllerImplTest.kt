@@ -2,6 +2,7 @@ package com.routeforge.simulation.data
 
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
 import com.routeforge.simulation.domain.ExecutionModeFailure
@@ -22,14 +23,14 @@ import org.junit.jupiter.api.Test
 private val longRoute =
     Route(
         points = emptyList(),
-        geometry = listOf(0.0 to 0.0, 10.0 to 0.0),
+        geometry = listOf(LatLng(0.0, 0.0), LatLng(10.0, 0.0)),
         distanceMeters = 1_000_000.0,
     )
 
 private val shortRoute =
     Route(
         points = emptyList(),
-        geometry = listOf(0.0 to 0.0, 0.0 to 0.0001),
+        geometry = listOf(LatLng(0.0, 0.0), LatLng(0.0, 0.0001)),
         distanceMeters = 11.0,
     )
 
@@ -83,7 +84,7 @@ class SimulationControllerImplTest {
         controller.startRoute(longRoute, speedSetting = SpeedSetting.Manual(10f))
         controller.tick(elapsedSeconds = 1.0)
 
-        val alternateRoute = longRoute.copy(geometry = listOf(0.0 to 0.0, 0.0 to 10.0))
+        val alternateRoute = longRoute.copy(geometry = listOf(LatLng(0.0, 0.0), LatLng(0.0, 10.0)))
         controller.updateActiveRoute(alternateRoute)
         controller.tick(elapsedSeconds = 1.0)
 
@@ -283,7 +284,7 @@ class SimulationControllerImplTest {
 
         assertEquals(SimulationStatus.RUNNING, controller.mockedSession.value?.status)
         assertEquals(10, controller.mockedSession.value?.completedRuns)
-        assertEquals(shortRoute.geometry.first().first, controller.mockedSession.value?.latitude)
+        assertEquals(shortRoute.geometry.first().latitude, controller.mockedSession.value?.latitude)
     }
 
     // --- User Story 7: joystick ---
@@ -316,13 +317,13 @@ class SimulationControllerImplTest {
         val controller = createController()
         controller.startRoute(longRoute, speedSetting = SpeedSetting.Manual(10f))
         controller.tick(elapsedSeconds = 1.0)
-        val positionDuringRoute = controller.mockedSession.value!!.let { it.latitude to it.longitude }
+        val positionDuringRoute = controller.mockedSession.value!!.let { LatLng(it.latitude, it.longitude) }
 
         val result = controller.startJoystick()
 
         assertEquals(Result.Success(Unit), result)
         assertEquals(SimulationMode.JOYSTICK, controller.mockedSession.value?.mode)
-        assertEquals(positionDuringRoute, controller.mockedSession.value?.let { it.latitude to it.longitude })
+        assertEquals(positionDuringRoute, controller.mockedSession.value?.let { LatLng(it.latitude, it.longitude) })
     }
 
     @Test
@@ -348,12 +349,12 @@ class SimulationControllerImplTest {
         controller.setSpeed(SpeedSetting.Manual(10f))
         controller.updateJoystickDirection(bearingDegrees = 0f)
         controller.tick(elapsedSeconds = 1.0)
-        val positionAtRelease = controller.mockedSession.value!!.let { it.latitude to it.longitude }
+        val positionAtRelease = controller.mockedSession.value!!.let { LatLng(it.latitude, it.longitude) }
 
         controller.pause()
         controller.tick(elapsedSeconds = 1.0)
 
         assertEquals(SimulationStatus.PAUSED, controller.mockedSession.value?.status)
-        assertEquals(positionAtRelease, controller.mockedSession.value?.let { it.latitude to it.longitude })
+        assertEquals(positionAtRelease, controller.mockedSession.value?.let { LatLng(it.latitude, it.longitude) })
     }
 }

@@ -1,5 +1,6 @@
 package com.routeforge.simulation.domain
 
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -13,7 +14,7 @@ class RouteProgressCalculatorTest {
     private val northboundRoute =
         Route(
             points = emptyList(),
-            geometry = listOf(0.0 to 0.0, 1.0 to 0.0, 2.0 to 0.0),
+            geometry = listOf(LatLng(0.0, 0.0), LatLng(1.0, 0.0), LatLng(2.0, 0.0)),
             distanceMeters = metersPerDegreeLatitude * 2,
         )
 
@@ -69,7 +70,7 @@ class RouteProgressCalculatorTest {
         val shortRoute =
             Route(
                 points = emptyList(),
-                geometry = listOf(0.0 to 0.0, 0.0 to 1.0),
+                geometry = listOf(LatLng(0.0, 0.0), LatLng(0.0, 1.0)),
                 distanceMeters = metersPerDegreeLatitude,
             )
 

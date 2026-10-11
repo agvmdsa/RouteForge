@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 private val sampleRoute =
-    Route(points = emptyList(), geometry = listOf(0.0 to 0.0, 1.0 to 1.0), distanceMeters = 100.0)
+    Route(points = emptyList(), geometry = listOf(LatLng(0.0, 0.0), LatLng(1.0, 1.0)), distanceMeters = 100.0)
 
 class RouteOptionsTest {
     @Test

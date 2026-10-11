@@ -1,5 +1,6 @@
 package com.routeforge.coredomain
 
+import com.routeforge.coredomain.model.LatLng
 import kotlin.math.asin
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -50,7 +51,7 @@ object GeoMath {
         longitude: Double,
         bearingDegrees: Float,
         distanceMeters: Double,
-    ): Pair<Double, Double> {
+    ): LatLng {
         val angularDistance = distanceMeters / EARTH_RADIUS_METERS
         val bearingRadians = Math.toRadians(bearingDegrees.toDouble())
         val phi1 = Math.toRadians(latitude)
@@ -64,7 +65,7 @@ object GeoMath {
                     cos(angularDistance) - sin(phi1) * sin(phi2),
                 )
 
-        return Math.toDegrees(phi2) to Math.toDegrees(lambda2)
+        return LatLng(Math.toDegrees(phi2), Math.toDegrees(lambda2))
     }
 }
 

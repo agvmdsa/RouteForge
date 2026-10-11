@@ -1,6 +1,7 @@
 package com.routeforge.coredomain.usecase
 
 import com.routeforge.coredomain.GeoMath
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -20,7 +21,7 @@ class FreeRoamRouteBuilderTest {
 
         val route = builder.build(points)
 
-        assertEquals(listOf(1.0 to 1.0, 2.0 to 2.0, 3.0 to 3.0), route.geometry)
+        assertEquals(listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0), LatLng(3.0, 3.0)), route.geometry)
         assertEquals(points, route.points)
     }
 
@@ -52,7 +53,7 @@ class FreeRoamRouteBuilderTest {
         val route = builder.build(listOf(samePoint, samePoint))
 
         assertEquals(0.0, route.distanceMeters, 0.0001)
-        assertEquals(listOf(5.0 to 5.0, 5.0 to 5.0), route.geometry)
+        assertEquals(listOf(LatLng(5.0, 5.0), LatLng(5.0, 5.0)), route.geometry)
     }
 
     @Test

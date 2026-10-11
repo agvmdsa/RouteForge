@@ -1,6 +1,7 @@
 package com.routeforge.simulation.domain
 
 import com.routeforge.coredomain.GeoMath
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 
 data class InterpolatedFix(
@@ -20,8 +21,8 @@ class RouteProgressCalculator {
     ): InterpolatedFix {
         val geometry = route.geometry
         if (geometry.size < 2) {
-            val point = geometry.firstOrNull() ?: (0.0 to 0.0)
-            return InterpolatedFix(point.first, point.second, 0f, isRouteExhausted = true, segmentIndex = 0)
+            val point = geometry.firstOrNull() ?: LatLng(0.0, 0.0)
+            return InterpolatedFix(point.latitude, point.longitude, 0f, isRouteExhausted = true, segmentIndex = 0)
         }
 
         var remaining = distanceTraveledMeters

@@ -35,6 +35,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.designsystem.components.AutoDismissConfirmationPill
 import com.routeforge.designsystem.components.FabColumn
@@ -191,15 +192,15 @@ fun SimulationScreen(
  *  [previousRealWasNull] track the transition so later updates to an already-active source don't
  *  keep yanking the camera back. */
 @Composable
-private fun rememberSimulationCameraTarget(state: SimulationState): Pair<Double, Double>? {
+private fun rememberSimulationCameraTarget(state: SimulationState): LatLng? {
     var previousSessionWasNull by remember { mutableStateOf(true) }
     var previousRealWasNull by remember { mutableStateOf(true) }
-    var cameraTarget by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    var cameraTarget by remember { mutableStateOf<LatLng?>(null) }
 
     LaunchedEffect(state.mockedSession) {
         val session = state.mockedSession
         if (session != null && previousSessionWasNull) {
-            cameraTarget = session.latitude to session.longitude
+            cameraTarget = LatLng(session.latitude, session.longitude)
         }
         previousSessionWasNull = session == null
     }
@@ -207,7 +208,7 @@ private fun rememberSimulationCameraTarget(state: SimulationState): Pair<Double,
         if (state.mockedSession == null) {
             val real = state.realLocation
             if (real != null && previousRealWasNull) {
-                cameraTarget = real.latitude to real.longitude
+                cameraTarget = LatLng(real.latitude, real.longitude)
             }
             previousRealWasNull = real == null
         }
@@ -217,8 +218,8 @@ private fun rememberSimulationCameraTarget(state: SimulationState): Pair<Double,
 
 private data class SimulationMapContent(
     val markers: List<RouteForgeMapMarker>,
-    val polylinePoints: List<Pair<Double, Double>>,
-    val traveledPolylinePoints: List<Pair<Double, Double>>,
+    val polylinePoints: List<LatLng>,
+    val traveledPolylinePoints: List<LatLng>,
     val sessionDistanceTraveledMeters: Double?,
 )
 
@@ -242,13 +243,13 @@ private fun rememberSimulationMapContent(
     val traveledPolylinePoints =
         if (loadedRoute != null && routeProgress != null) {
             loadedRoute.geometry.subList(0, (routeProgress.segmentIndex + 1).coerceAtMost(loadedRoute.geometry.size)) +
-                (routeProgress.latitude to routeProgress.longitude)
+                LatLng(routeProgress.latitude, routeProgress.longitude)
         } else {
             emptyList()
         }
 
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
-    var draggingPosition by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    var draggingPosition by remember { mutableStateOf<LatLng?>(null) }
     val markers =
         buildList {
             loadedRoute?.points?.forEachIndexed { index, point ->
@@ -267,7 +268,7 @@ private fun rememberSimulationMapContent(
                         draggable = editState.isOpen && !isReadOnly,
                         onDrag = { latitude, longitude ->
                             draggingIndex = index
-                            draggingPosition = latitude to longitude
+                            draggingPosition = LatLng(latitude, longitude)
                         },
                         onDragEnd = { latitude, longitude ->
                             draggingIndex = null
@@ -305,7 +306,7 @@ private fun rememberSimulationMapContent(
     val liveDraggingPosition = draggingPosition
     val mainPolylinePoints =
         if (draggingIndex != null && liveDraggingPosition != null && loadedRoute != null) {
-            loadedRoute.points.mapIndexed { i, p -> if (i == draggingIndex) liveDraggingPosition else p.latitude to p.longitude }
+            loadedRoute.points.mapIndexed { i, p -> if (i == draggingIndex) liveDraggingPosition else LatLng(p.latitude, p.longitude) }
         } else {
             state.loadedRoute?.geometry.orEmpty()
         }

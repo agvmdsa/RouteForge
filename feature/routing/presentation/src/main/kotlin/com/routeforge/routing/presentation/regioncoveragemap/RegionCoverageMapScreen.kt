@@ -20,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapRegionOverlay
 import com.routeforge.designsystem.theme.RouteForgeTheme
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.routing.presentation.R
@@ -42,7 +43,7 @@ fun RegionCoverageMapScreen(
 ) {
     val cameraTarget =
         state.regions.firstOrNull()?.let { region ->
-            (region.minLatitude + region.maxLatitude) / 2 to (region.minLongitude + region.maxLongitude) / 2
+            LatLng((region.minLatitude + region.maxLatitude) / 2, (region.minLongitude + region.maxLongitude) / 2)
         }
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->

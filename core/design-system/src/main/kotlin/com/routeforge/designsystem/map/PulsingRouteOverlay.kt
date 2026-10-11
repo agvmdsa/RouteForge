@@ -9,6 +9,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import com.routeforge.coredomain.model.LatLng
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Polyline
@@ -25,7 +26,7 @@ internal class PulsingRouteOverlay(
     private val haloOverlay: Polyline,
     private val mainOverlay: Polyline,
 ) {
-    fun setPoints(points: List<Pair<Double, Double>>) {
+    fun setPoints(points: List<LatLng>) {
         val geoPoints = points.map { (latitude, longitude) -> GeoPoint(latitude, longitude) }
         haloOverlay.setPoints(geoPoints)
         mainOverlay.setPoints(geoPoints)

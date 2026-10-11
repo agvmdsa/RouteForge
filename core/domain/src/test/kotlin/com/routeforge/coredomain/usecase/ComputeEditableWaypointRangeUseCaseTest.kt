@@ -1,5 +1,6 @@
 package com.routeforge.coredomain.usecase
 
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -17,7 +18,7 @@ class ComputeEditableWaypointRangeUseCaseTest {
     private val route =
         Route(
             points = points,
-            geometry = points.map { it.latitude to it.longitude },
+            geometry = points.map { LatLng(it.latitude, it.longitude) },
             distanceMeters = 200.0,
             waypointCumulativeDistances = listOf(0.0, 100.0, 200.0),
         )

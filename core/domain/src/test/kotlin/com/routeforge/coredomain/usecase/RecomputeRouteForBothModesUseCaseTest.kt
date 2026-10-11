@@ -3,6 +3,7 @@ package com.routeforge.coredomain.usecase
 import com.routeforge.coredomain.FakeRegionCatalog
 import com.routeforge.coredomain.FakeRegionUsageTracker
 import com.routeforge.coredomain.FakeRoutingEngine
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.ModeAvailability
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
@@ -27,7 +28,7 @@ class RecomputeRouteForBothModesUseCaseTest {
     private val points = listOf(start, end)
 
     private val guidedRoute =
-        Route(points = points, geometry = listOf(1.0 to 1.0, 2.0 to 2.0), distanceMeters = 150.0)
+        Route(points = points, geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 150.0)
 
     @Test
     fun `missing regions short-circuits before either mode is attempted`() {

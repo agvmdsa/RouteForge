@@ -26,6 +26,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.designsystem.theme.MapColors
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
@@ -201,10 +202,10 @@ private fun buildMapComponents(
 fun RouteForgeMap(
     markers: List<RouteForgeMapMarker>,
     modifier: Modifier = Modifier,
-    polylinePoints: List<Pair<Double, Double>> = emptyList(),
-    traveledPolylinePoints: List<Pair<Double, Double>> = emptyList(),
+    polylinePoints: List<LatLng> = emptyList(),
+    traveledPolylinePoints: List<LatLng> = emptyList(),
     regions: List<RouteForgeMapRegionOverlay> = emptyList(),
-    cameraTarget: Pair<Double, Double>? = null,
+    cameraTarget: LatLng? = null,
     onMapTap: ((Double, Double) -> Unit)? = null,
 ) {
     val context = LocalContext.current
@@ -357,7 +358,7 @@ fun RouteForgeMap(
             components.mapView.controller.setZoom(DEFAULT_MAP_ZOOM)
             hasSetInitialZoom.value = true
         }
-        components.mapView.controller.setCenter(GeoPoint(target.first, target.second))
+        components.mapView.controller.setCenter(GeoPoint(target.latitude, target.longitude))
     }
 
     AndroidView(factory = { components.mapView }, modifier = modifier.fillMaxSize())

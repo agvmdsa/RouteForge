@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.designsystem.components.AutoDismissConfirmationPill
 import com.routeforge.designsystem.components.FabColumn
@@ -183,15 +184,15 @@ fun RouteRequestScreen(
 /** Centers the map on the draft's first waypoint (or the last known real location, if the draft is
  *  still empty) exactly once — [hasCenteredOnce] stops a later edit from re-centering under the user. */
 @Composable
-private fun rememberInitialCameraTarget(state: RouteRequestState): Pair<Double, Double>? {
+private fun rememberInitialCameraTarget(state: RouteRequestState): LatLng? {
     var hasCenteredOnce by remember { mutableStateOf(false) }
-    var cameraTarget by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    var cameraTarget by remember { mutableStateOf<LatLng?>(null) }
     LaunchedEffect(state.draft.points.size, state.lastKnownLocation) {
         if (hasCenteredOnce) return@LaunchedEffect
         val first = state.draft.points.firstOrNull()
         val target =
-            first?.let { it.latitude to it.longitude }
-                ?: state.lastKnownLocation?.let { it.latitude to it.longitude }
+            first?.let { LatLng(it.latitude, it.longitude) }
+                ?: state.lastKnownLocation?.let { LatLng(it.latitude, it.longitude) }
         if (target != null) {
             cameraTarget = target
             hasCenteredOnce = true
@@ -207,11 +208,11 @@ private fun rememberInitialCameraTarget(state: RouteRequestState): Pair<Double, 
 private fun rememberRouteMarkersAndPolyline(
     state: RouteRequestState,
     onAction: (RouteRequestAction) -> Unit,
-): Pair<List<RouteForgeMapMarker>, List<Pair<Double, Double>>> {
+): Pair<List<RouteForgeMapMarker>, List<LatLng>> {
     val markerBackground = MaterialTheme.colorScheme.primary.toArgb()
     val markerText = MaterialTheme.colorScheme.onPrimary.toArgb()
     var draggingIndex by remember { mutableStateOf<Int?>(null) }
-    var draggingPosition by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    var draggingPosition by remember { mutableStateOf<LatLng?>(null) }
     val markers =
         state.draft.points.mapIndexed { index, point ->
             RouteForgeMapMarker(
@@ -223,7 +224,7 @@ private fun rememberRouteMarkersAndPolyline(
                 onClick = { onAction(RouteRequestAction.OnMarkerClick(index)) },
                 onDrag = { latitude, longitude ->
                     draggingIndex = index
-                    draggingPosition = latitude to longitude
+                    draggingPosition = LatLng(latitude, longitude)
                 },
                 onDragEnd = { latitude, longitude ->
                     draggingIndex = null
@@ -235,9 +236,9 @@ private fun rememberRouteMarkersAndPolyline(
     val liveDraggingPosition = draggingPosition
     val polylinePoints =
         if (draggingIndex != null && liveDraggingPosition != null) {
-            state.draft.points.mapIndexed { i, p -> if (i == draggingIndex) liveDraggingPosition else p.latitude to p.longitude }
+            state.draft.points.mapIndexed { i, p -> if (i == draggingIndex) liveDraggingPosition else LatLng(p.latitude, p.longitude) }
         } else {
-            state.route?.geometry ?: state.previewRoute?.geometry ?: state.draft.points.map { it.latitude to it.longitude }
+            state.route?.geometry ?: state.previewRoute?.geometry ?: state.draft.points.map { LatLng(it.latitude, it.longitude) }
         }
     return markers to polylinePoints
 }

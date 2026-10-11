@@ -4,6 +4,7 @@ import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
@@ -47,14 +48,14 @@ import org.junit.jupiter.api.Test
 private val sampleRoute =
     Route(
         points = emptyList(),
-        geometry = listOf(0.0 to 0.0, 1.0 to 1.0),
+        geometry = listOf(LatLng(0.0, 0.0), LatLng(1.0, 1.0)),
         distanceMeters = 100.0,
     )
 
 private val routeWithAlternate =
     sampleRoute.copy(
         mode = RoutePlaybackMode.GUIDED,
-        alternateGeometry = listOf(2.0 to 2.0, 3.0 to 3.0),
+        alternateGeometry = listOf(LatLng(2.0, 2.0), LatLng(3.0, 3.0)),
         alternateDistanceMeters = 50.0,
     )
 
