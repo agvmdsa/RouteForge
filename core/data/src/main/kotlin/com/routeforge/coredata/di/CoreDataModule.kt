@@ -5,8 +5,10 @@ import com.routeforge.coredata.HttpClientFactory
 import com.routeforge.coredata.PlatformMockLocationAuthorizationChecker
 import com.routeforge.coredata.SharedPreferencesFavoriteRoutesRepository
 import com.routeforge.coredata.SharedPreferencesFavoriteWaypointsRepository
+import com.routeforge.coredata.SharedPreferencesMapStyleStore
 import com.routeforge.coredomain.FavoriteRoutesRepository
 import com.routeforge.coredomain.FavoriteWaypointsRepository
+import com.routeforge.coredomain.MapStyleStore
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
 import com.routeforge.coredomain.NetworkConnectivityChecker
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
@@ -33,4 +35,5 @@ val coreDataModule =
         single { SharedPreferencesFavoriteWaypointsRepository(androidContext()) }.bind<FavoriteWaypointsRepository>()
         single { SharedPreferencesFavoriteRoutesRepository(androidContext()) }.bind<FavoriteRoutesRepository>()
         single { AndroidNetworkConnectivityChecker(androidContext()) }.bind<NetworkConnectivityChecker>()
+        single { SharedPreferencesMapStyleStore(androidContext()) }.bind<MapStyleStore>()
     }

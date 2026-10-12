@@ -1,17 +1,21 @@
 package com.routeforge.routing.presentation.regioncoveragemap
 
 import androidx.lifecycle.ViewModel
+import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /** Read-only snapshot of the region catalog at the time this screen opens — no live refresh
- *  needed, since nothing on this screen can change which regions are downloaded. */
+ *  needed, since nothing on this screen can change which regions are downloaded. [mapStyle] is
+ *  likewise read once (not reactively), consistent with that same choice. */
 class RegionCoverageMapViewModel(
     observeRegionCatalog: ObserveRegionCatalogUseCase,
+    observeMapStyle: ObserveMapStyleUseCase,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(RegionCoverageMapState(regions = observeRegionCatalog()))
+    private val _state =
+        MutableStateFlow(RegionCoverageMapState(regions = observeRegionCatalog(), mapStyle = observeMapStyle().value))
     val state = _state.asStateFlow()
 
     fun onAction(action: RegionCoverageMapAction) {

@@ -2,6 +2,9 @@ package com.routeforge.routing.presentation.settings
 
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.model.MapStyle
+import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
+import com.routeforge.coredomain.usecase.SetMapStyleUseCase
 import com.routeforge.routing.domain.DEFAULT_STORAGE_QUOTA_BYTES
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
@@ -9,6 +12,7 @@ import com.routeforge.routing.domain.usecase.EnforceStorageQuotaUseCase
 import com.routeforge.routing.domain.usecase.GetStorageUsageSummaryUseCase
 import com.routeforge.routing.domain.usecase.ObserveStorageQuotaUseCase
 import com.routeforge.routing.domain.usecase.SetStorageQuotaUseCase
+import com.routeforge.routing.presentation.FakeMapStyleStore
 import com.routeforge.routing.presentation.FakeRegionCatalog
 import com.routeforge.routing.presentation.FakeRegionUsageTracker
 import com.routeforge.routing.presentation.FakeStorageQuotaStore
@@ -25,6 +29,7 @@ class SettingsViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val quotaStore = FakeStorageQuotaStore()
     private val regionCatalog = FakeRegionCatalog()
+    private val mapStyleStore = FakeMapStyleStore()
 
     @BeforeEach
     fun setUp() {
@@ -52,6 +57,8 @@ class SettingsViewModelTest {
                         ),
                 ),
             getStorageUsageSummary = GetStorageUsageSummaryUseCase(regionCatalog),
+            observeMapStyle = ObserveMapStyleUseCase(mapStyleStore),
+            setMapStyle = SetMapStyleUseCase(mapStyleStore),
         )
 
     @Test
@@ -78,6 +85,23 @@ class SettingsViewModelTest {
         viewModel.onAction(SettingsAction.OnQuotaSelected(null))
 
         assertEquals(null, viewModel.state.value.quotaBytes)
+    }
+
+    @Test
+    fun `initial state reflects the default map style`() {
+        val viewModel = createViewModel()
+
+        assertEquals(MapStyle.DEFAULT, viewModel.state.value.mapStyle)
+    }
+
+    @Test
+    fun `selecting a map style updates state and persists it`() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(SettingsAction.OnMapStyleSelected(MapStyle.TOPOGRAPHIC))
+
+        assertEquals(MapStyle.TOPOGRAPHIC, viewModel.state.value.mapStyle)
+        assertEquals(MapStyle.TOPOGRAPHIC, mapStyleStore.observeMapStyle().value)
     }
 
     @Test

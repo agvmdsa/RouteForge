@@ -1,6 +1,8 @@
 package com.routeforge.routing.presentation.di
 
 import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
+import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
+import com.routeforge.coredomain.usecase.SetMapStyleUseCase
 import com.routeforge.routing.domain.usecase.ComputeRegionUsageUseCase
 import com.routeforge.coredomain.usecase.ComputeEditableWaypointRangeUseCase
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
@@ -45,6 +47,8 @@ val routingPresentationModule =
         factoryOf(::ComputeRegionUsageUseCase)
         factoryOf(::RecomputeRouteForBothModesUseCase)
         factoryOf(::ComputeEditableWaypointRangeUseCase)
+        factoryOf(::ObserveMapStyleUseCase)
+        factoryOf(::SetMapStyleUseCase)
         viewModel {
             RouteRequestViewModel(
                 prepareRouteOptions = get(),
@@ -58,6 +62,7 @@ val routingPresentationModule =
                 favoriteRoutesRepository = get(),
                 selectedFavoriteWaypointHolder = get(),
                 pendingSearchWaypointHolder = get(),
+                observeMapStyle = get(),
             )
         }
         viewModelOf(::WaypointEditViewModel)

@@ -2,7 +2,9 @@ package com.routeforge.routing.presentation.regioncoveragemap
 
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
+import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
+import com.routeforge.routing.presentation.FakeMapStyleStore
 import com.routeforge.routing.presentation.FakeRegionCatalog
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -37,7 +39,10 @@ private val notDownloadedRegion =
 class RegionCoverageMapViewModelTest {
     private fun viewModel(regions: List<Region>): RegionCoverageMapViewModel {
         val regionCatalog = FakeRegionCatalog(regions = regions)
-        return RegionCoverageMapViewModel(observeRegionCatalog = ObserveRegionCatalogUseCase(regionCatalog))
+        return RegionCoverageMapViewModel(
+            observeRegionCatalog = ObserveRegionCatalogUseCase(regionCatalog),
+            observeMapStyle = ObserveMapStyleUseCase(FakeMapStyleStore()),
+        )
     }
 
     @Test

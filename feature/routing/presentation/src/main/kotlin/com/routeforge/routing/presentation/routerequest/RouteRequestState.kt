@@ -1,5 +1,6 @@
 package com.routeforge.routing.presentation.routerequest
 
+import com.routeforge.coredomain.model.MapStyle
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
@@ -36,4 +37,5 @@ data class RouteRequestState(
      *  on whichever button triggered it, instead of leaving the user guessing why nothing changed
      *  yet. */
     val isComputingPreview: Boolean = false,
+    val mapStyle: MapStyle = MapStyle.DEFAULT,
 )

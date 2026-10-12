@@ -156,6 +156,7 @@ fun RouteRequestScreen(
                 markers = markers,
                 polylinePoints = polylinePoints,
                 cameraTarget = cameraTarget,
+                mapStyle = state.mapStyle,
                 onMapTap = { latitude, longitude -> onAction(RouteRequestAction.OnMapTap(latitude, longitude)) },
                 modifier = Modifier.fillMaxSize(),
             )

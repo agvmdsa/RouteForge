@@ -52,6 +52,7 @@ fun RegionCoverageMapScreen(
                 markers = emptyList(),
                 regions = state.regions.map { it.toOverlay() },
                 cameraTarget = cameraTarget,
+                mapStyle = state.mapStyle,
                 onMapTap = { latitude, longitude -> onAction(RegionCoverageMapAction.OnMapTapped(latitude, longitude)) },
                 modifier = Modifier.fillMaxSize(),
             )

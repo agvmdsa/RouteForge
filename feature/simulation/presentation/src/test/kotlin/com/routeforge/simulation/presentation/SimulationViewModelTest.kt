@@ -9,6 +9,7 @@ import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.simulation.domain.JoystickStartFailure
 import com.routeforge.simulation.domain.model.ExecutionMode
 import com.routeforge.simulation.domain.model.SimulationMode
@@ -114,6 +115,7 @@ class SimulationViewModelTest {
             lastComputedRouteHolder = lastComputedRouteHolder,
             lastKnownRealLocationHolder = lastKnownRealLocationHolder,
             pendingTeleportTargetHolder = pendingTeleportTargetHolder,
+            observeMapStyle = ObserveMapStyleUseCase(FakeMapStyleStore()),
         )
 
     @Test

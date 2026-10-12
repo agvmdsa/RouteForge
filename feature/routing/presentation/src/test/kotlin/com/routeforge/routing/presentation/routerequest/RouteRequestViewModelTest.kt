@@ -22,10 +22,12 @@ import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.coredomain.usecase.ComputeRouteUseCase
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
+import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
 import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
 import com.routeforge.routing.presentation.FakeFavoriteRoutesRepository
 import com.routeforge.routing.presentation.FakeFavoriteWaypointsRepository
+import com.routeforge.routing.presentation.FakeMapStyleStore
 import com.routeforge.routing.presentation.FakeRegionCatalog
 import com.routeforge.routing.presentation.FakeRegionUsageTracker
 import com.routeforge.routing.presentation.FakeRoutingEngine
@@ -97,6 +99,7 @@ class RouteRequestViewModelTest {
             favoriteRoutesRepository = favoriteRoutesRepository,
             selectedFavoriteWaypointHolder = selectedFavoriteWaypointHolder,
             pendingSearchWaypointHolder = pendingSearchWaypointHolder,
+            observeMapStyle = ObserveMapStyleUseCase(FakeMapStyleStore()),
             backgroundDispatcher = dispatcher,
         )
 

@@ -7,6 +7,7 @@ import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
+import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
@@ -64,6 +65,7 @@ class SimulationViewModel(
     private val lastComputedRouteHolder: LastComputedRouteHolder,
     private val lastKnownRealLocationHolder: LastKnownRealLocationHolder,
     private val pendingTeleportTargetHolder: PendingTeleportTargetHolder,
+    observeMapStyle: ObserveMapStyleUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SimulationState())
     val state = _state.asStateFlow()
@@ -101,6 +103,10 @@ class SimulationViewModel(
 
         observeAuthorizationLostUseCase()
             .onEach { _events.send(SimulationEvent.NavigateToSetup) }
+            .launchIn(viewModelScope)
+
+        observeMapStyle()
+            .onEach { mapStyle -> _state.update { it.copy(mapStyle = mapStyle) } }
             .launchIn(viewModelScope)
 
         lastComputedRouteHolder.route

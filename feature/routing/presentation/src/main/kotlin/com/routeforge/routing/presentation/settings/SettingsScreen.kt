@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routeforge.coredomain.model.MapStyle
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.routing.presentation.R
@@ -43,6 +44,13 @@ private val QuotaOptions: List<Pair<Long?, Int>> =
         2_000_000_000L to R.string.settings_quota_2gb,
         5_000_000_000L to R.string.settings_quota_5gb,
         null to R.string.settings_quota_unlimited,
+    )
+
+private val MapStyleOptions: List<Pair<MapStyle, Int>> =
+    listOf(
+        MapStyle.STANDARD to R.string.settings_map_style_standard,
+        MapStyle.MINIMAL to R.string.settings_map_style_minimal,
+        MapStyle.TOPOGRAPHIC to R.string.settings_map_style_topographic,
     )
 
 @Composable
@@ -80,6 +88,10 @@ fun SettingsScreen(
                 onQuotaSelected = { onAction(SettingsAction.OnQuotaSelected(it)) },
                 onManageDownloadsClick = onManageDownloadsClick,
             )
+            MapStyleSection(
+                mapStyle = state.mapStyle,
+                onMapStyleSelected = { onAction(SettingsAction.OnMapStyleSelected(it)) },
+            )
         }
     }
 }
@@ -116,6 +128,35 @@ private fun StorageQuotaSection(
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = onManageDownloadsClick, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.settings_manage_downloads_button))
+            }
+        }
+    }
+}
+
+@Composable
+private fun MapStyleSection(
+    mapStyle: MapStyle,
+    onMapStyleSelected: (MapStyle) -> Unit,
+) {
+    Surface(shape = CardShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(CardPadding)) {
+            Text(
+                text = stringResource(R.string.settings_map_style_section_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(ChipSpacing),
+            ) {
+                MapStyleOptions.forEach { (option, labelRes) ->
+                    FilterChip(
+                        selected = option == mapStyle,
+                        onClick = { onMapStyleSelected(option) },
+                        label = { Text(stringResource(labelRes)) },
+                    )
+                }
             }
         }
     }

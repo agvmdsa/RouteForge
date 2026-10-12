@@ -155,6 +155,7 @@ fun SimulationScreen(
                 polylinePoints = mapContent.polylinePoints,
                 traveledPolylinePoints = mapContent.traveledPolylinePoints,
                 cameraTarget = cameraTarget,
+                mapStyle = state.mapStyle,
                 onMapTap = { latitude, longitude ->
                     if (editState.isOpen) {
                         onEditAction(WaypointEditAction.OnMapTap(latitude, longitude))

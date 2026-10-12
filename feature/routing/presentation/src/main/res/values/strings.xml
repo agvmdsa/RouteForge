@@ -62,6 +62,10 @@
     <string name="settings_usage_label">%1$d MB of %2$d MB used</string>
     <string name="settings_usage_unlimited_label">%1$d MB used</string>
     <string name="settings_manage_downloads_button">Manage downloads</string>
+    <string name="settings_map_style_section_title">Map style</string>
+    <string name="settings_map_style_standard">Standard</string>
+    <string name="settings_map_style_minimal">Minimal</string>
+    <string name="settings_map_style_topographic">Topographic</string>
     <string name="routing_add_waypoint_title">Add this waypoint?</string>
     <string name="routing_add_waypoint_message">Latitude: %1$s\nLongitude: %2$s</string>
     <string name="routing_add_waypoint_message_named">Add %1$s as a waypoint?</string>

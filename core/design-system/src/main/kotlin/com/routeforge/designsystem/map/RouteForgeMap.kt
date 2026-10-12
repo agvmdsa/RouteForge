@@ -27,9 +27,11 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.routeforge.coredomain.model.LatLng
+import com.routeforge.coredomain.model.MapStyle
 import com.routeforge.designsystem.theme.MapColors
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
+import org.osmdroid.tileprovider.tilesource.ITileSource
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.CustomZoomButtonsController
@@ -51,6 +53,13 @@ private const val GHOST_MARKER_ALPHA = 0.4f
 private val MarkerDotSize = 20.dp
 private val MarkerBadgeSize = 28.dp
 private val MarkerArrowSize = 32.dp
+
+private fun MapStyle.toTileSource(): ITileSource =
+    when (this) {
+        MapStyle.STANDARD -> TileSourceFactory.MAPNIK
+        MapStyle.MINIMAL -> TileSourceFactory.WIKIMEDIA
+        MapStyle.TOPOGRAPHIC -> TileSourceFactory.OpenTopo
+    }
 
 private fun buildDotDrawable(
     context: Context,
@@ -165,7 +174,6 @@ private fun buildMapComponents(
     }
     val mapView =
         MapView(context).apply {
-            setTileSource(TileSourceFactory.MAPNIK)
             setMultiTouchControls(true)
             zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
             controller.setZoom(FALLBACK_WORLD_MAP_ZOOM)
@@ -206,6 +214,7 @@ fun RouteForgeMap(
     traveledPolylinePoints: List<LatLng> = emptyList(),
     regions: List<RouteForgeMapRegionOverlay> = emptyList(),
     cameraTarget: LatLng? = null,
+    mapStyle: MapStyle = MapStyle.DEFAULT,
     onMapTap: ((Double, Double) -> Unit)? = null,
 ) {
     val context = LocalContext.current
@@ -222,6 +231,11 @@ fun RouteForgeMap(
                 onTap = { latitude, longitude -> currentOnTap?.invoke(latitude, longitude) },
             )
         }
+
+    LaunchedEffect(mapStyle) {
+        components.mapView.setTileSource(mapStyle.toTileSource())
+        components.mapView.invalidate()
+    }
 
     LaunchedEffect(routeColorArgb) {
         components.routeOverlay.setColor(routeColorArgb, ROUTE_LINE_WIDTH_PX)

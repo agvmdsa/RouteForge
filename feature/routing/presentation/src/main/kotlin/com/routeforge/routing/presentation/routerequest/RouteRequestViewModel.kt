@@ -22,6 +22,7 @@ import com.routeforge.coredomain.model.autoResolved
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
+import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -49,6 +50,7 @@ class RouteRequestViewModel(
     private val favoriteRoutesRepository: FavoriteRoutesRepository,
     private val selectedFavoriteWaypointHolder: SelectedFavoriteWaypointHolder,
     private val pendingSearchWaypointHolder: PendingSearchWaypointHolder,
+    observeMapStyle: ObserveMapStyleUseCase,
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val _state = MutableStateFlow(RouteRequestState(lastKnownLocation = lastKnownRealLocationHolder.location.value))
@@ -58,6 +60,10 @@ class RouteRequestViewModel(
     val events = _events.receiveAsFlow()
 
     init {
+        observeMapStyle()
+            .onEach { mapStyle -> _state.update { it.copy(mapStyle = mapStyle) } }
+            .launchIn(viewModelScope)
+
         selectedFavoriteWaypointHolder.selected
             .onEach { point ->
                 if (point != null) {
