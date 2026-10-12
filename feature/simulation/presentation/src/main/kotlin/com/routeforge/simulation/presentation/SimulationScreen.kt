@@ -56,6 +56,8 @@ import com.routeforge.simulation.presentation.components.FavoriteTeleportCancelR
 import com.routeforge.simulation.presentation.components.Joystick
 import com.routeforge.simulation.presentation.components.JoystickInterruptSheet
 import com.routeforge.simulation.presentation.components.PlaybackButton
+import com.routeforge.simulation.presentation.components.RouteProgressCard
+import com.routeforge.simulation.presentation.components.RouteProgressUi
 import com.routeforge.simulation.presentation.components.StartRouteDialog
 import com.routeforge.simulation.presentation.components.SwitchRouteModeSheet
 import com.routeforge.simulation.presentation.components.TeleportConfirmationSheet
@@ -147,6 +149,7 @@ fun SimulationScreen(
 ) {
     val cameraTarget = rememberSimulationCameraTarget(state)
     val mapContent = rememberSimulationMapContent(state, editState, onEditAction)
+    val routeProgress = rememberRouteProgress(state)
 
     Scaffold { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
@@ -172,6 +175,13 @@ fun SimulationScreen(
                 onDismissWaypointsUpdatedConfirmation = onDismissWaypointsUpdatedConfirmation,
                 onAction = onAction,
             )
+
+            routeProgress?.let {
+                RouteProgressCard(
+                    progress = it,
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(Spacing.ScreenContent),
+                )
+            }
 
             SimulationMovementControls(state = state, onAction = onAction)
 
@@ -215,6 +225,34 @@ private fun rememberSimulationCameraTarget(state: SimulationState): LatLng? {
         }
     }
     return cameraTarget
+}
+
+/** Null whenever there's nothing meaningful to show progress for: no active session, not a ROUTE
+ *  session (joystick/stationary have no "total distance" to measure against), or a route with no
+ *  measurable length. Recomputed from [SimulationState] alone — no new domain calculation needed,
+ *  the route's total distance and the session's traveled distance/speed already carry everything
+ *  this derives. */
+@Composable
+private fun rememberRouteProgress(state: SimulationState): RouteProgressUi? {
+    val session = state.mockedSession
+    val route = state.loadedRoute
+    if (session == null || route == null || session.mode != SimulationMode.ROUTE || route.distanceMeters <= 0.0) {
+        return null
+    }
+    return remember(session.distanceTraveledMeters, route.distanceMeters, session.speedMetersPerSecond) {
+        val traveled = session.distanceTraveledMeters.coerceIn(0.0, route.distanceMeters)
+        RouteProgressUi(
+            fractionComplete = (traveled / route.distanceMeters).toFloat(),
+            traveledMeters = traveled,
+            totalMeters = route.distanceMeters,
+            etaSeconds =
+                if (session.speedMetersPerSecond > 0f) {
+                    (route.distanceMeters - traveled) / session.speedMetersPerSecond
+                } else {
+                    null
+                },
+        )
+    }
 }
 
 private data class SimulationMapContent(
