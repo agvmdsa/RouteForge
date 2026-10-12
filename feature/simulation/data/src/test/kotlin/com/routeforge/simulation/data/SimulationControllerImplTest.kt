@@ -287,6 +287,27 @@ class SimulationControllerImplTest {
         assertEquals(shortRoute.geometry.first().latitude, controller.mockedSession.value?.latitude)
     }
 
+    @Test
+    fun `a route set to PingPong reverses at each end instead of teleporting back to the start`() {
+        val controller = createController()
+        controller.startRoute(shortRoute, speedSetting = SpeedSetting.Manual(100f))
+        controller.setExecutionMode(ExecutionMode.PingPong)
+
+        controller.tick(elapsedSeconds = 1.0) // overshoots to the far end, reverses
+
+        assertEquals(SimulationStatus.RUNNING, controller.mockedSession.value?.status)
+        assertEquals(1, controller.mockedSession.value?.completedRuns)
+        assertEquals(shortRoute.geometry.last().latitude, controller.mockedSession.value?.latitude)
+        assertEquals(shortRoute.geometry.last().longitude, controller.mockedSession.value?.longitude)
+
+        controller.tick(elapsedSeconds = 1.0) // overshoots back to the start, reverses again
+
+        assertEquals(SimulationStatus.RUNNING, controller.mockedSession.value?.status)
+        assertEquals(2, controller.mockedSession.value?.completedRuns)
+        assertEquals(shortRoute.geometry.first().latitude, controller.mockedSession.value?.latitude)
+        assertEquals(shortRoute.geometry.first().longitude, controller.mockedSession.value?.longitude)
+    }
+
     // --- User Story 7: joystick ---
 
     @Test

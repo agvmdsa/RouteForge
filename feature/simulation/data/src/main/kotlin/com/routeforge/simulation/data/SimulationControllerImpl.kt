@@ -224,7 +224,8 @@ internal class SimulationControllerImpl(
     ): SimulationSession {
         val route = current.route ?: return current
         val newDistance = current.distanceTraveledMeters + current.speedMetersPerSecond * elapsedSeconds
-        val fix = routeProgressCalculator.interpolate(route, newDistance)
+        val effectiveGeometry = if (current.isReversed) route.geometry.reversed() else route.geometry
+        val fix = routeProgressCalculator.interpolate(route.copy(geometry = effectiveGeometry), newDistance)
 
         if (!fix.isRouteExhausted) {
             return current.copy(
@@ -241,9 +242,31 @@ internal class SimulationControllerImpl(
                 ExecutionMode.Once -> false
                 is ExecutionMode.Times -> current.completedRuns + 1 < executionMode.count
                 ExecutionMode.Loop -> true
+                ExecutionMode.PingPong -> true
             }
 
-        return if (shouldRestart) {
+        if (!shouldRestart) {
+            return current.copy(
+                status = SimulationStatus.COMPLETED,
+                latitude = fix.latitude,
+                longitude = fix.longitude,
+                bearingDegrees = fix.bearingDegrees,
+                distanceTraveledMeters = newDistance,
+            )
+        }
+
+        return if (current.executionMode == ExecutionMode.PingPong) {
+            // Reverses in place at the endpoint it just reached, rather than teleporting back to
+            // route.geometry.first() like Loop/Times do.
+            current.copy(
+                status = SimulationStatus.RUNNING,
+                isReversed = !current.isReversed,
+                latitude = fix.latitude,
+                longitude = fix.longitude,
+                distanceTraveledMeters = 0.0,
+                completedRuns = current.completedRuns + 1,
+            )
+        } else {
             val (startLat, startLon) = route.geometry.first()
             current.copy(
                 status = SimulationStatus.RUNNING,
@@ -251,14 +274,6 @@ internal class SimulationControllerImpl(
                 longitude = startLon,
                 distanceTraveledMeters = 0.0,
                 completedRuns = current.completedRuns + 1,
-            )
-        } else {
-            current.copy(
-                status = SimulationStatus.COMPLETED,
-                latitude = fix.latitude,
-                longitude = fix.longitude,
-                bearingDegrees = fix.bearingDegrees,
-                distanceTraveledMeters = newDistance,
             )
         }
     }

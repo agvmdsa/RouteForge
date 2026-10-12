@@ -40,6 +40,7 @@
     <string name="simulation_execution_once">Once</string>
     <string name="simulation_execution_times">N times</string>
     <string name="simulation_execution_loop">Loop</string>
+    <string name="simulation_execution_ping_pong">Back and forth</string>
     <string name="simulation_execution_times_input_label">Times</string>
     <string name="simulation_joystick_label">Joystick</string>
     <string name="simulation_joystick_interrupt_title">Clear route and use joystick?</string>

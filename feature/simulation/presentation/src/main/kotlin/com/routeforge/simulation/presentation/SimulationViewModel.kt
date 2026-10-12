@@ -308,6 +308,7 @@ class SimulationViewModel(
         when (_state.value.executionModeSelection) {
             ExecutionModeSelection.ONCE -> ExecutionMode.Once
             ExecutionModeSelection.LOOP -> ExecutionMode.Loop
+            ExecutionModeSelection.PING_PONG -> ExecutionMode.PingPong
             ExecutionModeSelection.TIMES -> {
                 val count = _state.value.executionTimesInput.toIntOrNull()
                 if (count == null || count <= 0) null else ExecutionMode.Times(count)

@@ -17,7 +17,7 @@ enum class SimulationErrorType {
     REAL_LOCATION_TIMED_OUT,
 }
 
-enum class ExecutionModeSelection { ONCE, TIMES, LOOP }
+enum class ExecutionModeSelection { ONCE, TIMES, LOOP, PING_PONG }
 
 data class SimulationState(
     val mockedSession: SimulationSession? = null,

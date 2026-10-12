@@ -14,4 +14,7 @@ data class SimulationSession(
     val speedSetting: SpeedSetting = SpeedSetting.DEFAULT,
     val executionMode: ExecutionMode = ExecutionMode.DEFAULT,
     val completedRuns: Int = 0,
+    /** True while traveling [route]'s geometry back toward its start — only ever set when
+     *  [executionMode] is [ExecutionMode.PingPong]; irrelevant otherwise. */
+    val isReversed: Boolean = false,
 )

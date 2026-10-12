@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Loop
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -124,6 +125,7 @@ private fun ExecutionModeSelection.toIcon() =
         ExecutionModeSelection.ONCE -> Icons.Filled.PlayArrow
         ExecutionModeSelection.TIMES -> Icons.Filled.Repeat
         ExecutionModeSelection.LOOP -> Icons.Filled.Loop
+        ExecutionModeSelection.PING_PONG -> Icons.Filled.SwapHoriz
     }
 
 @Composable
@@ -132,4 +134,5 @@ private fun ExecutionModeSelection.toLabel(): String =
         ExecutionModeSelection.ONCE -> stringResource(R.string.simulation_execution_once)
         ExecutionModeSelection.TIMES -> stringResource(R.string.simulation_execution_times)
         ExecutionModeSelection.LOOP -> stringResource(R.string.simulation_execution_loop)
+        ExecutionModeSelection.PING_PONG -> stringResource(R.string.simulation_execution_ping_pong)
     }

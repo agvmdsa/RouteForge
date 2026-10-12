@@ -24,8 +24,9 @@ class ExecutionModeTest {
     }
 
     @Test
-    fun `Once and Loop are always accepted`() {
+    fun `Once, Loop, and PingPong are always accepted`() {
         assertEquals(Result.Success(Unit), useCase(ExecutionMode.Once))
         assertEquals(Result.Success(Unit), useCase(ExecutionMode.Loop))
+        assertEquals(Result.Success(Unit), useCase(ExecutionMode.PingPong))
     }
 }

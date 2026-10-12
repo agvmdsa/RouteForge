@@ -10,6 +10,10 @@ sealed class ExecutionMode {
 
     data object Loop : ExecutionMode()
 
+    /** Reaching the end reverses direction and keeps moving back along the same path instead of
+     *  teleporting back to the start — repeats indefinitely, same as [Loop]. */
+    data object PingPong : ExecutionMode()
+
     companion object {
         val DEFAULT: ExecutionMode = Once
     }

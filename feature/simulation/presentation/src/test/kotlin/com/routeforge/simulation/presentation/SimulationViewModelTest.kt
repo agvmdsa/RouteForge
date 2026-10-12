@@ -667,6 +667,18 @@ class SimulationViewModelTest {
         assertEquals(ExecutionMode.Times(3), controller.startRouteCalls.first().executionMode)
     }
 
+    @Test
+    fun `starting a route with PingPong passes it through to the controller`() {
+        lastComputedRouteHolder.set(sampleRoute)
+        val viewModel = createViewModel()
+        viewModel.onAction(SimulationAction.OnStartRouteSimulation)
+        viewModel.onAction(SimulationAction.OnExecutionModeSelected(ExecutionModeSelection.PING_PONG))
+
+        viewModel.onAction(SimulationAction.OnConfirmStartRoute)
+
+        assertEquals(ExecutionMode.PingPong, controller.startRouteCalls.first().executionMode)
+    }
+
     // --- User Story 7: joystick (toggle-based) ---
 
     @Test
