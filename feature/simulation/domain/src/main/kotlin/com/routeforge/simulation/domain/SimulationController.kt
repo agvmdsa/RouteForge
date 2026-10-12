@@ -5,10 +5,17 @@ import com.routeforge.coredomain.model.Route
 import com.routeforge.simulation.domain.model.ExecutionMode
 import com.routeforge.simulation.domain.model.SimulationSession
 import com.routeforge.simulation.domain.model.SpeedSetting
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 interface SimulationController {
     val mockedSession: StateFlow<SimulationSession?>
+
+    /** Fires once each time an active session stops itself because mock-location authorization
+     *  was lost mid-session (e.g. this app got deselected as the Developer Options mock-location
+     *  app) — distinct from a caller calling [stop] directly, so a listener can tell the user
+     *  what happened instead of the session just silently disappearing. */
+    val authorizationLost: SharedFlow<Unit>
 
     fun teleport(
         latitude: Double,

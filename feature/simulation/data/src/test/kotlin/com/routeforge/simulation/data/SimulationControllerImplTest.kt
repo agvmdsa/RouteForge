@@ -13,6 +13,8 @@ import com.routeforge.simulation.domain.model.SimulationStatus
 import com.routeforge.simulation.domain.model.SpeedSetting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -229,6 +231,19 @@ class SimulationControllerImplTest {
         assertNull(controller.mockedSession.value)
         assertEquals(1, publisher.clearCallCount)
     }
+
+    @Test
+    fun `revoked authorization mid-simulation emits authorizationLost`() =
+        runTest {
+            val controller = createController()
+            controller.startRoute(longRoute, speedSetting = SpeedSetting.Manual(10f))
+            val authorizationLostDeferred = async { controller.authorizationLost.first() }
+
+            authorizationChecker.authorized = false
+            controller.tick(elapsedSeconds = 1.0)
+
+            authorizationLostDeferred.await()
+        }
 
     // --- User Story 4: speed control ---
 

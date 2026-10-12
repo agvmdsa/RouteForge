@@ -22,7 +22,9 @@ import kotlinx.coroutines.flow.onEach
 import org.koin.android.ext.android.inject
 
 private const val NOTIFICATION_CHANNEL_ID = "simulation_active"
+private const val NOTIFICATION_CHANNEL_ID_ALERTS = "simulation_alerts"
 private const val NOTIFICATION_ID = 1001
+private const val ALERT_NOTIFICATION_ID = 1002
 private const val ACTION_PAUSE = "com.routeforge.simulation.action.PAUSE"
 private const val ACTION_RESUME = "com.routeforge.simulation.action.RESUME"
 private const val ACTION_STOP = "com.routeforge.simulation.action.STOP"
@@ -61,6 +63,10 @@ class SimulationForegroundService : Service() {
                     updateNotification(mockedSession.mode, mockedSession.status)
                 }
             }.launchIn(serviceScope)
+
+        simulationController.authorizationLost
+            .onEach { showAuthorizationLostNotification() }
+            .launchIn(serviceScope)
     }
 
     override fun onStartCommand(
@@ -98,7 +104,16 @@ class SimulationForegroundService : Service() {
                 getString(R.string.simulation_notification_channel_name),
                 NotificationManager.IMPORTANCE_LOW,
             )
-        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        // A separate, higher-importance channel from the silent ongoing-session one above — this
+        // one is for the rare "mock location stopped itself" alert, which does need to actually
+        // get the user's attention rather than sit quietly in the shade.
+        val alertsChannel =
+            NotificationChannel(
+                NOTIFICATION_CHANNEL_ID_ALERTS,
+                getString(R.string.simulation_notification_channel_name_alerts),
+                NotificationManager.IMPORTANCE_DEFAULT,
+            )
+        getSystemService(NotificationManager::class.java).createNotificationChannels(listOf(channel, alertsChannel))
     }
 
     private fun actionPendingIntent(
@@ -192,5 +207,22 @@ class SimulationForegroundService : Service() {
         status: SimulationStatus,
     ) {
         getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, buildNotificationFor(mode, status))
+    }
+
+    /** The "honest failure" notification: fired once [simulationController] reports it lost mock-
+     *  location authorization mid-session, so the user learns why mocking stopped instead of the
+     *  app just silently drifting back to the real GPS. Dismissible and on its own channel, unlike
+     *  the ongoing session notification above. */
+    private fun showAuthorizationLostNotification() {
+        val notification =
+            Notification
+                .Builder(this, NOTIFICATION_CHANNEL_ID_ALERTS)
+                .setContentTitle(getString(R.string.simulation_notification_authorization_lost_title))
+                .setContentText(getString(R.string.simulation_notification_authorization_lost_text))
+                .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+                .setAutoCancel(true)
+                .apply { contentPendingIntent()?.let { setContentIntent(it) } }
+                .build()
+        getSystemService(NotificationManager::class.java).notify(ALERT_NOTIFICATION_ID, notification)
     }
 }

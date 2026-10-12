@@ -23,8 +23,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
@@ -46,6 +49,9 @@ internal class SimulationControllerImpl(
 
     private val _mockedSession = MutableStateFlow<SimulationSession?>(null)
     override val mockedSession: StateFlow<SimulationSession?> = _mockedSession.asStateFlow()
+
+    private val _authorizationLost = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val authorizationLost: SharedFlow<Unit> = _authorizationLost.asSharedFlow()
 
     private var tickJob: Job? = null
 
@@ -186,6 +192,7 @@ internal class SimulationControllerImpl(
 
         if (!mockLocationAuthorizationChecker.isAuthorized()) {
             stop()
+            _authorizationLost.tryEmit(Unit)
             return
         }
 

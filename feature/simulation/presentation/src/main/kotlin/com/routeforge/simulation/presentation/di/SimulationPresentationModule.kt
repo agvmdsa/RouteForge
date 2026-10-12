@@ -2,6 +2,7 @@ package com.routeforge.simulation.presentation.di
 
 import com.routeforge.simulation.domain.usecase.ConfirmJoystickInterruptUseCase
 import com.routeforge.simulation.domain.usecase.IsNetworkConnectedUseCase
+import com.routeforge.simulation.domain.usecase.ObserveAuthorizationLostUseCase
 import com.routeforge.simulation.domain.usecase.ObserveMockedSessionUseCase
 import com.routeforge.simulation.domain.usecase.ObserveRealLocationUseCase
 import com.routeforge.simulation.domain.usecase.PauseSimulationUseCase
@@ -29,6 +30,7 @@ val simulationPresentationModule =
         factoryOf(::StopSimulationUseCase)
         factoryOf(::ObserveMockedSessionUseCase)
         factoryOf(::ObserveRealLocationUseCase)
+        factoryOf(::ObserveAuthorizationLostUseCase)
         factoryOf(::IsNetworkConnectedUseCase)
         factoryOf(::SetSpeedUseCase)
         factoryOf(::SetExecutionModeUseCase)

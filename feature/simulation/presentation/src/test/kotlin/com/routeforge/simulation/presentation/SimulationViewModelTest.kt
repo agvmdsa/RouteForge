@@ -17,6 +17,7 @@ import com.routeforge.simulation.domain.model.SimulationStatus
 import com.routeforge.simulation.domain.model.SpeedSetting
 import com.routeforge.simulation.domain.usecase.ConfirmJoystickInterruptUseCase
 import com.routeforge.simulation.domain.usecase.IsNetworkConnectedUseCase
+import com.routeforge.simulation.domain.usecase.ObserveAuthorizationLostUseCase
 import com.routeforge.simulation.domain.usecase.ObserveMockedSessionUseCase
 import com.routeforge.simulation.domain.usecase.ObserveRealLocationUseCase
 import com.routeforge.simulation.domain.usecase.PauseSimulationUseCase
@@ -102,6 +103,7 @@ class SimulationViewModelTest {
             stopSimulationUseCase = StopSimulationUseCase(controller),
             observeMockedSessionUseCase = ObserveMockedSessionUseCase(controller),
             observeRealLocationUseCase = ObserveRealLocationUseCase(realLocationDataSource),
+            observeAuthorizationLostUseCase = ObserveAuthorizationLostUseCase(controller),
             isNetworkConnectedUseCase = IsNetworkConnectedUseCase(networkConnectivityChecker),
             setSpeedUseCase = SetSpeedUseCase(controller),
             requestJoystickInterruptUseCase = RequestJoystickInterruptUseCase(controller),
@@ -365,6 +367,17 @@ class SimulationViewModelTest {
 
             authorizationChecker.authorized = false
             viewModel.onAction(SimulationAction.OnScreenResumed)
+
+            assertEquals(SimulationEvent.NavigateToSetup, eventDeferred.await())
+        }
+
+    @Test
+    fun `the controller reporting authorization lost mid-session navigates back to setup immediately`() =
+        runTest(dispatcher) {
+            val viewModel = createViewModel()
+            val eventDeferred = async { viewModel.events.first() }
+
+            controller.emitAuthorizationLost()
 
             assertEquals(SimulationEvent.NavigateToSetup, eventDeferred.await())
         }

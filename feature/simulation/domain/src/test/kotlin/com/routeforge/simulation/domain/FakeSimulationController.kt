@@ -5,7 +5,9 @@ import com.routeforge.coredomain.model.Route
 import com.routeforge.simulation.domain.model.ExecutionMode
 import com.routeforge.simulation.domain.model.SimulationSession
 import com.routeforge.simulation.domain.model.SpeedSetting
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class FakeSimulationController : SimulationController {
@@ -22,6 +24,9 @@ class FakeSimulationController : SimulationController {
 
     private val _mockedSession = MutableStateFlow<SimulationSession?>(null)
     override val mockedSession: StateFlow<SimulationSession?> = _mockedSession
+
+    private val _authorizationLost = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val authorizationLost: SharedFlow<Unit> = _authorizationLost
 
     val teleportCalls = mutableListOf<TeleportCall>()
     val startRouteCalls = mutableListOf<StartRouteCall>()
@@ -41,6 +46,10 @@ class FakeSimulationController : SimulationController {
 
     fun emit(mockedSession: SimulationSession?) {
         _mockedSession.value = mockedSession
+    }
+
+    fun emitAuthorizationLost() {
+        _authorizationLost.tryEmit(Unit)
     }
 
     override fun teleport(

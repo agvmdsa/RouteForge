@@ -19,6 +19,7 @@ import com.routeforge.simulation.domain.model.SimulationStatus
 import com.routeforge.simulation.domain.model.SpeedSetting
 import com.routeforge.simulation.domain.usecase.ConfirmJoystickInterruptUseCase
 import com.routeforge.simulation.domain.usecase.IsNetworkConnectedUseCase
+import com.routeforge.simulation.domain.usecase.ObserveAuthorizationLostUseCase
 import com.routeforge.simulation.domain.usecase.ObserveMockedSessionUseCase
 import com.routeforge.simulation.domain.usecase.ObserveRealLocationUseCase
 import com.routeforge.simulation.domain.usecase.PauseSimulationUseCase
@@ -52,6 +53,7 @@ class SimulationViewModel(
     private val stopSimulationUseCase: StopSimulationUseCase,
     observeMockedSessionUseCase: ObserveMockedSessionUseCase,
     private val observeRealLocationUseCase: ObserveRealLocationUseCase,
+    observeAuthorizationLostUseCase: ObserveAuthorizationLostUseCase,
     private val isNetworkConnectedUseCase: IsNetworkConnectedUseCase,
     private val setSpeedUseCase: SetSpeedUseCase,
     private val requestJoystickInterruptUseCase: RequestJoystickInterruptUseCase,
@@ -96,6 +98,10 @@ class SimulationViewModel(
                     stopObservingRealLocation()
                 }
             }.launchIn(viewModelScope)
+
+        observeAuthorizationLostUseCase()
+            .onEach { _events.send(SimulationEvent.NavigateToSetup) }
+            .launchIn(viewModelScope)
 
         lastComputedRouteHolder.route
             .onEach { route -> _state.update { it.copy(loadedRoute = route) } }
