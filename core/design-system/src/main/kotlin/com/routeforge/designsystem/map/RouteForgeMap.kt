@@ -57,7 +57,6 @@ private val MarkerArrowSize = 32.dp
 private fun MapStyle.toTileSource(): ITileSource =
     when (this) {
         MapStyle.STANDARD -> TileSourceFactory.MAPNIK
-        MapStyle.MINIMAL -> TileSourceFactory.WIKIMEDIA
         MapStyle.TOPOGRAPHIC -> TileSourceFactory.OpenTopo
     }
 

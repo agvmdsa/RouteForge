@@ -49,7 +49,6 @@ private val QuotaOptions: List<Pair<Long?, Int>> =
 private val MapStyleOptions: List<Pair<MapStyle, Int>> =
     listOf(
         MapStyle.STANDARD to R.string.settings_map_style_standard,
-        MapStyle.MINIMAL to R.string.settings_map_style_minimal,
         MapStyle.TOPOGRAPHIC to R.string.settings_map_style_topographic,
     )
 
