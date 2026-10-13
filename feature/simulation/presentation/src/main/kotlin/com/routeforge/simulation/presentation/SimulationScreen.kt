@@ -157,7 +157,9 @@ fun SimulationScreen(
                 onMapTap = { latitude, longitude ->
                     if (editState.isOpen) {
                         onEditAction(WaypointEditAction.OnMapTap(latitude, longitude))
-                    } else {
+                    } else if (state.loadedRoute == null) {
+                        // Tap-to-teleport only makes sense with no route loaded — teleporting
+                        // mid-route would fight the route's own playback position.
                         onAction(SimulationAction.OnMapTap(latitude, longitude))
                     }
                 },
