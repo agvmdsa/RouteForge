@@ -35,10 +35,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.simulation.presentation.R
@@ -56,10 +58,10 @@ private val ToggleIconButtonSize = 32.dp
 private const val METERS_PER_KILOMETER = 1_000.0
 
 /** How far past the card's resting position (bottom-center, set by the caller's own
- *  `Box.align`/padding) a drag is allowed to settle once released — not pixel-exact against the
- *  card's own measured edges (that needs tracking the card's size, which is what made the
- *  previous attempt at this fragile), just a generous, screen-dimension-based margin that keeps
- *  it from ending up thrown off-screen and unreachable. */
+ *  `Box.align`/padding) a drag is allowed to settle once released. Factors in the card's own
+ *  measured width/height (via `onSizeChanged`), not just the screen's — a margin computed from
+ *  screen size alone (the first version of this) left enough slack that the card could still end
+ *  up partly or fully off-screen, since it never accounted for how wide the card itself is. */
 private val HorizontalDragMargin = 24.dp
 private val TopDragMargin = 48.dp
 private val BottomDragSlack = 8.dp
@@ -79,7 +81,8 @@ internal data class RouteProgressUi(
  *  caller's own alignment/padding); dragging it anywhere — in either expanded or collapsed state —
  *  just adds a running offset on top. Dragging is unclamped while the finger is down, but on
  *  release (or right after expanding/collapsing) it springs back within [HorizontalDragMargin]/
- *  [TopDragMargin]/[BottomDragSlack] of the screen edges instead of staying wherever it landed.
+ *  [TopDragMargin]/[BottomDragSlack] of the screen edges — accounting for the card's own current
+ *  size, so it never ends up partly or fully off-screen — instead of staying wherever it landed.
  *  The expand/collapse toggle lives on its own [IconButton] rather than a tap-anywhere-on-the-card
  *  gesture, specifically so it doesn't fight the drag gesture covering the rest of the card for
  *  the same touch. Neither the collapsed state nor the dragged position is persisted — both are
@@ -90,24 +93,34 @@ internal fun RouteProgressCard(
     modifier: Modifier = Modifier,
 ) {
     var isExpanded by remember { mutableStateOf(true) }
+    var cardSizePx by remember { mutableStateOf(IntSize.Zero) }
     val offset = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
-    val maxHorizontalOffsetPx =
-        with(density) { (configuration.screenWidthDp.dp / 2 - HorizontalDragMargin).toPx() }.coerceAtLeast(0f)
-    val maxUpOffsetPx = with(density) { (configuration.screenHeightDp.dp - TopDragMargin).toPx() }.coerceAtLeast(0f)
-    val maxDownOffsetPx = with(density) { BottomDragSlack.toPx() }
+    val screenWidthPx = with(density) { configuration.screenWidthDp.dp.toPx() }
+    val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
+    val horizontalMarginPx = with(density) { HorizontalDragMargin.toPx() }
+    val topMarginPx = with(density) { TopDragMargin.toPx() }
+    val bottomSlackPx = with(density) { BottomDragSlack.toPx() }
+    val restingBottomPx = with(density) { Spacing.ScreenContent.toPx() }
 
-    fun clampToScreen(raw: Offset) =
-        Offset(
-            x = raw.x.coerceIn(-maxHorizontalOffsetPx, maxHorizontalOffsetPx),
-            y = raw.y.coerceIn(-maxUpOffsetPx, maxDownOffsetPx),
+    // Returns [raw] unclamped if the card hasn't been measured yet (there's one frame between
+    // first composing and the first onSizeChanged callback) — safer than clamping against a
+    // not-yet-known size, which would read as "zero width/height" and clamp everything to zero.
+    fun clampToScreen(raw: Offset): Offset {
+        if (cardSizePx == IntSize.Zero) return raw
+        val maxHorizontal = ((screenWidthPx - cardSizePx.width) / 2f - horizontalMarginPx).coerceAtLeast(0f)
+        val maxUp = (screenHeightPx - cardSizePx.height - restingBottomPx - topMarginPx).coerceAtLeast(0f)
+        return Offset(
+            x = raw.x.coerceIn(-maxHorizontal, maxHorizontal),
+            y = raw.y.coerceIn(-maxUp, bottomSlackPx),
         )
+    }
 
     // Re-settles within bounds right after an expand/collapse toggle too — e.g. dragged near a
     // corner while collapsed, then expanded into a taller card that would otherwise hang off-screen.
-    LaunchedEffect(isExpanded) {
+    LaunchedEffect(isExpanded, cardSizePx) {
         val clamped = clampToScreen(offset.value)
         if (clamped != offset.value) offset.animateTo(clamped, SnapBackSpring)
     }
@@ -122,6 +135,7 @@ internal fun RouteProgressCard(
         shadowElevation = ProgressCardElevation,
         modifier =
             modifier
+                .onSizeChanged { cardSizePx = it }
                 .offset { IntOffset(offset.value.x.roundToInt(), offset.value.y.roundToInt()) }
                 .pointerInput(Unit) {
                     detectDragGestures(
