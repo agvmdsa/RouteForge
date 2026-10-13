@@ -14,9 +14,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Signpost
+import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -42,8 +46,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.routeforge.coredomain.model.RoutePlaybackMode
+import com.routeforge.designsystem.speed.SpeedSelectorDialog
 import com.routeforge.designsystem.theme.Spacing
+import com.routeforge.simulation.presentation.SimulationAction
+import com.routeforge.simulation.presentation.SimulationState
 import com.routeforge.simulation.presentation.R
+import com.routeforge.simulation.presentation.WaypointEditTriggerButton
+import com.routeforge.simulation.presentation.waypointedit.WaypointEditAction
+import com.routeforge.simulation.presentation.waypointedit.WaypointEditState
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
@@ -55,6 +66,7 @@ private val ProgressCardCollapsedHorizontalPadding = 16.dp
 private val ProgressCardCollapsedVerticalPadding = 8.dp
 private val ProgressCardRowSpacing = 8.dp
 private val ToggleIconButtonSize = 32.dp
+private val ControlIconButtonSize = 48.dp
 private const val METERS_PER_KILOMETER = 1_000.0
 
 /** How far past the card's resting position (bottom-center, set by the caller's own
@@ -90,9 +102,15 @@ internal data class RouteProgressUi(
 @Composable
 internal fun RouteProgressCard(
     progress: RouteProgressUi,
+    state: SimulationState,
+    sessionDistanceTraveledMeters: Double?,
+    editState: WaypointEditState,
+    onEditAction: (WaypointEditAction) -> Unit,
+    onAction: (SimulationAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var isExpanded by remember { mutableStateOf(true) }
+    var isPlaybackSpeedDialogOpen by remember { mutableStateOf(false) }
     var cardSizePx by remember { mutableStateOf(IntSize.Zero) }
     val offset = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
     val coroutineScope = rememberCoroutineScope()
@@ -193,6 +211,48 @@ internal fun RouteProgressCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
+                ) {
+                    IconButton(
+                        onClick = { onAction(SimulationAction.OnCancelRouteClick) },
+                        modifier = Modifier.size(ControlIconButtonSize),
+                    ) {
+                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_route_button))
+                    }
+                    PlaybackButton(state = state, onAction = onAction, modifier = Modifier.size(ControlIconButtonSize))
+                    val activeRoute = state.loadedRoute
+                    if (activeRoute?.alternateGeometry != null) {
+                        IconButton(
+                            onClick = { onAction(SimulationAction.OnSwitchRouteModeClick) },
+                            modifier = Modifier.size(ControlIconButtonSize),
+                        ) {
+                            Icon(
+                                imageVector =
+                                    if (activeRoute.mode == RoutePlaybackMode.GUIDED) {
+                                        Icons.Filled.Signpost
+                                    } else {
+                                        Icons.Filled.Straighten
+                                    },
+                                contentDescription = stringResource(R.string.simulation_switch_route_mode_button),
+                            )
+                        }
+                    }
+                    WaypointEditTriggerButton(
+                        loadedRoute = state.loadedRoute,
+                        distanceTraveledMeters = sessionDistanceTraveledMeters,
+                        editState = editState,
+                        onEditAction = onEditAction,
+                        modifier = Modifier.size(ControlIconButtonSize),
+                    )
+                    IconButton(
+                        onClick = { isPlaybackSpeedDialogOpen = true },
+                        modifier = Modifier.size(ControlIconButtonSize),
+                    ) {
+                        Icon(Icons.Filled.Speed, contentDescription = stringResource(R.string.simulation_playback_speed_button))
+                    }
+                }
             }
         } else {
             Row(
@@ -210,6 +270,7 @@ internal fun RouteProgressCard(
                     text = stringResource(R.string.simulation_route_progress_collapsed_label, percent, etaLabel),
                     style = MaterialTheme.typography.bodyMedium,
                 )
+                PlaybackButton(state = state, onAction = onAction, modifier = Modifier.size(ControlIconButtonSize))
                 IconButton(onClick = { isExpanded = true }, modifier = Modifier.size(ToggleIconButtonSize)) {
                     Icon(
                         Icons.Filled.ExpandMore,
@@ -218,6 +279,17 @@ internal fun RouteProgressCard(
                 }
             }
         }
+    }
+
+    if (isPlaybackSpeedDialogOpen) {
+        SpeedSelectorDialog(
+            title = stringResource(R.string.simulation_playback_speed_dialog_title),
+            speedLabel = stringResource(R.string.simulation_speed_value_label, state.playbackSpeedKmh.roundToInt()),
+            confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
+            speedKmh = state.playbackSpeedKmh,
+            onSpeedChange = { kmh -> onAction(SimulationAction.OnPlaybackSpeedChange(kmh)) },
+            onDismiss = { isPlaybackSpeedDialogOpen = false },
+        )
     }
 }
 

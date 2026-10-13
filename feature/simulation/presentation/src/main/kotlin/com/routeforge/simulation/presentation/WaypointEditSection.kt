@@ -1,11 +1,14 @@
 package com.routeforge.simulation.presentation
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.designsystem.format.formatCoordinates
@@ -16,25 +19,40 @@ import com.routeforge.designsystem.waypointedit.WaypointListItem
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditAction
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditState
 
-/** The "Edit route" FAB (visible iff a route is loaded, FR-004) plus the edit sheet and its
- *  overlays — Simulate's half of spec 008's shared waypoint-edit surface. Map-tap/marker-drag
- *  gating and rendering stay in [SimulationScreen] itself, since this composable doesn't own the
- *  map. */
+private val WaypointEditTriggerButtonSize = 48.dp
+
+/** The "Edit route" trigger (visible iff a route is loaded and the sheet isn't already open) —
+ *  lives inside [com.routeforge.simulation.presentation.components.RouteProgressCard] now; only
+ *  this button relocated there, not the sheet it opens (see [WaypointEditOverlays]). */
 @Composable
-fun WaypointEditSection(
+fun WaypointEditTriggerButton(
     loadedRoute: Route?,
     distanceTraveledMeters: Double?,
     editState: WaypointEditState,
     onEditAction: (WaypointEditAction) -> Unit,
+    modifier: Modifier = Modifier.size(WaypointEditTriggerButtonSize),
 ) {
     if (loadedRoute != null && !editState.isOpen) {
-        FloatingActionButton(
+        IconButton(
             onClick = { onEditAction(WaypointEditAction.OnOpen(loadedRoute, distanceTraveledMeters)) },
+            modifier = modifier,
         ) {
             Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.simulation_edit_route_button))
         }
     }
+}
 
+/** The waypoint-edit sheet and its own sub-sheets — Simulate's half of spec 008's shared
+ *  waypoint-edit surface. Unaffected by spec 011's control relocation: only
+ *  [WaypointEditTriggerButton] moved, this stays called from [SimulationScreen] at its original
+ *  position so z-order over the map is unchanged. Map-tap/marker-drag gating and rendering stay in
+ *  [SimulationScreen] itself, since this composable doesn't own the map. */
+@Composable
+fun WaypointEditOverlays(
+    loadedRoute: Route?,
+    editState: WaypointEditState,
+    onEditAction: (WaypointEditAction) -> Unit,
+) {
     if (editState.isOpen) {
         WaypointEditSheet(
             title = stringResource(R.string.simulation_waypoint_edit_sheet_title),

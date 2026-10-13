@@ -11,10 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Signpost
 import androidx.compose.material.icons.filled.SportsEsports
-import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.Button
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -36,7 +33,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.model.LatLng
-import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.designsystem.components.AutoDismissConfirmationPill
 import com.routeforge.designsystem.components.FabColumn
 import com.routeforge.designsystem.components.TopBanner
@@ -55,7 +51,6 @@ import com.routeforge.simulation.presentation.components.CoordinatePill
 import com.routeforge.simulation.presentation.components.FavoriteTeleportCancelRouteSheet
 import com.routeforge.simulation.presentation.components.Joystick
 import com.routeforge.simulation.presentation.components.JoystickInterruptSheet
-import com.routeforge.simulation.presentation.components.PlaybackButton
 import com.routeforge.simulation.presentation.components.RouteProgressCard
 import com.routeforge.simulation.presentation.components.RouteProgressUi
 import com.routeforge.simulation.presentation.components.StartRouteDialog
@@ -179,21 +174,20 @@ fun SimulationScreen(
             routeProgress?.let {
                 RouteProgressCard(
                     progress = it,
+                    state = state,
+                    sessionDistanceTraveledMeters = mapContent.sessionDistanceTraveledMeters,
+                    editState = editState,
+                    onEditAction = onEditAction,
+                    onAction = onAction,
                     modifier = Modifier.align(Alignment.BottomCenter).padding(Spacing.ScreenContent),
                 )
             }
 
             SimulationMovementControls(state = state, onAction = onAction)
-
-            SimulationRouteControls(
-                state = state,
-                sessionDistanceTraveledMeters = mapContent.sessionDistanceTraveledMeters,
-                editState = editState,
-                onEditAction = onEditAction,
-                onAction = onAction,
-            )
         }
     }
+
+    WaypointEditOverlays(loadedRoute = state.loadedRoute, editState = editState, onEditAction = onEditAction)
 
     SimulationDialogs(state = state, onAction = onAction)
 }
@@ -411,46 +405,28 @@ private fun BoxScope.SimulationTopOverlays(
     )
 }
 
-/** Bottom-start FAB column (playback/joystick speed selector, joystick toggle) plus the joystick
- *  itself and both speed dialogs — grouped together since the dialogs' open/closed state is only
- *  ever toggled from this column's own FABs. */
+/** Bottom-start FAB column (joystick speed selector, joystick toggle) plus the joystick itself and
+ *  its speed dialog — grouped together since the dialog's open/closed state is only ever toggled
+ *  from this column's own FAB. Route playback no longer has controls here (spec 011) — the
+ *  joystick and an active route remain mutually exclusive, so this column is only ever shown when
+ *  no route is loaded. */
 @Composable
 private fun BoxScope.SimulationMovementControls(
     state: SimulationState,
     onAction: (SimulationAction) -> Unit,
 ) {
+    if (state.loadedRoute != null) return
     var isJoystickSpeedDialogOpen by remember { mutableStateOf(false) }
-    var isPlaybackSpeedDialogOpen by remember { mutableStateOf(false) }
     FabColumn(alignment = Alignment.BottomStart) {
-        if (state.loadedRoute != null) {
-            // A route and the joystick are mutually exclusive (engaging one clears the
-            // other), so only the controls relevant to what's actually loaded are shown.
+        if (state.isJoystickVisible) {
             SpeedSelectorFab(
-                onClick = { isPlaybackSpeedDialogOpen = true },
-                contentDescription = stringResource(R.string.simulation_playback_speed_button),
+                onClick = { isJoystickSpeedDialogOpen = true },
+                contentDescription = stringResource(R.string.simulation_joystick_speed_button),
             )
-        } else {
-            if (state.isJoystickVisible) {
-                SpeedSelectorFab(
-                    onClick = { isJoystickSpeedDialogOpen = true },
-                    contentDescription = stringResource(R.string.simulation_joystick_speed_button),
-                )
-            }
-            FloatingActionButton(onClick = { onAction(SimulationAction.OnToggleJoystick) }) {
-                Icon(Icons.Filled.SportsEsports, contentDescription = stringResource(R.string.simulation_joystick_label))
-            }
         }
-    }
-    if (isPlaybackSpeedDialogOpen) {
-        SpeedSelectorDialog(
-            title = stringResource(R.string.simulation_playback_speed_dialog_title),
-            speedLabel = stringResource(R.string.simulation_speed_value_label, state.playbackSpeedKmh.roundToInt()),
-            confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
-            speedKmh = state.playbackSpeedKmh,
-            onSpeedChange = { kmh -> onAction(SimulationAction.OnPlaybackSpeedChange(kmh)) },
-            onDismiss = { isPlaybackSpeedDialogOpen = false },
-            speedRangeKmh = SpeedSelectorRangeKmh,
-        )
+        FloatingActionButton(onClick = { onAction(SimulationAction.OnToggleJoystick) }) {
+            Icon(Icons.Filled.SportsEsports, contentDescription = stringResource(R.string.simulation_joystick_label))
+        }
     }
 
     if (state.isJoystickVisible) {
@@ -470,45 +446,6 @@ private fun BoxScope.SimulationMovementControls(
                 speedRangeKmh = SpeedSelectorRangeKmh,
             )
         }
-    }
-}
-
-/** Bottom-end FAB column: cancel, playback controls, mode-switch (if an alternate geometry is
- *  available), and the waypoint reorder/edit sheet trigger — only rendered while a route is loaded. */
-@Composable
-private fun BoxScope.SimulationRouteControls(
-    state: SimulationState,
-    sessionDistanceTraveledMeters: Double?,
-    editState: WaypointEditState,
-    onEditAction: (WaypointEditAction) -> Unit,
-    onAction: (SimulationAction) -> Unit,
-) {
-    if (state.loadedRoute == null) return
-    val activeRoute = state.loadedRoute
-    FabColumn(alignment = Alignment.BottomEnd) {
-        FloatingActionButton(onClick = { onAction(SimulationAction.OnCancelRouteClick) }) {
-            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_route_button))
-        }
-        PlaybackButton(state = state, onAction = onAction)
-        if (activeRoute.alternateGeometry != null) {
-            FloatingActionButton(onClick = { onAction(SimulationAction.OnSwitchRouteModeClick) }) {
-                Icon(
-                    imageVector =
-                        if (activeRoute.mode == RoutePlaybackMode.GUIDED) {
-                            Icons.Filled.Signpost
-                        } else {
-                            Icons.Filled.Straighten
-                        },
-                    contentDescription = stringResource(R.string.simulation_switch_route_mode_button),
-                )
-            }
-        }
-        WaypointEditSection(
-            loadedRoute = state.loadedRoute,
-            distanceTraveledMeters = sessionDistanceTraveledMeters,
-            editState = editState,
-            onEditAction = onEditAction,
-        )
     }
 }
 
