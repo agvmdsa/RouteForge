@@ -256,7 +256,15 @@ fun RouteForgeMap(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            components.mapView.onDetach()
+            // Not onDetach() — that's a one-way teardown of this MapView's tile-loading
+            // machinery, meant for "the app is really done with this map" (Activity.onDestroy()).
+            // This effect's onDispose also fires on an ordinary tab-away navigation (switching to
+            // another bottom-nav tab doesn't pause/resume the Activity, so onPause() above never
+            // runs for that case) — detaching there permanently broke tile loading for whatever
+            // new MapView replaced this one on return, since the old instance's tile loader
+            // threads were mid-flight and kept logging "mWriter being null" while the session
+            // underneath (unaffected — it runs independently in SimulationController) kept ticking.
+            components.mapView.onPause()
         }
     }
 
