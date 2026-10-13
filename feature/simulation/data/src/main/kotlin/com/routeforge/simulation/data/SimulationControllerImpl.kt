@@ -167,9 +167,30 @@ internal class SimulationControllerImpl(
         }
     }
 
+    /** Re-projects [SimulationSession.distanceTraveledMeters] onto [route]'s own geometry (rather
+     *  than keeping the old geometry's meters value) whenever a route is actively playing — Guided
+     *  and Free-roam rarely share the same shape or total length, so reusing the raw number from
+     *  one on the other can land well before or after the real-world point the user was actually
+     *  at. [RouteProgressCalculator.projectDistanceMeters] finds the closest point on the new
+     *  geometry to the session's current (lat, lon) and reports the distance to reach it, so
+     *  playback continues from that same real-world spot instead of jumping. */
     override fun updateActiveRoute(route: Route) {
         _mockedSession.update { current ->
-            if (current?.mode == SimulationMode.ROUTE) current.copy(route = route) else current
+            if (current?.mode != SimulationMode.ROUTE) {
+                current
+            } else {
+                val effectiveGeometry = if (current.isReversed) route.geometry.reversed() else route.geometry
+                val effectiveRoute = route.copy(geometry = effectiveGeometry)
+                val projectedDistance = routeProgressCalculator.projectDistanceMeters(effectiveRoute, current.latitude, current.longitude)
+                val fix = routeProgressCalculator.interpolate(effectiveRoute, projectedDistance)
+                current.copy(
+                    route = route,
+                    distanceTraveledMeters = projectedDistance,
+                    latitude = fix.latitude,
+                    longitude = fix.longitude,
+                    bearingDegrees = fix.bearingDegrees,
+                )
+            }
         }
     }
 

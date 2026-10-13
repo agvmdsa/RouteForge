@@ -3,6 +3,7 @@ package com.routeforge.simulation.domain
 import com.routeforge.coredomain.GeoMath
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
+import kotlin.math.cos
 
 data class InterpolatedFix(
     val latitude: Double,
@@ -50,5 +51,66 @@ class RouteProgressCalculator {
 
         val (lastLat, lastLon) = geometry.last()
         return InterpolatedFix(lastLat, lastLon, 0f, isRouteExhausted = true, segmentIndex = lastSegmentIndex)
+    }
+
+    /** Finds the point on [route]'s geometry closest to (`latitude`, `longitude`) and returns the
+     *  cumulative distance along that geometry to reach it — the inverse of [interpolate]. Used
+     *  when swapping Guided ↔ Free-roam mid-session: the two geometries rarely have the same
+     *  shape or total length, so re-using the old geometry's traveled-meters value on the new one
+     *  can land well before or after where the user actually is. Projecting the current real
+     *  position onto the new geometry instead keeps playback continuing from that exact point. */
+    fun projectDistanceMeters(
+        route: Route,
+        latitude: Double,
+        longitude: Double,
+    ): Double {
+        val geometry = route.geometry
+        if (geometry.size < 2) return 0.0
+
+        var cumulative = 0.0
+        var bestDistanceAlong = 0.0
+        var bestSquaredOffset = Double.MAX_VALUE
+
+        for (index in 0 until geometry.size - 1) {
+            val (startLat, startLon) = geometry[index]
+            val (endLat, endLon) = geometry[index + 1]
+            val segmentLength = GeoMath.haversineMeters(startLat, startLon, endLat, endLon)
+
+            // Local flat approximation (degrees scaled by cos(latitude) for longitude) is accurate
+            // enough over a single route segment's span to pick the closest segment and fraction
+            // along it — the actual distance accumulated below still uses the real haversine
+            // segment lengths, so this approximation only affects *which* point is picked, not the
+            // reported distance.
+            val lonScale = cos(Math.toRadians((startLat + endLat) / 2))
+            val startX = startLon * lonScale
+            val endX = endLon * lonScale
+            val pointX = longitude * lonScale
+
+            val deltaX = endX - startX
+            val deltaY = endLat - startLat
+            val segmentLengthSquared = deltaX * deltaX + deltaY * deltaY
+            val fraction =
+                if (segmentLengthSquared == 0.0) {
+                    0.0
+                } else {
+                    (((pointX - startX) * deltaX + (latitude - startLat) * deltaY) / segmentLengthSquared)
+                        .coerceIn(0.0, 1.0)
+                }
+
+            val closestX = startX + deltaX * fraction
+            val closestY = startLat + deltaY * fraction
+            val offsetX = pointX - closestX
+            val offsetY = latitude - closestY
+            val squaredOffset = offsetX * offsetX + offsetY * offsetY
+
+            if (squaredOffset < bestSquaredOffset) {
+                bestSquaredOffset = squaredOffset
+                bestDistanceAlong = cumulative + segmentLength * fraction
+            }
+
+            cumulative += segmentLength
+        }
+
+        return bestDistanceAlong
     }
 }

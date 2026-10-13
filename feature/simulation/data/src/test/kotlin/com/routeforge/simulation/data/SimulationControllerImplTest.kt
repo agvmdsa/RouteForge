@@ -81,18 +81,37 @@ class SimulationControllerImplTest {
     }
 
     @Test
-    fun `updateActiveRoute swaps the active route's geometry while preserving distance traveled`() {
+    fun `updateActiveRoute keeps the traveled distance accurate when the new geometry continues the same direction from the same start`() {
         val controller = createController()
         controller.startRoute(longRoute, speedSetting = SpeedSetting.Manual(10f))
         controller.tick(elapsedSeconds = 1.0)
 
-        val alternateRoute = longRoute.copy(geometry = listOf(LatLng(0.0, 0.0), LatLng(0.0, 10.0)))
-        controller.updateActiveRoute(alternateRoute)
-        controller.tick(elapsedSeconds = 1.0)
+        // A longer route, but still due north from the exact same origin — the real-world point
+        // reached so far sits at the same distance along this geometry too.
+        val longerNorthboundRoute = longRoute.copy(geometry = listOf(LatLng(0.0, 0.0), LatLng(20.0, 0.0)))
+        controller.updateActiveRoute(longerNorthboundRoute)
 
         val mockedSession = controller.mockedSession.value
-        assertEquals(alternateRoute, mockedSession?.route)
-        assertEquals(20.0, mockedSession?.distanceTraveledMeters)
+        assertEquals(longerNorthboundRoute, mockedSession?.route)
+        assertEquals(10.0, mockedSession?.distanceTraveledMeters ?: -1.0, 0.01)
+    }
+
+    @Test
+    fun `updateActiveRoute re-projects onto the new geometry instead of keeping the old meters value when the shape differs`() {
+        val controller = createController()
+        controller.startRoute(longRoute, speedSetting = SpeedSetting.Manual(10f))
+        controller.tick(elapsedSeconds = 1.0)
+
+        // Heads due east from the same start instead of north — the real position reached on the
+        // old (northbound) geometry is almost exactly this alternate geometry's own start, not
+        // 10m along it. Blindly keeping distanceTraveledMeters at 10.0 would be wrong here.
+        val eastboundAlternate = longRoute.copy(geometry = listOf(LatLng(0.0, 0.0), LatLng(0.0, 10.0)))
+        controller.updateActiveRoute(eastboundAlternate)
+
+        val mockedSession = controller.mockedSession.value
+        assertEquals(0.0, mockedSession?.distanceTraveledMeters ?: -1.0, 0.5)
+        assertEquals(0.0, mockedSession?.latitude ?: -1.0, 0.0001)
+        assertEquals(0.0, mockedSession?.longitude ?: -1.0, 0.0001)
     }
 
     @Test
