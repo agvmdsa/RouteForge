@@ -47,6 +47,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.routeforge.coredomain.model.RoutePlaybackMode
+import com.routeforge.designsystem.components.TooltipAnchor
+import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.speed.SpeedSelectorDialog
 import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.simulation.presentation.SimulationAction
@@ -182,11 +184,14 @@ internal fun RouteProgressCard(
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f),
                     )
-                    IconButton(onClick = { isExpanded = false }, modifier = Modifier.size(ToggleIconButtonSize)) {
-                        Icon(
-                            Icons.Filled.ExpandLess,
-                            contentDescription = stringResource(R.string.simulation_route_progress_collapse),
-                        )
+                    val collapseDescription = stringResource(R.string.simulation_route_progress_collapse)
+                    TooltipAnchor(tooltipText = collapseDescription) {
+                        IconButton(
+                            onClick = { isExpanded = false },
+                            modifier = Modifier.size(ToggleIconButtonSize).tourTarget("sim_collapse_toggle"),
+                        ) {
+                            Icon(Icons.Filled.ExpandLess, contentDescription = collapseDescription)
+                        }
                     }
                 }
                 LinearProgressIndicator(
@@ -215,28 +220,39 @@ internal fun RouteProgressCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
                 ) {
-                    IconButton(
-                        onClick = { onAction(SimulationAction.OnCancelRouteClick) },
-                        modifier = Modifier.size(ControlIconButtonSize),
-                    ) {
-                        Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_route_button))
+                    val cancelDescription = stringResource(R.string.simulation_cancel_route_button)
+                    TooltipAnchor(tooltipText = cancelDescription) {
+                        IconButton(
+                            onClick = { onAction(SimulationAction.OnCancelRouteClick) },
+                            modifier = Modifier.size(ControlIconButtonSize).tourTarget("sim_cancel_route"),
+                        ) {
+                            Icon(Icons.Filled.Close, contentDescription = cancelDescription)
+                        }
                     }
-                    PlaybackButton(state = state, onAction = onAction, modifier = Modifier.size(ControlIconButtonSize))
+                    PlaybackButton(
+                        state = state,
+                        onAction = onAction,
+                        modifier = Modifier.size(ControlIconButtonSize).tourTarget("sim_playback"),
+                    )
                     val activeRoute = state.loadedRoute
                     if (activeRoute?.alternateGeometry != null) {
-                        IconButton(
-                            onClick = { onAction(SimulationAction.OnSwitchRouteModeClick) },
-                            modifier = Modifier.size(ControlIconButtonSize),
-                        ) {
-                            Icon(
-                                imageVector =
-                                    if (activeRoute.mode == RoutePlaybackMode.GUIDED) {
-                                        Icons.Filled.Signpost
-                                    } else {
-                                        Icons.Filled.Straighten
-                                    },
-                                contentDescription = stringResource(R.string.simulation_switch_route_mode_button),
-                            )
+                        val switchModeDescription = stringResource(R.string.simulation_switch_route_mode_button)
+                        val switchModeTooltip = stringResource(R.string.simulation_switch_route_mode_tooltip)
+                        TooltipAnchor(tooltipText = switchModeTooltip) {
+                            IconButton(
+                                onClick = { onAction(SimulationAction.OnSwitchRouteModeClick) },
+                                modifier = Modifier.size(ControlIconButtonSize).tourTarget("sim_switch_mode"),
+                            ) {
+                                Icon(
+                                    imageVector =
+                                        if (activeRoute.mode == RoutePlaybackMode.GUIDED) {
+                                            Icons.Filled.Signpost
+                                        } else {
+                                            Icons.Filled.Straighten
+                                        },
+                                    contentDescription = switchModeDescription,
+                                )
+                            }
                         }
                     }
                     WaypointEditTriggerButton(
@@ -244,13 +260,16 @@ internal fun RouteProgressCard(
                         distanceTraveledMeters = sessionDistanceTraveledMeters,
                         editState = editState,
                         onEditAction = onEditAction,
-                        modifier = Modifier.size(ControlIconButtonSize),
+                        modifier = Modifier.size(ControlIconButtonSize).tourTarget("sim_edit_route"),
                     )
-                    IconButton(
-                        onClick = { isPlaybackSpeedDialogOpen = true },
-                        modifier = Modifier.size(ControlIconButtonSize),
-                    ) {
-                        Icon(Icons.Filled.Speed, contentDescription = stringResource(R.string.simulation_playback_speed_button))
+                    val speedDescription = stringResource(R.string.simulation_playback_speed_button)
+                    TooltipAnchor(tooltipText = speedDescription) {
+                        IconButton(
+                            onClick = { isPlaybackSpeedDialogOpen = true },
+                            modifier = Modifier.size(ControlIconButtonSize).tourTarget("sim_playback_speed_selector"),
+                        ) {
+                            Icon(Icons.Filled.Speed, contentDescription = speedDescription)
+                        }
                     }
                 }
             }
@@ -270,12 +289,19 @@ internal fun RouteProgressCard(
                     text = stringResource(R.string.simulation_route_progress_collapsed_label, percent, etaLabel),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                PlaybackButton(state = state, onAction = onAction, modifier = Modifier.size(ControlIconButtonSize))
-                IconButton(onClick = { isExpanded = true }, modifier = Modifier.size(ToggleIconButtonSize)) {
-                    Icon(
-                        Icons.Filled.ExpandMore,
-                        contentDescription = stringResource(R.string.simulation_route_progress_expand),
-                    )
+                PlaybackButton(
+                    state = state,
+                    onAction = onAction,
+                    modifier = Modifier.size(ControlIconButtonSize).tourTarget("sim_playback"),
+                )
+                val expandDescription = stringResource(R.string.simulation_route_progress_expand)
+                TooltipAnchor(tooltipText = expandDescription) {
+                    IconButton(
+                        onClick = { isExpanded = true },
+                        modifier = Modifier.size(ToggleIconButtonSize).tourTarget("sim_expand_toggle"),
+                    ) {
+                        Icon(Icons.Filled.ExpandMore, contentDescription = expandDescription)
+                    }
                 }
             }
         }

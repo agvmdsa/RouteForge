@@ -66,10 +66,24 @@ fun NavGraphBuilder.savedGraph(
     regionCatalogGraph(navController)
 }
 
-/** The Settings tab's own nested graph. */
-fun NavGraphBuilder.settingsGraph(navController: NavController) {
+/** The Settings tab's own nested graph. [onNavigateToSimulationTab]/[onNavigateToRouteCreationTab]/
+ *  [onNavigateToSavedTab] back the "repeat tour" actions (spec 013 FR-009) — tab-switching lives in
+ *  the app module's own navigation graph, which this feature module must not depend on, so the host
+ *  app supplies these the same way it already supplies [onGoToSimulate] to [planRouteGraph]/
+ *  [savedGraph]. */
+fun NavGraphBuilder.settingsGraph(
+    navController: NavController,
+    onNavigateToSimulationTab: () -> Unit,
+    onNavigateToRouteCreationTab: () -> Unit,
+    onNavigateToSavedTab: () -> Unit,
+) {
     composable<SettingsRoute> {
-        SettingsRoot(onManageDownloadsClick = { navController.navigate(RegionCatalogRoute) })
+        SettingsRoot(
+            onManageDownloadsClick = { navController.navigate(RegionCatalogRoute) },
+            onNavigateToSimulationTab = onNavigateToSimulationTab,
+            onNavigateToRouteCreationTab = onNavigateToRouteCreationTab,
+            onNavigateToSavedTab = onNavigateToSavedTab,
+        )
     }
     regionCatalogGraph(navController)
 }

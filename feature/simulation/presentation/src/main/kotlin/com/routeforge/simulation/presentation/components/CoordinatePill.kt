@@ -13,6 +13,8 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import com.routeforge.designsystem.components.StatusPill
+import com.routeforge.designsystem.components.TooltipAnchor
+import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.format.formatCoordinates
 import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.domain.model.SimulationSession
@@ -34,7 +36,7 @@ internal fun CoordinatePill(
             else -> stringResource(R.string.simulation_status_no_simulation)
         }
     val copyLabel = stringResource(R.string.simulation_copy_coordinates)
-    StatusPill(modifier = modifier) {
+    StatusPill(modifier = modifier.tourTarget("sim_coordinate_pill")) {
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
@@ -46,8 +48,11 @@ internal fun CoordinatePill(
                 },
         )
         if (mockedSession?.mode == SimulationMode.STATIONARY) {
-            IconButton(onClick = onCancelMockClick) {
-                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.simulation_cancel_mock_button))
+            val cancelMockDescription = stringResource(R.string.simulation_cancel_mock_button)
+            TooltipAnchor(tooltipText = cancelMockDescription) {
+                IconButton(onClick = onCancelMockClick, modifier = Modifier.tourTarget("sim_cancel_mock")) {
+                    Icon(Icons.Filled.Close, contentDescription = cancelMockDescription)
+                }
             }
         }
     }

@@ -5,10 +5,12 @@ import androidx.compose.material.icons.filled.Reorder
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.routeforge.coredomain.model.ModeAvailability
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.format.formatCoordinates
 import com.routeforge.designsystem.sheets.MissingRegionsWarningSheet
 import com.routeforge.designsystem.waypointedit.WaypointEditSheet
@@ -30,6 +32,7 @@ fun WaypointEditSection(
     if (!editState.isOpen && points.size >= 2) {
         FloatingActionButton(
             onClick = { onEditAction(WaypointEditAction.OnOpen(points, chosenMode ?: RoutePlaybackMode.FREE_ROAM)) },
+            modifier = Modifier.tourTarget("routeReq_edit_waypoints"),
         ) {
             Icon(Icons.Filled.Reorder, contentDescription = stringResource(R.string.routing_edit_waypoints_button))
         }

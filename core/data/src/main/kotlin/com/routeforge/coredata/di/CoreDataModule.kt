@@ -6,11 +6,14 @@ import com.routeforge.coredata.PlatformMockLocationAuthorizationChecker
 import com.routeforge.coredata.SharedPreferencesFavoriteRoutesRepository
 import com.routeforge.coredata.SharedPreferencesFavoriteWaypointsRepository
 import com.routeforge.coredata.SharedPreferencesMapStyleStore
+import com.routeforge.coredata.SharedPreferencesTourProgressRepository
 import com.routeforge.coredomain.FavoriteRoutesRepository
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.MapStyleStore
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
 import com.routeforge.coredomain.NetworkConnectivityChecker
+import com.routeforge.coredomain.TourProgressRepository
+import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
@@ -36,4 +39,6 @@ val coreDataModule =
         single { SharedPreferencesFavoriteRoutesRepository(androidContext()) }.bind<FavoriteRoutesRepository>()
         single { AndroidNetworkConnectivityChecker(androidContext()) }.bind<NetworkConnectivityChecker>()
         single { SharedPreferencesMapStyleStore(androidContext()) }.bind<MapStyleStore>()
+        single { SharedPreferencesTourProgressRepository(androidContext(), get()) }.bind<TourProgressRepository>()
+        single { TourReplayCoordinator() }
     }

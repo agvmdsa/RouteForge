@@ -18,8 +18,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.stringResource
@@ -27,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.model.MapStyle
+import com.routeforge.coredomain.model.TourSection
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.routing.presentation.R
@@ -55,9 +59,23 @@ private val MapStyleOptions: List<Pair<MapStyle, Int>> =
 @Composable
 fun SettingsRoot(
     onManageDownloadsClick: () -> Unit,
+    onNavigateToSimulationTab: () -> Unit,
+    onNavigateToRouteCreationTab: () -> Unit,
+    onNavigateToSavedTab: () -> Unit,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                SettingsEvent.NavigateToSimulationTab -> onNavigateToSimulationTab()
+                SettingsEvent.NavigateToRouteCreationTab -> onNavigateToRouteCreationTab()
+                SettingsEvent.NavigateToSavedTab -> onNavigateToSavedTab()
+            }
+        }
+    }
+
     SettingsScreen(state = state, onAction = viewModel::onAction, onManageDownloadsClick = onManageDownloadsClick)
 }
 
@@ -91,6 +109,53 @@ fun SettingsScreen(
                 mapStyle = state.mapStyle,
                 onMapStyleSelected = { onAction(SettingsAction.OnMapStyleSelected(it)) },
             )
+            ToursSection(
+                onRepeatTourClick = { section -> onAction(SettingsAction.OnRepeatTourClick(section)) },
+                onRepeatAllToursClick = { onAction(SettingsAction.OnRepeatAllToursClick) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun TourSection.displayName(): String =
+    when (this) {
+        TourSection.SIMULATION -> stringResource(R.string.settings_tour_name_simulation)
+        TourSection.ROUTE_CREATION -> stringResource(R.string.settings_tour_name_route_creation)
+        TourSection.SAVED -> stringResource(R.string.settings_tour_name_saved)
+    }
+
+/** Lists each [TourSection] with its own "repeat" action, plus a "Repeat all" action that replays
+ *  all three in sequence (spec 013 FR-008/FR-009) — the only Settings UI this feature adds. */
+@Composable
+private fun ToursSection(
+    onRepeatTourClick: (TourSection) -> Unit,
+    onRepeatAllToursClick: () -> Unit,
+) {
+    Surface(shape = CardShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(CardPadding)) {
+            Text(
+                text = stringResource(R.string.settings_tours_section_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            TourSection.entries.forEach { section ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(text = section.displayName(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    TextButton(onClick = { onRepeatTourClick(section) }) {
+                        Text(stringResource(R.string.settings_repeat_tour_button))
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(onClick = onRepeatAllToursClick, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.settings_repeat_all_tours_button))
+            }
         }
     }
 }

@@ -1,4 +1,18 @@
 <resources>
+    <string name="simulation_tour_skip_button">Skip</string>
+    <string name="simulation_tour_next_button">Next</string>
+    <string name="simulation_tour_done_button">Done</string>
+    <string name="simulation_tour_desc_coordinate_pill">Tap anywhere on the map to simulate your location there — no route needed. The coordinates of your simulated location show up here.</string>
+    <string name="simulation_tour_desc_cancel_route">Stops the current route and clears it, returning to a map with no route loaded.</string>
+    <string name="simulation_tour_desc_playback">Starts, pauses, or resumes the route simulation.</string>
+    <string name="simulation_tour_desc_switch_mode">Swaps between the road-following Guided path and the straight-line Free-roam path. Only shown when an alternate path is available for this route.</string>
+    <string name="simulation_tour_desc_edit_route">Opens the waypoint list so you can reorder or remove points from the loaded route.</string>
+    <string name="simulation_tour_desc_playback_speed">Sets how fast the route plays back.</string>
+    <string name="simulation_tour_desc_collapse">Collapses the progress card into a compact bar.</string>
+    <string name="simulation_tour_desc_expand">Expands the progress card back to show full route details.</string>
+    <string name="simulation_tour_desc_joystick_toggle">Turns the joystick on or off, letting you move freely around the map when no route is loaded.</string>
+    <string name="simulation_tour_desc_joystick_speed">Sets how fast you move with the joystick. This button only appears while the joystick is active.</string>
+    <string name="simulation_tour_desc_cancel_mock">Stops the simulated location and switches back to your real location.</string>
     <string name="simulation_teleport_confirm_title">Teleport to this location?</string>
     <string name="simulation_teleport_confirm_message">Latitude: %1$s\nLongitude: %2$s</string>
     <string name="simulation_teleport_confirm_button">Confirm</string>
@@ -19,6 +33,7 @@
     <string name="simulation_favorite_teleport_cancel_route_confirm">Cancel route and teleport</string>
     <string name="simulation_favorite_teleport_cancel_route_dismiss">Keep route</string>
     <string name="simulation_switch_route_mode_button">Switch route mode</string>
+    <string name="simulation_switch_route_mode_tooltip">Swap between the road-following (Guided) path and the straight-line (Free-roam) path</string>
     <string name="simulation_switch_mode_to_guided_title">Switch to Guided?</string>
     <string name="simulation_switch_mode_to_free_roam_title">Switch to Free-roam?</string>
     <string name="simulation_switch_mode_message">This recalculates the path for the rest of the route. Your progress carries over by distance traveled, not exact position, so where you are on the map may shift slightly.</string>

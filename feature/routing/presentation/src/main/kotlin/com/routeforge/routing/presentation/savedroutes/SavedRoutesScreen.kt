@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,7 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
@@ -35,6 +36,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,11 +50,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routeforge.coredomain.TourProgressRepository
+import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.model.FavoriteRoute
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.model.TourSection
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.IconBadge
+import com.routeforge.designsystem.components.LocalTourTargetRegistry
+import com.routeforge.designsystem.components.NoOpTourProgressRepository
+import com.routeforge.designsystem.components.SpotlightOverlay
+import com.routeforge.designsystem.components.TourStep
 import com.routeforge.designsystem.components.TwoButtonConfirmationSheet
+import com.routeforge.designsystem.components.rememberTourTargetRegistry
+import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.sheets.MissingRegionsWarningSheet
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.designsystem.theme.Spacing
@@ -60,6 +71,7 @@ import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.presentation.R
 import com.routeforge.routing.presentation.routerequest.ModeChoiceSheet
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 private val CardSpacing = 12.dp
 private val CardShape = RoundedCornerShape(20.dp)
@@ -74,6 +86,8 @@ fun SavedRoutesRoot(
     onDone: () -> Unit,
     onOpenRegionCatalog: () -> Unit,
     viewModel: SavedRoutesViewModel = koinViewModel(),
+    tourProgressRepository: TourProgressRepository = koinInject(),
+    tourReplayCoordinator: TourReplayCoordinator = koinInject(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -105,7 +119,12 @@ fun SavedRoutesRoot(
             }
         }
     }
-    SavedRoutesScreen(state = state, onAction = viewModel::onAction)
+    SavedRoutesScreen(
+        state = state,
+        onAction = viewModel::onAction,
+        tourProgressRepository = tourProgressRepository,
+        tourReplayCoordinator = tourReplayCoordinator,
+    )
 }
 
 private fun writePendingExport(
@@ -121,34 +140,84 @@ private fun writePendingExport(
 fun SavedRoutesScreen(
     state: SavedRoutesState,
     onAction: (SavedRoutesAction) -> Unit,
+    tourProgressRepository: TourProgressRepository = remember { NoOpTourProgressRepository() },
+    tourReplayCoordinator: TourReplayCoordinator = remember { TourReplayCoordinator() },
 ) {
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
-        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            Text(
-                text = stringResource(R.string.saved_routes_title),
-                style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(Spacing.ScreenContent),
-            )
-            if (state.routes.isEmpty()) {
-                EmptySavedRoutesContent(modifier = Modifier.weight(1f).fillMaxWidth())
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth().weight(1f),
-                    contentPadding = PaddingValues(horizontal = Spacing.ScreenContent),
-                    verticalArrangement = Arrangement.spacedBy(CardSpacing),
-                ) {
-                    items(state.routes, key = { it.id }) { route ->
-                        SavedRouteCard(
-                            route = route,
-                            isComputing = state.isComputingId == route.id,
-                            onUseClick = { onAction(SavedRoutesAction.OnUseClick(route.id)) },
-                            onEditClick = { onAction(SavedRoutesAction.OnEditClick(route.id)) },
-                            onDeleteClick = { onAction(SavedRoutesAction.OnDeleteClick(route.id)) },
-                            onExportClick = { onAction(SavedRoutesAction.OnExportClick(route.id)) },
-                        )
+    val tourTargetRegistry = rememberTourTargetRegistry()
+    val seenTourSections by tourProgressRepository.observeSeenSections().collectAsStateWithLifecycle()
+    var activeTourStepIndex by remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(seenTourSections) {
+        if (TourSection.SAVED !in seenTourSections) activeTourStepIndex = 0
+    }
+
+    LaunchedEffect(tourReplayCoordinator) {
+        tourReplayCoordinator.replayRequests.collect { section ->
+            if (section == TourSection.SAVED) activeTourStepIndex = 0
+        }
+    }
+
+    val tourSteps = rememberSavedRoutesTourSteps()
+    val availableTourSteps = tourSteps.filter { tourTargetRegistry.isTargetAvailable(it.targetId) }
+
+    fun endSavedTour() {
+        activeTourStepIndex = null
+        tourProgressRepository.markSeen(TourSection.SAVED)
+        tourReplayCoordinator.notifyReplayFinished(TourSection.SAVED)
+    }
+
+    CompositionLocalProvider(LocalTourTargetRegistry provides tourTargetRegistry) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
+                Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                    Text(
+                        text = stringResource(R.string.saved_routes_title),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(Spacing.ScreenContent),
+                    )
+                    if (state.routes.isEmpty()) {
+                        EmptySavedRoutesContent(modifier = Modifier.weight(1f).fillMaxWidth())
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth().weight(1f),
+                            contentPadding = PaddingValues(horizontal = Spacing.ScreenContent),
+                            verticalArrangement = Arrangement.spacedBy(CardSpacing),
+                        ) {
+                            itemsIndexed(state.routes, key = { _, route -> route.id }) { index, route ->
+                                SavedRouteCard(
+                                    route = route,
+                                    isComputing = state.isComputingId == route.id,
+                                    isTourTarget = index == 0,
+                                    onUseClick = { onAction(SavedRoutesAction.OnUseClick(route.id)) },
+                                    onEditClick = { onAction(SavedRoutesAction.OnEditClick(route.id)) },
+                                    onDeleteClick = { onAction(SavedRoutesAction.OnDeleteClick(route.id)) },
+                                    onExportClick = { onAction(SavedRoutesAction.OnExportClick(route.id)) },
+                                )
+                            }
+                        }
                     }
                 }
+            }
+
+            activeTourStepIndex?.let { index ->
+                val clampedIndex = index.coerceIn(0, (availableTourSteps.size - 1).coerceAtLeast(0))
+                SpotlightOverlay(
+                    steps = availableTourSteps,
+                    currentStepIndex = clampedIndex,
+                    registry = tourTargetRegistry,
+                    skipButtonLabel = stringResource(R.string.routing_tour_skip_button),
+                    nextButtonLabel = stringResource(R.string.routing_tour_next_button),
+                    doneButtonLabel = stringResource(R.string.routing_tour_done_button),
+                    onNext = {
+                        if (clampedIndex + 1 < availableTourSteps.size) {
+                            activeTourStepIndex = clampedIndex + 1
+                        } else {
+                            endSavedTour()
+                        }
+                    },
+                    onSkip = { endSavedTour() },
+                )
             }
         }
     }
@@ -240,10 +309,25 @@ fun SavedRoutesScreen(
     }
 }
 
+/** Every potential Saved-tour step (spec 013 FR-003). Only the first route card in the list
+ *  registers these targets ([SavedRouteCard]'s `isTourTarget`) — with a variable-length list each
+ *  card would otherwise register the same id, and whichever renders last would silently win. These
+ *  are fuller explanations written for a first-time visitor, not the controls' short accessible
+ *  names. */
+@Composable
+private fun rememberSavedRoutesTourSteps(): List<TourStep> =
+    listOf(
+        TourStep("saved_edit", stringResource(R.string.saved_routes_tour_desc_edit)),
+        TourStep("saved_delete", stringResource(R.string.saved_routes_tour_desc_delete)),
+        TourStep("saved_export", stringResource(R.string.saved_routes_tour_desc_export)),
+        TourStep("saved_use", stringResource(R.string.saved_routes_tour_desc_use)),
+    )
+
 @Composable
 private fun SavedRouteCard(
     route: FavoriteRoute,
     isComputing: Boolean,
+    isTourTarget: Boolean,
     onUseClick: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
@@ -267,16 +351,28 @@ private fun SavedRouteCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 )
             }
-            IconButton(onClick = onEditClick) {
+            IconButton(
+                onClick = onEditClick,
+                modifier = if (isTourTarget) Modifier.tourTarget("saved_edit") else Modifier,
+            ) {
                 Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.favorites_edit_button))
             }
-            IconButton(onClick = onDeleteClick) {
+            IconButton(
+                onClick = onDeleteClick,
+                modifier = if (isTourTarget) Modifier.tourTarget("saved_delete") else Modifier,
+            ) {
                 Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.routing_delete_button))
             }
-            IconButton(onClick = onExportClick) {
+            IconButton(
+                onClick = onExportClick,
+                modifier = if (isTourTarget) Modifier.tourTarget("saved_export") else Modifier,
+            ) {
                 Icon(Icons.Filled.FileDownload, contentDescription = stringResource(R.string.saved_routes_export_button))
             }
-            IconButton(onClick = onUseClick) {
+            IconButton(
+                onClick = onUseClick,
+                modifier = if (isTourTarget) Modifier.tourTarget("saved_use") else Modifier,
+            ) {
                 if (isComputing) {
                     CircularProgressIndicator(modifier = Modifier.size(UseSpinnerSize))
                 } else {

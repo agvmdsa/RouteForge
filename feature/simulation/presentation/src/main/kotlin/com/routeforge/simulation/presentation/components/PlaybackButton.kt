@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.routeforge.designsystem.components.TooltipAnchor
 import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.domain.model.SimulationStatus
 import com.routeforge.simulation.presentation.R
@@ -33,7 +34,9 @@ internal fun PlaybackButton(
         } else {
             Triple(Icons.Filled.PlayArrow, stringResource(R.string.simulation_start_button), SimulationAction.OnStartRouteSimulation)
         }
-    IconButton(onClick = { onAction(action) }, modifier = modifier) {
-        Icon(icon, contentDescription = description)
+    TooltipAnchor(tooltipText = description) {
+        IconButton(onClick = { onAction(action) }, modifier = modifier) {
+            Icon(icon, contentDescription = description)
+        }
     }
 }

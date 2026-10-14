@@ -22,6 +22,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,11 +35,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routeforge.coredomain.TourProgressRepository
+import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.RoutePlaybackMode
+import com.routeforge.coredomain.model.TourSection
 import com.routeforge.designsystem.components.AutoDismissConfirmationPill
 import com.routeforge.designsystem.components.FabColumn
+import com.routeforge.designsystem.components.LocalTourTargetRegistry
+import com.routeforge.designsystem.components.NoOpTourProgressRepository
+import com.routeforge.designsystem.components.SpotlightOverlay
 import com.routeforge.designsystem.components.TopBanner
+import com.routeforge.designsystem.components.TourStep
+import com.routeforge.designsystem.components.rememberTourTargetRegistry
+import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapMarker
 import com.routeforge.designsystem.map.RouteForgeMapMarkerIcon
@@ -53,6 +63,7 @@ import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEdi
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditViewModel
 import com.routeforge.routing.presentation.R
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 
 private const val JSON_MIME_TYPE = "application/json"
 private const val GPX_MIME_TYPE = "application/gpx+xml"
@@ -64,6 +75,8 @@ fun RouteRequestRoot(
     onOpenFavorites: () -> Unit,
     viewModel: RouteRequestViewModel = koinViewModel(),
     waypointEditViewModel: WaypointEditViewModel = koinViewModel(),
+    tourProgressRepository: TourProgressRepository = koinInject(),
+    tourReplayCoordinator: TourReplayCoordinator = koinInject(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val editState by waypointEditViewModel.state.collectAsStateWithLifecycle()
@@ -125,6 +138,8 @@ fun RouteRequestRoot(
         onEditAction = waypointEditViewModel::onAction,
         showWaypointsUpdatedConfirmation = showWaypointsUpdatedConfirmation,
         onDismissWaypointsUpdatedConfirmation = { showWaypointsUpdatedConfirmation = false },
+        tourProgressRepository = tourProgressRepository,
+        tourReplayCoordinator = tourReplayCoordinator,
     )
 }
 
@@ -146,41 +161,105 @@ fun RouteRequestScreen(
     onEditAction: (WaypointEditAction) -> Unit = {},
     showWaypointsUpdatedConfirmation: Boolean = false,
     onDismissWaypointsUpdatedConfirmation: () -> Unit = {},
+    tourProgressRepository: TourProgressRepository = remember { NoOpTourProgressRepository() },
+    tourReplayCoordinator: TourReplayCoordinator = remember { TourReplayCoordinator() },
 ) {
     val cameraTarget = rememberInitialCameraTarget(state)
     val (markers, polylinePoints) = rememberRouteMarkersAndPolyline(state, onAction)
+    val tourTargetRegistry = rememberTourTargetRegistry()
+    val seenTourSections by tourProgressRepository.observeSeenSections().collectAsStateWithLifecycle()
+    var activeTourStepIndex by remember { mutableStateOf<Int?>(null) }
 
-    Scaffold { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            RouteForgeMap(
-                markers = markers,
-                polylinePoints = polylinePoints,
-                cameraTarget = cameraTarget,
-                mapStyle = state.mapStyle,
-                onMapTap = { latitude, longitude -> onAction(RouteRequestAction.OnMapTap(latitude, longitude)) },
-                modifier = Modifier.fillMaxSize(),
-            )
+    LaunchedEffect(seenTourSections) {
+        if (TourSection.ROUTE_CREATION !in seenTourSections) activeTourStepIndex = 0
+    }
 
-            RouteRequestOverlays(
-                state = state,
-                showWaypointsUpdatedConfirmation = showWaypointsUpdatedConfirmation,
-                onDismissWaypointsUpdatedConfirmation = onDismissWaypointsUpdatedConfirmation,
-            )
+    LaunchedEffect(tourReplayCoordinator) {
+        tourReplayCoordinator.replayRequests.collect { section ->
+            if (section == TourSection.ROUTE_CREATION) activeTourStepIndex = 0
+        }
+    }
 
-            RouteRequestLeadingFabs(
-                state = state,
-                onAction = onAction,
-                onImportClick = onImportClick,
-                editState = editState,
-                onEditAction = onEditAction,
-            )
+    val tourSteps = rememberRouteRequestTourSteps()
+    val availableTourSteps = tourSteps.filter { tourTargetRegistry.isTargetAvailable(it.targetId) }
 
-            RouteRequestTrailingFabs(state = state, onAction = onAction)
+    fun endRouteCreationTour() {
+        activeTourStepIndex = null
+        tourProgressRepository.markSeen(TourSection.ROUTE_CREATION)
+        tourReplayCoordinator.notifyReplayFinished(TourSection.ROUTE_CREATION)
+    }
+
+    CompositionLocalProvider(LocalTourTargetRegistry provides tourTargetRegistry) {
+        Scaffold { paddingValues ->
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+                RouteForgeMap(
+                    markers = markers,
+                    polylinePoints = polylinePoints,
+                    cameraTarget = cameraTarget,
+                    mapStyle = state.mapStyle,
+                    onMapTap = { latitude, longitude -> onAction(RouteRequestAction.OnMapTap(latitude, longitude)) },
+                    modifier = Modifier.fillMaxSize(),
+                )
+
+                RouteRequestOverlays(
+                    state = state,
+                    showWaypointsUpdatedConfirmation = showWaypointsUpdatedConfirmation,
+                    onDismissWaypointsUpdatedConfirmation = onDismissWaypointsUpdatedConfirmation,
+                )
+
+                RouteRequestLeadingFabs(
+                    state = state,
+                    onAction = onAction,
+                    onImportClick = onImportClick,
+                    editState = editState,
+                    onEditAction = onEditAction,
+                )
+
+                RouteRequestTrailingFabs(state = state, onAction = onAction)
+
+                activeTourStepIndex?.let { index ->
+                    val clampedIndex = index.coerceIn(0, (availableTourSteps.size - 1).coerceAtLeast(0))
+                    SpotlightOverlay(
+                        steps = availableTourSteps,
+                        currentStepIndex = clampedIndex,
+                        registry = tourTargetRegistry,
+                        skipButtonLabel = stringResource(R.string.routing_tour_skip_button),
+                        nextButtonLabel = stringResource(R.string.routing_tour_next_button),
+                        doneButtonLabel = stringResource(R.string.routing_tour_done_button),
+                        onNext = {
+                            if (clampedIndex + 1 < availableTourSteps.size) {
+                                activeTourStepIndex = clampedIndex + 1
+                            } else {
+                                endRouteCreationTour()
+                            }
+                        },
+                        onSkip = { endRouteCreationTour() },
+                    )
+                }
+            }
         }
     }
 
     RouteRequestDialogs(state = state, onAction = onAction)
 }
+
+/** Every potential Route Creation-tour step (spec 013 FR-002), filtered down by
+ *  [RouteRequestScreen] to whichever targets are actually registered before being handed to
+ *  [SpotlightOverlay] — e.g. Switch route mode only exists before a route has been computed. These
+ *  are fuller explanations written for a first-time visitor, not the controls' short accessible
+ *  names. */
+@Composable
+private fun rememberRouteRequestTourSteps(): List<TourStep> =
+    listOf(
+        TourStep("routeReq_status_pill", stringResource(R.string.routing_tour_desc_status_pill)),
+        TourStep("routeReq_import", stringResource(R.string.routing_tour_desc_import)),
+        TourStep("routeReq_add_from_favorites", stringResource(R.string.routing_tour_desc_add_from_favorites)),
+        TourStep("routeReq_undo", stringResource(R.string.routing_tour_desc_undo)),
+        TourStep("routeReq_edit_waypoints", stringResource(R.string.routing_tour_desc_edit_waypoints)),
+        TourStep("routeReq_switch_mode", stringResource(R.string.routing_tour_desc_switch_mode)),
+        TourStep("routeReq_proceed", stringResource(R.string.routing_tour_desc_proceed)),
+        TourStep("routeReq_save_route", stringResource(R.string.routing_tour_desc_save_route)),
+    )
 
 /** Centers the map on the draft's first waypoint (or the last known real location, if the draft is
  *  still empty) exactly once — [hasCenteredOnce] stops a later edit from re-centering under the user. */
@@ -287,14 +366,20 @@ private fun BoxScope.RouteRequestLeadingFabs(
     onEditAction: (WaypointEditAction) -> Unit,
 ) {
     FabColumn(alignment = Alignment.BottomStart) {
-        FloatingActionButton(onClick = onImportClick) {
+        FloatingActionButton(onClick = onImportClick, modifier = Modifier.tourTarget("routeReq_import")) {
             Icon(Icons.Filled.FileUpload, contentDescription = stringResource(R.string.routing_import_button))
         }
-        FloatingActionButton(onClick = { onAction(RouteRequestAction.OnOpenFavoritesClick) }) {
+        FloatingActionButton(
+            onClick = { onAction(RouteRequestAction.OnOpenFavoritesClick) },
+            modifier = Modifier.tourTarget("routeReq_add_from_favorites"),
+        ) {
             Icon(Icons.Filled.Star, contentDescription = stringResource(R.string.routing_add_from_favorites_button))
         }
         if (state.draft.canUndo) {
-            FloatingActionButton(onClick = { onAction(RouteRequestAction.OnUndo) }) {
+            FloatingActionButton(
+                onClick = { onAction(RouteRequestAction.OnUndo) },
+                modifier = Modifier.tourTarget("routeReq_undo"),
+            ) {
                 Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.routing_undo_button))
             }
         }
@@ -317,7 +402,10 @@ private fun BoxScope.RouteRequestTrailingFabs(
     FabColumn(alignment = Alignment.BottomEnd) {
         if (state.draft.points.size >= MIN_WAYPOINTS_TO_PLAY) {
             if (state.route == null) {
-                FloatingActionButton(onClick = { onAction(RouteRequestAction.OnSwitchRouteModeClick) }) {
+                FloatingActionButton(
+                    onClick = { onAction(RouteRequestAction.OnSwitchRouteModeClick) },
+                    modifier = Modifier.tourTarget("routeReq_switch_mode"),
+                ) {
                     if (state.isComputingPreview) {
                         CircularProgressIndicator()
                     } else {
@@ -330,6 +418,7 @@ private fun BoxScope.RouteRequestTrailingFabs(
             }
             FloatingActionButton(
                 onClick = { onAction(RouteRequestAction.OnRequestRoute) },
+                modifier = Modifier.tourTarget("routeReq_proceed"),
             ) {
                 if (state.isComputing) {
                     CircularProgressIndicator()
@@ -337,7 +426,10 @@ private fun BoxScope.RouteRequestTrailingFabs(
                     Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.routing_proceed_button))
                 }
             }
-            FloatingActionButton(onClick = { onAction(RouteRequestAction.OnSaveRouteClick) }) {
+            FloatingActionButton(
+                onClick = { onAction(RouteRequestAction.OnSaveRouteClick) },
+                modifier = Modifier.tourTarget("routeReq_save_route"),
+            ) {
                 Icon(Icons.Filled.Bookmark, contentDescription = stringResource(R.string.routing_save_route_button))
             }
         }

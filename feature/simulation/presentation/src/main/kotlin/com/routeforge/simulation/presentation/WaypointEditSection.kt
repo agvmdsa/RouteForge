@@ -11,6 +11,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
+import com.routeforge.designsystem.components.TooltipAnchor
+import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.format.formatCoordinates
 import com.routeforge.designsystem.sheets.AddWaypointConfirmationSheet
 import com.routeforge.designsystem.sheets.MissingRegionsWarningSheet
@@ -33,11 +35,14 @@ fun WaypointEditTriggerButton(
     modifier: Modifier = Modifier.size(WaypointEditTriggerButtonSize),
 ) {
     if (loadedRoute != null && !editState.isOpen) {
-        IconButton(
-            onClick = { onEditAction(WaypointEditAction.OnOpen(loadedRoute, distanceTraveledMeters)) },
-            modifier = modifier,
-        ) {
-            Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.simulation_edit_route_button))
+        val description = stringResource(R.string.simulation_edit_route_button)
+        TooltipAnchor(tooltipText = description) {
+            IconButton(
+                onClick = { onEditAction(WaypointEditAction.OnOpen(loadedRoute, distanceTraveledMeters)) },
+                modifier = modifier.tourTarget("sim_edit_route"),
+            ) {
+                Icon(Icons.Filled.Edit, contentDescription = description)
+            }
         }
     }
 }

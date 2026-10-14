@@ -1,6 +1,7 @@
 package com.routeforge.routing.presentation.settings
 
 import com.routeforge.coredomain.model.MapStyle
+import com.routeforge.coredomain.model.TourSection
 
 sealed interface SettingsAction {
     data class OnQuotaSelected(
@@ -10,4 +11,10 @@ sealed interface SettingsAction {
     data class OnMapStyleSelected(
         val mapStyle: MapStyle,
     ) : SettingsAction
+
+    data class OnRepeatTourClick(
+        val section: TourSection,
+    ) : SettingsAction
+
+    data object OnRepeatAllToursClick : SettingsAction
 }

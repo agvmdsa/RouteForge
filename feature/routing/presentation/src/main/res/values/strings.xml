@@ -1,4 +1,19 @@
 <resources>
+    <string name="routing_tour_skip_button">Skip</string>
+    <string name="routing_tour_next_button">Next</string>
+    <string name="routing_tour_done_button">Done</string>
+    <string name="routing_tour_desc_status_pill">Tap anywhere on the map to add a waypoint there. Once you have 2 or more, the action buttons below appear.</string>
+    <string name="routing_tour_desc_import">Imports a route file (JSON or GPX) from your device.</string>
+    <string name="routing_tour_desc_add_from_favorites">Adds a saved favorite waypoint to this route.</string>
+    <string name="routing_tour_desc_undo">Undoes the last waypoint change. Only appears after you\'ve made an edit.</string>
+    <string name="routing_tour_desc_edit_waypoints">Opens the waypoint list to reorder or remove points. Only appears once you have at least two waypoints.</string>
+    <string name="routing_tour_desc_switch_mode">Previews the alternate route mode — Guided (follow roads) or Free-roam (straight line) — before computing the route.</string>
+    <string name="routing_tour_desc_proceed">Computes the route from your waypoints so you can play it.</string>
+    <string name="routing_tour_desc_save_route">Saves this route so you can reuse it later from Saved.</string>
+    <string name="saved_routes_tour_desc_edit">Renames this saved route.</string>
+    <string name="saved_routes_tour_desc_delete">Deletes this saved route.</string>
+    <string name="saved_routes_tour_desc_export">Exports this route as a JSON or GPX file.</string>
+    <string name="saved_routes_tour_desc_use">Loads this route into Simulation so you can play it.</string>
     <string name="routing_undo_button">Undo</string>
     <string name="routing_import_button">Import route</string>
     <string name="routing_proceed_button">Proceed to play</string>
@@ -65,6 +80,12 @@
     <string name="settings_map_style_section_title">Map style</string>
     <string name="settings_map_style_standard">Standard</string>
     <string name="settings_map_style_topographic">Topographic</string>
+    <string name="settings_tours_section_title">Guided tours</string>
+    <string name="settings_tour_name_simulation">Simulation</string>
+    <string name="settings_tour_name_route_creation">Route Creation</string>
+    <string name="settings_tour_name_saved">Saved</string>
+    <string name="settings_repeat_tour_button">Repeat</string>
+    <string name="settings_repeat_all_tours_button">Repeat all</string>
     <string name="routing_add_waypoint_title">Add this waypoint?</string>
     <string name="routing_add_waypoint_message">Latitude: %1$s\nLongitude: %2$s</string>
     <string name="routing_add_waypoint_message_named">Add %1$s as a waypoint?</string>
