@@ -45,6 +45,7 @@ import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.components.TourHost
 import com.routeforge.designsystem.components.TourLabels
 import com.routeforge.designsystem.components.TourStep
+import com.routeforge.designsystem.components.TourTargets
 import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapMarker
@@ -264,6 +265,9 @@ private fun rememberSimulationTourSteps(state: SimulationState): List<TourStep> 
         explanatoryStep("sim_expand_toggle", stringResource(R.string.simulation_tour_desc_expand)),
         explanatoryStep("sim_joystick_toggle", stringResource(R.string.simulation_tour_desc_joystick_toggle)),
         explanatoryStep("sim_joystick_speed", stringResource(R.string.simulation_tour_desc_joystick_speed)),
+        // The Saved tab sits in the app's bottom bar, outside this screen — the tour finds it through
+        // the shell's own registry.
+        TourStep(id = "sim_saved_tab", text = stringResource(R.string.simulation_tour_desc_saved_tab), targetId = TourTargets.SavedTab),
     )
 }
 

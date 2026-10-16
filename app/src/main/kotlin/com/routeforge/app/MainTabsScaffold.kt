@@ -14,7 +14,10 @@ import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
@@ -25,6 +28,10 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.routeforge.addresssearch.presentation.AddressSearchRoute
 import com.routeforge.addresssearch.presentation.SearchSourceContext
+import com.routeforge.designsystem.components.LocalTourTargetRegistry
+import com.routeforge.designsystem.components.TourTargetRegistry
+import com.routeforge.designsystem.components.TourTargets
+import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.routing.presentation.routerequest.RouteRequestRoute
 import com.routeforge.routing.presentation.saved.SavedRoute
 import com.routeforge.routing.presentation.settings.SettingsRoute
@@ -144,39 +151,52 @@ fun MainTabsScaffold(
         navController.switchToTab(SimulateTabRoute)
     }
 
-    Scaffold(
-        bottomBar = {
-            if (activeRootTab != null) {
-                // FR-013: no explicit insets handling needed here — ShortNavigationBar already
-                // applies WindowInsets.systemBarsForVisualComponents (horizontal + bottom) as its
-                // own default windowInsets param, which correctly reports a slimmer inset under
-                // gesture navigation and a taller one under 3-button navigation. Adding another
-                // windowInsetsPadding around this would double-count that inset.
-                ShortNavigationBar {
-                    NavBarEntries.forEach { entry ->
-                        when (entry) {
-                            is NavBarEntry.Tab ->
-                                ShortNavigationBarItem(
-                                    selected = currentDestination != null && entry.item.isInHierarchy(currentDestination),
-                                    onClick = { navController.switchToTab(entry.item.tabRoute) },
-                                    icon = { Icon(entry.item.icon, contentDescription = null) },
-                                    label = { Text(stringResource(entry.item.labelRes)) },
-                                )
-                            NavBarEntry.Search ->
-                                ShortNavigationBarItem(
-                                    selected = false,
-                                    onClick = {
-                                        val sourceContext =
-                                            if (activeRootTab?.tab == AppTab.PLAN_ROUTE) SearchSourceContext.PLAN_ROUTE else SearchSourceContext.TELEPORT_OR_FAVORITE
-                                        navController.navigate(AddressSearchRoute(sourceContext = sourceContext))
-                                    },
-                                    icon = { Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.tab_search_label)) },
-                                    label = { Text(stringResource(R.string.tab_search_label)) },
-                                )
+    // The bottom bar belongs to this shell, outside every screen's own tour. Controls here that a screen's
+    // tour wants to point at report into this registry, which each screen's tour falls back to.
+    val shellTourTargets = remember { TourTargetRegistry() }
+    CompositionLocalProvider(LocalTourTargetRegistry provides shellTourTargets) {
+        Scaffold(
+            bottomBar = {
+                if (activeRootTab != null) {
+                    // FR-013: no explicit insets handling needed here — ShortNavigationBar already
+                    // applies WindowInsets.systemBarsForVisualComponents (horizontal + bottom) as its
+                    // own default windowInsets param, which correctly reports a slimmer inset under
+                    // gesture navigation and a taller one under 3-button navigation. Adding another
+                    // windowInsetsPadding around this would double-count that inset.
+                    ShortNavigationBar {
+                        NavBarEntries.forEach { entry ->
+                            when (entry) {
+                                is NavBarEntry.Tab ->
+                                    ShortNavigationBarItem(
+                                        selected = currentDestination != null && entry.item.isInHierarchy(currentDestination),
+                                        onClick = { navController.switchToTab(entry.item.tabRoute) },
+                                        icon = { Icon(entry.item.icon, contentDescription = null) },
+                                        label = { Text(stringResource(entry.item.labelRes)) },
+                                        modifier =
+                                            if (entry.item.tab == AppTab.SAVED) {
+                                                Modifier.tourTarget(TourTargets.SavedTab)
+                                            } else {
+                                                Modifier
+                                            },
+                                    )
+                                NavBarEntry.Search ->
+                                    ShortNavigationBarItem(
+                                        selected = false,
+                                        onClick = {
+                                            val sourceContext =
+                                                if (activeRootTab?.tab == AppTab.PLAN_ROUTE) SearchSourceContext.PLAN_ROUTE else SearchSourceContext.TELEPORT_OR_FAVORITE
+                                            navController.navigate(AddressSearchRoute(sourceContext = sourceContext))
+                                        },
+                                        icon = {
+                                            Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.tab_search_label))
+                                        },
+                                        label = { Text(stringResource(R.string.tab_search_label)) },
+                                    )
+                            }
                         }
                     }
                 }
-            }
-        },
-    ) { paddingValues -> content(paddingValues) }
+            },
+        ) { paddingValues -> content(paddingValues) }
+    }
 }

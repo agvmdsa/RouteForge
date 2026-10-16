@@ -70,8 +70,9 @@ private val ScreenEdgeMargin = 16.dp
 /** One stop in a section's tour. An [TourStepKind.EXPLANATORY] step dims the screen and spotlights
  *  [targetId] (required) with [text]; an [TourStepKind.ACTION] step waits for the user to do
  *  something real and advances by itself once [isSatisfied]. [targetId] must match a
- *  [Modifier.tourTarget] id registered on the same screen; for an action step it is the control the
- *  hint rings, or `null` for the center of the screen.
+ *  [Modifier.tourTarget] id registered on the same screen — or in the app shell around it, like the
+ *  bottom tab bar ([TourTargets]); for an action step it is the control the hint rings, or `null`
+ *  for the center of the screen.
  *
  *  [isApplicable] is the screen-state rule for whether the step applies at all — [TourHost] also
  *  requires the target to be on screen. [isPaused] (action steps) hides the instruction strip while
@@ -107,11 +108,22 @@ data class TourLabels(
     val continueMessage: String? = null,
 )
 
+/** Targets that live in the app shell around every screen rather than in a screen's own content —
+ *  they register in the app-wide registry (see [LocalTourTargetRegistry]) and any screen's tour can
+ *  point at them. */
+object TourTargets {
+    /** The Saved tab in the bottom bar. */
+    const val SavedTab = "app_tab_saved"
+}
+
 /** Holds each registered target's current on-screen bounds for a single screen's tour — not
  *  shared across screens, so [TourHost] creates one per screen. A target leaves the registry when
  *  its control leaves the composition, so a control that has since disappeared is never offered
- *  as a step's target. */
-class TourTargetRegistry {
+ *  as a step's target. Lookups fall back to [parent], the app-wide registry the shell's own
+ *  controls (the bottom bar) report into. */
+class TourTargetRegistry(
+    private val parent: TourTargetRegistry? = null,
+) {
     private val boundsById = mutableStateMapOf<String, Rect>()
 
     internal fun register(
@@ -125,11 +137,11 @@ class TourTargetRegistry {
         boundsById.remove(id)
     }
 
-    internal fun boundsFor(id: String): Rect? = boundsById[id]
+    internal fun boundsFor(id: String): Rect? = boundsById[id] ?: parent?.boundsFor(id)
 
     /** Whether [id]'s control is currently on screen — without exposing [Rect] itself outside this
      *  module. */
-    fun isTargetAvailable(id: String): Boolean = boundsById.containsKey(id)
+    fun isTargetAvailable(id: String): Boolean = boundsById.containsKey(id) || parent?.isTargetAvailable(id) == true
 }
 
 /** Reports every section as already seen and ignores [markSeen] — the default for a tour-hosting
@@ -150,7 +162,8 @@ class NoOpTourProgressRepository : TourProgressRepository {
  *  deeply-nested controls it points at (e.g. Simulation's controls live across
  *  `RouteProgressCard`/`PlaybackButton`/`WaypointEditSection`/`CoordinatePill`, none of which
  *  otherwise have any reason to know a tour exists). `null` by default — `tourTarget` is then a
- *  no-op, so existing composables are unaffected on any screen that doesn't provide one. */
+ *  no-op, so existing composables are unaffected on any screen that doesn't provide one. The app
+ *  provides one for the whole shell, which [TourHost] uses as the parent of its own. */
 val LocalTourTargetRegistry = compositionLocalOf<TourTargetRegistry?> { null }
 
 /** Reports this composable's current on-screen bounds into the ambient [LocalTourTargetRegistry]

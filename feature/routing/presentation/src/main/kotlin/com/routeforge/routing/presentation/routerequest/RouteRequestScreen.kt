@@ -48,6 +48,7 @@ import com.routeforge.designsystem.components.TourHost
 import com.routeforge.designsystem.components.TourLabels
 import com.routeforge.designsystem.components.TourStep
 import com.routeforge.designsystem.components.TourStepResult
+import com.routeforge.designsystem.components.TourTargets
 import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapMarker
@@ -265,6 +266,9 @@ private fun rememberRouteRequestTourSteps(state: RouteRequestState): List<TourSt
         explanatoryStep("routeReq_edit_waypoints", stringResource(R.string.routing_tour_desc_edit_waypoints)),
         explanatoryStep("routeReq_proceed", stringResource(R.string.routing_tour_desc_proceed)),
         explanatoryStep("routeReq_save_route", stringResource(R.string.routing_tour_desc_save_route)),
+        // The Saved tab sits in the app's bottom bar, outside this screen — the tour finds it through
+        // the shell's own registry.
+        TourStep(id = "routeReq_saved_tab", text = stringResource(R.string.routing_tour_desc_saved_tab), targetId = TourTargets.SavedTab),
     )
 }
 

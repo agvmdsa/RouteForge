@@ -70,7 +70,8 @@ fun TourHost(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val registry = remember { TourTargetRegistry() }
+    val shellRegistry = LocalTourTargetRegistry.current
+    val registry = remember(shellRegistry) { TourTargetRegistry(parent = shellRegistry) }
     var contentOriginOnScreen by remember { mutableStateOf(Offset.Zero) }
     var position by remember { mutableStateOf<TourPosition?>(null) }
     var hasPresentedAnything by remember { mutableStateOf(false) }

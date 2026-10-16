@@ -13,6 +13,7 @@
     <string name="simulation_tour_desc_expand">Expands the progress card back to show full route details.</string>
     <string name="simulation_tour_desc_joystick_toggle">Turns the joystick on or off, letting you move freely around the map when no route is loaded.</string>
     <string name="simulation_tour_desc_joystick_speed">Sets how fast you move with the joystick. This button only appears while the joystick is active.</string>
+    <string name="simulation_tour_desc_saved_tab">Saved keeps what you want to reuse. Routes from Plan Route load here with Use this route. Locations — points you confirmed with Also save as favorite — can teleport you with Mock here.</string>
     <string name="simulation_tour_desc_cancel_mock">Stops the simulated location and switches back to your real location.</string>
     <string name="simulation_teleport_confirm_title">Teleport to this location?</string>
     <string name="simulation_teleport_confirm_message">Latitude: %1$s\nLongitude: %2$s</string>
