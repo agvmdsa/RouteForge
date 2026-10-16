@@ -5,7 +5,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class TourReplayCoordinatorTest {
@@ -110,4 +112,47 @@ class TourReplayCoordinatorTest {
 
             assertEquals(TourSection.ROUTE_CREATION, first)
         }
+
+    @Test
+    fun `consuming a plain request reports that it does not continue a sequence`() {
+        coordinator.requestReplay(TourSection.SIMULATION)
+
+        assertFalse(coordinator.consumeReplay(TourSection.SIMULATION))
+    }
+
+    @Test
+    fun `consuming a request that continues a sequence reports it`() {
+        coordinator.requestReplay(TourSection.ROUTE_CREATION, continuesSequence = true)
+
+        assertTrue(coordinator.consumeReplay(TourSection.ROUTE_CREATION))
+    }
+
+    @Test
+    fun `consuming nothing or another section's request reports false and keeps the request`() {
+        assertFalse(coordinator.consumeReplay(TourSection.ROUTE_CREATION))
+
+        coordinator.requestReplay(TourSection.SIMULATION, continuesSequence = true)
+
+        assertFalse(coordinator.consumeReplay(TourSection.ROUTE_CREATION))
+        assertEquals(TourSection.SIMULATION, coordinator.pendingReplay.value)
+        assertTrue(coordinator.consumeReplay(TourSection.SIMULATION))
+    }
+
+    @Test
+    fun `a sequence request is only reported once`() {
+        coordinator.requestReplay(TourSection.ROUTE_CREATION, continuesSequence = true)
+        coordinator.consumeReplay(TourSection.ROUTE_CREATION)
+
+        coordinator.requestReplay(TourSection.ROUTE_CREATION)
+
+        assertFalse(coordinator.consumeReplay(TourSection.ROUTE_CREATION))
+    }
+
+    @Test
+    fun `a newer request replaces whether the older one continued a sequence`() {
+        coordinator.requestReplay(TourSection.ROUTE_CREATION, continuesSequence = true)
+        coordinator.requestReplay(TourSection.ROUTE_CREATION)
+
+        assertFalse(coordinator.consumeReplay(TourSection.ROUTE_CREATION))
+    }
 }

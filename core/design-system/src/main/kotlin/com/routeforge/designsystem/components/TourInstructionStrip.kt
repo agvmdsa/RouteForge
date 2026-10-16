@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.routeforge.designsystem.theme.Spacing
 
@@ -32,6 +33,11 @@ private val StripSpacing = 4.dp
  *  tallest such message (the authorization banner with its button); there is no measuring of the
  *  message itself, so retune it on a device if a banner ever grows past it. */
 private val TopMessageExtraOffset = 96.dp
+
+/** Distance from the top of the content area at which the tour's strip, callout and greeting sit:
+ *  the banner slot, or below it while the screen's own top message occupies that slot (FR-020). */
+internal fun tourTopOffset(isTopMessageVisible: Boolean): Dp =
+    if (isTopMessageVisible) Spacing.BannerTopOffset + TopMessageExtraOffset else Spacing.BannerTopOffset
 
 /** The light instruction strip an action step shows (and the result callout reuses): [text], a Skip
  *  button, and a Next button only when [nextLabel] is given — action steps advance on their own and
@@ -51,7 +57,7 @@ fun TourInstructionStrip(
     nextLabel: String? = null,
     onNext: () -> Unit = {},
 ) {
-    val topOffset = if (isTopMessageVisible) Spacing.BannerTopOffset + TopMessageExtraOffset else Spacing.BannerTopOffset
+    val topOffset = tourTopOffset(isTopMessageVisible)
     Box(
         modifier =
             modifier

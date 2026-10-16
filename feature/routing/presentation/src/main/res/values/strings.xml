@@ -2,6 +2,7 @@
     <string name="routing_tour_skip_button">Skip</string>
     <string name="routing_tour_next_button">Next</string>
     <string name="routing_tour_done_button">Done</string>
+    <string name="routing_tour_continue_message">Nice! Let\'s continue with the Route Creation tour.</string>
     <string name="routing_tour_desc_tap_map_two">Tap the map to place two points for your route. A confirmation sheet appears after each tap — confirm it to add the point.</string>
     <string name="routing_tour_desc_tap_map_one_more">Nice! Tap the map once more to place one more point. Confirm the sheet to add it.</string>
     <string name="routing_tour_desc_import">Imports a route file (JSON or GPX) from your device.</string>

@@ -11,12 +11,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionOnScreen
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.TourProgressRepository
@@ -26,12 +30,16 @@ import com.routeforge.coredomain.tour.TourEngine
 import com.routeforge.coredomain.tour.TourPhase
 import com.routeforge.coredomain.tour.TourPosition
 import com.routeforge.coredomain.tour.TourStepStatus
+import kotlinx.coroutines.delay
 
 // A control that appears as a consequence of the user's last action (the cancel "X" right after a
 // mock is confirmed) registers its bounds in the layout pass *after* the state change, and that
 // registration reaches this host a frame later still. Judging "is this step's control on screen?"
 // any sooner would wrongly skip the step.
 private const val SETTLE_FRAMES = 2
+
+// Long enough to read one short line before the first step takes over the screen.
+private const val CONTINUE_MESSAGE_MILLIS = 2_200L
 
 /** The tour for one screen ([section]): replaces the screen's own content [Box], so its overlays
  *  share the content area's coordinate space with the screen's banners and controls. Provides the
@@ -66,6 +74,7 @@ fun TourHost(
     var contentOriginOnScreen by remember { mutableStateOf(Offset.Zero) }
     var position by remember { mutableStateOf<TourPosition?>(null) }
     var hasPresentedAnything by remember { mutableStateOf(false) }
+    var continueMessage by remember { mutableStateOf<String?>(null) }
 
     val seenSections by progressRepository.observeSeenSections().collectAsStateWithLifecycle()
     val pendingReplay by replayCoordinator.pendingReplay.collectAsStateWithLifecycle()
@@ -91,8 +100,23 @@ fun TourHost(
     }
     LaunchedEffect(pendingReplay) {
         if (pendingReplay == section) {
+            val continuesSequence = replayCoordinator.consumeReplay(section)
+            // Already running (the first-visit start got there first): restarting would only
+            // flash the first step again.
+            if (position == null) {
+                val greeting = labels.continueMessage.takeIf { continuesSequence }
+                if (greeting == null) start() else continueMessage = greeting
+            }
+        }
+    }
+
+    // Its own effect rather than a delay inside the one above: consuming the request clears
+    // [pendingReplay], which would cancel that effect — and the greeting with it — right away.
+    continueMessage?.let { greeting ->
+        LaunchedEffect(greeting) {
+            delay(CONTINUE_MESSAGE_MILLIS)
+            continueMessage = null
             start()
-            replayCoordinator.consumeReplay(section)
         }
     }
 
@@ -104,6 +128,17 @@ fun TourHost(
             },
     ) {
         CompositionLocalProvider(LocalTourTargetRegistry provides registry) { content() }
+
+        continueMessage?.let { greeting ->
+            ConfirmationPill(
+                message = greeting,
+                modifier =
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = tourTopOffset(isTopMessageVisible))
+                        .semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
 
         val current = position ?: return@Box
         val statuses = steps.map { it.statusIn(registry) }

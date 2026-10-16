@@ -97,10 +97,14 @@ data class TourStepResult(
     val outcome: TourResultOutcome,
 )
 
+/** The words a tour needs, passed in because `core:design-system` has no resources. [continueMessage]
+ *  is what a section greets the user with when it starts right after the previous one in "Repeat
+ *  all"; `null` for a section that never follows another. */
 data class TourLabels(
     val skip: String,
     val next: String,
     val done: String,
+    val continueMessage: String? = null,
 )
 
 /** Holds each registered target's current on-screen bounds for a single screen's tour — not

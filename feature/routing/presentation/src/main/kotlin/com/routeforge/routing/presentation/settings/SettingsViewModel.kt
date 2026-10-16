@@ -9,19 +9,12 @@ import com.routeforge.coredomain.usecase.SetMapStyleUseCase
 import com.routeforge.routing.domain.usecase.GetStorageUsageSummaryUseCase
 import com.routeforge.routing.domain.usecase.ObserveStorageQuotaUseCase
 import com.routeforge.routing.domain.usecase.SetStorageQuotaUseCase
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-private fun TourSection.toNavigationEvent(): SettingsEvent =
-    when (this) {
-        TourSection.SIMULATION -> SettingsEvent.NavigateToSimulationTab
-        TourSection.ROUTE_CREATION -> SettingsEvent.NavigateToRouteCreationTab
-    }
 
 class SettingsViewModel(
     private val observeStorageQuota: ObserveStorageQuotaUseCase,
@@ -33,9 +26,6 @@ class SettingsViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow(SettingsState(usedBytes = getStorageUsageSummary()))
     val state = _state.asStateFlow()
-
-    private val _events = Channel<SettingsEvent>()
-    val events = _events.receiveAsFlow()
 
     init {
         viewModelScope.launch {
@@ -62,24 +52,31 @@ class SettingsViewModel(
         }
     }
 
+    private var repeatAllJob: Job? = null
+
+    /** Asking for the replay is all Settings does — the app brings that section's tab forward and
+     *  the section's own screen starts the tour. Settings itself is off screen by then. A single
+     *  repeat also ends any "Repeat all" still waiting, so that sequence can't wake up later and
+     *  carry on from the section the user just replayed on their own. */
     private fun repeatTour(section: TourSection) {
-        viewModelScope.launch {
-            _events.send(section.toNavigationEvent())
-            tourReplayCoordinator.requestReplay(section)
-        }
+        repeatAllJob?.cancel()
+        tourReplayCoordinator.requestReplay(section)
     }
 
-    /** Navigates through all three sections in order (FR-008), waiting for each one's tour to
-     *  finish (completed or skipped — [TourReplayCoordinator.notifyReplayFinished] fires either
-     *  way) before advancing, so the user sees one section at a time rather than being dropped
-     *  somewhere mid-sequence. */
+    /** Replays every section in order (FR-008), waiting for each one's tour to finish
+     *  (completed or skipped — [TourReplayCoordinator.notifyReplayFinished] fires either way)
+     *  before asking for the next, so the user sees one section at a time rather than being dropped
+     *  somewhere mid-sequence. Every section after the first is marked as continuing the sequence,
+     *  so its screen can say so. This keeps running while the user is on another tab: the
+     *  view model outlives Settings leaving the screen, and nothing here needs Settings composed. */
     private fun repeatAllTours() {
-        viewModelScope.launch {
-            for (section in TourSection.entries) {
-                _events.send(section.toNavigationEvent())
-                tourReplayCoordinator.requestReplay(section)
-                tourReplayCoordinator.replayCompletions.first { it == section }
+        repeatAllJob?.cancel()
+        repeatAllJob =
+            viewModelScope.launch {
+                TourSection.entries.forEachIndexed { index, section ->
+                    tourReplayCoordinator.requestReplay(section, continuesSequence = index > 0)
+                    tourReplayCoordinator.replayCompletions.first { it == section }
+                }
             }
-        }
     }
 }

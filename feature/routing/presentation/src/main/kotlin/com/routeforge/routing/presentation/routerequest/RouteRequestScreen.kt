@@ -178,6 +178,7 @@ fun RouteRequestScreen(
                     skip = stringResource(R.string.routing_tour_skip_button),
                     next = stringResource(R.string.routing_tour_next_button),
                     done = stringResource(R.string.routing_tour_done_button),
+                    continueMessage = stringResource(R.string.routing_tour_continue_message),
                 ),
             isTopMessageVisible = state.errorType != null || showWaypointsUpdatedConfirmation,
             modifier = Modifier.fillMaxSize().padding(paddingValues),
