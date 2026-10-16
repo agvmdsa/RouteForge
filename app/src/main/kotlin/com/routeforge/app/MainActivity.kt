@@ -97,7 +97,6 @@ class MainActivity : ComponentActivity() {
                                 navController = navController,
                                 onNavigateToSimulationTab = { navController.switchToTab(SimulateTabRoute) },
                                 onNavigateToRouteCreationTab = { navController.switchToTab(PlanTabRoute) },
-                                onNavigateToSavedTab = { navController.switchToTab(SavedTabRoute) },
                             )
                         }
                         composable<AddressSearchRoute> { backStackEntry ->

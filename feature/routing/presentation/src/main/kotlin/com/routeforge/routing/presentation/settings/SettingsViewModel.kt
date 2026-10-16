@@ -21,7 +21,6 @@ private fun TourSection.toNavigationEvent(): SettingsEvent =
     when (this) {
         TourSection.SIMULATION -> SettingsEvent.NavigateToSimulationTab
         TourSection.ROUTE_CREATION -> SettingsEvent.NavigateToRouteCreationTab
-        TourSection.SAVED -> SettingsEvent.NavigateToSavedTab
     }
 
 class SettingsViewModel(

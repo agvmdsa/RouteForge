@@ -62,7 +62,6 @@ fun SettingsRoot(
     onManageDownloadsClick: () -> Unit,
     onNavigateToSimulationTab: () -> Unit,
     onNavigateToRouteCreationTab: () -> Unit,
-    onNavigateToSavedTab: () -> Unit,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -72,7 +71,6 @@ fun SettingsRoot(
             when (event) {
                 SettingsEvent.NavigateToSimulationTab -> onNavigateToSimulationTab()
                 SettingsEvent.NavigateToRouteCreationTab -> onNavigateToRouteCreationTab()
-                SettingsEvent.NavigateToSavedTab -> onNavigateToSavedTab()
             }
         }
     }
@@ -124,11 +122,10 @@ private fun TourSection.displayName(): String =
     when (this) {
         TourSection.SIMULATION -> stringResource(R.string.settings_tour_name_simulation)
         TourSection.ROUTE_CREATION -> stringResource(R.string.settings_tour_name_route_creation)
-        TourSection.SAVED -> stringResource(R.string.settings_tour_name_saved)
     }
 
 /** Lists each [TourSection] with its own "repeat" action, plus a "Repeat all" action that replays
- *  all three in sequence (spec 013 FR-008/FR-009) — the only Settings UI this feature adds. */
+ *  of them in sequence (spec 013 FR-008/FR-009) — the only Settings UI this feature adds. */
 @Composable
 private fun ToursSection(
     onRepeatTourClick: (TourSection) -> Unit,

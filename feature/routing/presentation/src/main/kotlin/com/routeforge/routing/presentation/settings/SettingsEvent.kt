@@ -7,6 +7,4 @@ sealed interface SettingsEvent {
     data object NavigateToSimulationTab : SettingsEvent
 
     data object NavigateToRouteCreationTab : SettingsEvent
-
-    data object NavigateToSavedTab : SettingsEvent
 }

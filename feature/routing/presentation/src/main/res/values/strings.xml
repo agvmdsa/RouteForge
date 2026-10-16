@@ -10,10 +10,6 @@
     <string name="routing_tour_desc_switch_mode">Previews the alternate route mode — Guided (follow roads) or Free-roam (straight line) — before computing the route.</string>
     <string name="routing_tour_desc_proceed">Computes the route from your waypoints so you can play it.</string>
     <string name="routing_tour_desc_save_route">Saves this route so you can reuse it later from Saved.</string>
-    <string name="saved_routes_tour_desc_edit">Renames this saved route.</string>
-    <string name="saved_routes_tour_desc_delete">Deletes this saved route.</string>
-    <string name="saved_routes_tour_desc_export">Exports this route as a JSON or GPX file.</string>
-    <string name="saved_routes_tour_desc_use">Loads this route into Simulation so you can play it.</string>
     <string name="routing_undo_button">Undo</string>
     <string name="routing_import_button">Import route</string>
     <string name="routing_proceed_button">Proceed to play</string>
@@ -83,7 +79,6 @@
     <string name="settings_tours_section_title">Guided tours</string>
     <string name="settings_tour_name_simulation">Simulation</string>
     <string name="settings_tour_name_route_creation">Route Creation</string>
-    <string name="settings_tour_name_saved">Saved</string>
     <string name="settings_repeat_tour_button">Repeat</string>
     <string name="settings_repeat_all_tours_button">Repeat all</string>
     <string name="routing_add_waypoint_title">Add this waypoint?</string>
