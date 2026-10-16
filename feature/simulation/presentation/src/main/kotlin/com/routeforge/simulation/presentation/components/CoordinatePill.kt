@@ -36,13 +36,15 @@ internal fun CoordinatePill(
             else -> stringResource(R.string.simulation_status_no_simulation)
         }
     val copyLabel = stringResource(R.string.simulation_copy_coordinates)
-    StatusPill(modifier = modifier.tourTarget("sim_coordinate_pill")) {
+    StatusPill(modifier = modifier) {
         Text(
             text = text,
             style = MaterialTheme.typography.bodyMedium,
             modifier =
                 if (mockedSession != null) {
-                    Modifier.clickable(onClickLabel = copyLabel) { clipboardManager.setText(AnnotatedString(text)) }
+                    Modifier
+                        .clickable(onClickLabel = copyLabel) { clipboardManager.setText(AnnotatedString(text)) }
+                        .tourTarget("sim_coordinate_text")
                 } else {
                     Modifier
                 },

@@ -19,7 +19,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,15 +36,15 @@ import com.routeforge.coredomain.TourProgressRepository
 import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.TourSection
+import com.routeforge.coredomain.tour.TourStepKind
 import com.routeforge.designsystem.components.AutoDismissConfirmationPill
 import com.routeforge.designsystem.components.FabColumn
-import com.routeforge.designsystem.components.LocalTourTargetRegistry
 import com.routeforge.designsystem.components.NoOpTourProgressRepository
-import com.routeforge.designsystem.components.SpotlightOverlay
 import com.routeforge.designsystem.components.TooltipAnchor
 import com.routeforge.designsystem.components.TopBanner
+import com.routeforge.designsystem.components.TourHost
+import com.routeforge.designsystem.components.TourLabels
 import com.routeforge.designsystem.components.TourStep
-import com.routeforge.designsystem.components.rememberTourTargetRegistry
 import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapMarker
@@ -163,91 +162,60 @@ fun SimulationScreen(
     val cameraTarget = rememberSimulationCameraTarget(state)
     val mapContent = rememberSimulationMapContent(state, editState, onEditAction)
     val routeProgress = rememberRouteProgress(state)
-    val tourTargetRegistry = rememberTourTargetRegistry()
-    val seenTourSections by tourProgressRepository.observeSeenSections().collectAsStateWithLifecycle()
-    var activeTourStepIndex by remember { mutableStateOf<Int?>(null) }
 
-    LaunchedEffect(seenTourSections) {
-        if (TourSection.SIMULATION !in seenTourSections) activeTourStepIndex = 0
-    }
+    Scaffold { paddingValues ->
+        TourHost(
+            section = TourSection.SIMULATION,
+            steps = rememberSimulationTourSteps(state),
+            progressRepository = tourProgressRepository,
+            replayCoordinator = tourReplayCoordinator,
+            labels =
+                TourLabels(
+                    skip = stringResource(R.string.simulation_tour_skip_button),
+                    next = stringResource(R.string.simulation_tour_next_button),
+                    done = stringResource(R.string.simulation_tour_done_button),
+                ),
+            isTopMessageVisible = state.isBlockedByAuthorization || state.errorType != null || showWaypointsUpdatedConfirmation,
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+        ) {
+            RouteForgeMap(
+                markers = mapContent.markers,
+                polylinePoints = mapContent.polylinePoints,
+                traveledPolylinePoints = mapContent.traveledPolylinePoints,
+                cameraTarget = cameraTarget,
+                mapStyle = state.mapStyle,
+                onMapTap = { latitude, longitude ->
+                    if (editState.isOpen) {
+                        onEditAction(WaypointEditAction.OnMapTap(latitude, longitude))
+                    } else if (state.loadedRoute == null) {
+                        // Tap-to-teleport only makes sense with no route loaded — teleporting
+                        // mid-route would fight the route's own playback position.
+                        onAction(SimulationAction.OnMapTap(latitude, longitude))
+                    }
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
 
-    LaunchedEffect(tourReplayCoordinator) {
-        tourReplayCoordinator.replayRequests.collect { section ->
-            if (section == TourSection.SIMULATION) activeTourStepIndex = 0
-        }
-    }
+            SimulationTopOverlays(
+                state = state,
+                showWaypointsUpdatedConfirmation = showWaypointsUpdatedConfirmation,
+                onDismissWaypointsUpdatedConfirmation = onDismissWaypointsUpdatedConfirmation,
+                onAction = onAction,
+            )
 
-    val tourSteps = rememberSimulationTourSteps()
-    val availableTourSteps = tourSteps.filter { tourTargetRegistry.isTargetAvailable(it.targetId) }
-
-    fun endSimulationTour() {
-        activeTourStepIndex = null
-        tourProgressRepository.markSeen(TourSection.SIMULATION)
-        tourReplayCoordinator.notifyReplayFinished(TourSection.SIMULATION)
-    }
-
-    CompositionLocalProvider(LocalTourTargetRegistry provides tourTargetRegistry) {
-        Scaffold { paddingValues ->
-            Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                RouteForgeMap(
-                    markers = mapContent.markers,
-                    polylinePoints = mapContent.polylinePoints,
-                    traveledPolylinePoints = mapContent.traveledPolylinePoints,
-                    cameraTarget = cameraTarget,
-                    mapStyle = state.mapStyle,
-                    onMapTap = { latitude, longitude ->
-                        if (editState.isOpen) {
-                            onEditAction(WaypointEditAction.OnMapTap(latitude, longitude))
-                        } else if (state.loadedRoute == null) {
-                            // Tap-to-teleport only makes sense with no route loaded — teleporting
-                            // mid-route would fight the route's own playback position.
-                            onAction(SimulationAction.OnMapTap(latitude, longitude))
-                        }
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                )
-
-                SimulationTopOverlays(
+            routeProgress?.let {
+                RouteProgressCard(
+                    progress = it,
                     state = state,
-                    showWaypointsUpdatedConfirmation = showWaypointsUpdatedConfirmation,
-                    onDismissWaypointsUpdatedConfirmation = onDismissWaypointsUpdatedConfirmation,
+                    sessionDistanceTraveledMeters = mapContent.sessionDistanceTraveledMeters,
+                    editState = editState,
+                    onEditAction = onEditAction,
                     onAction = onAction,
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(Spacing.ScreenContent),
                 )
-
-                routeProgress?.let {
-                    RouteProgressCard(
-                        progress = it,
-                        state = state,
-                        sessionDistanceTraveledMeters = mapContent.sessionDistanceTraveledMeters,
-                        editState = editState,
-                        onEditAction = onEditAction,
-                        onAction = onAction,
-                        modifier = Modifier.align(Alignment.BottomCenter).padding(Spacing.ScreenContent),
-                    )
-                }
-
-                SimulationMovementControls(state = state, onAction = onAction)
-
-                activeTourStepIndex?.let { index ->
-                    val clampedIndex = index.coerceIn(0, (availableTourSteps.size - 1).coerceAtLeast(0))
-                    SpotlightOverlay(
-                        steps = availableTourSteps,
-                        currentStepIndex = clampedIndex,
-                        registry = tourTargetRegistry,
-                        skipButtonLabel = stringResource(R.string.simulation_tour_skip_button),
-                        nextButtonLabel = stringResource(R.string.simulation_tour_next_button),
-                        doneButtonLabel = stringResource(R.string.simulation_tour_done_button),
-                        onNext = {
-                            if (clampedIndex + 1 < availableTourSteps.size) {
-                                activeTourStepIndex = clampedIndex + 1
-                            } else {
-                                endSimulationTour()
-                            }
-                        },
-                        onSkip = { endSimulationTour() },
-                    )
-                }
             }
+
+            SimulationMovementControls(state = state, onAction = onAction)
         }
     }
 
@@ -256,29 +224,54 @@ fun SimulationScreen(
     SimulationDialogs(state = state, onAction = onAction)
 }
 
-/** Every potential Simulation-tour step (spec 013). Unlike [specs/012-simulation-screen-tooltips]'s
- *  long-press tooltips — which must match each control's accessible name exactly — these are their
- *  own fuller explanations, written for someone seeing the control for the first time (e.g. calling
- *  out that the joystick speed button only appears once the joystick itself is active). Not every
- *  step is necessarily on screen at once (e.g. route controls vs. joystick controls are mutually
- *  exclusive, and the Expand/Collapse toggle is only ever one or the other) — [SimulationScreen]
- *  filters this list down to whichever targets are actually registered before handing it to
- *  [SpotlightOverlay]. */
+/** Every Simulation-tour step (spec 014), in order. Tapping the map to start a simulation is the one
+ *  action step; the rest explain controls. Unlike [specs/012-simulation-screen-tooltips]'s long-press
+ *  tooltips — which must match each control's accessible name exactly — these are their own fuller
+ *  explanations, written for someone seeing the control for the first time (e.g. calling out that the
+ *  joystick speed button only appears once the joystick itself is active). Not every step is on
+ *  screen at once (e.g. route controls vs. joystick controls are mutually exclusive, and the
+ *  Expand/Collapse toggle is only ever one or the other) — [TourHost] skips a step whose control
+ *  isn't there, and the state rules below skip the ones that make no sense for the current state. */
 @Composable
-private fun rememberSimulationTourSteps(): List<TourStep> =
-    listOf(
-        TourStep("sim_coordinate_pill", stringResource(R.string.simulation_tour_desc_coordinate_pill)),
-        TourStep("sim_cancel_route", stringResource(R.string.simulation_tour_desc_cancel_route)),
-        TourStep("sim_playback", stringResource(R.string.simulation_tour_desc_playback)),
-        TourStep("sim_switch_mode", stringResource(R.string.simulation_tour_desc_switch_mode)),
-        TourStep("sim_edit_route", stringResource(R.string.simulation_tour_desc_edit_route)),
-        TourStep("sim_playback_speed_selector", stringResource(R.string.simulation_tour_desc_playback_speed)),
-        TourStep("sim_collapse_toggle", stringResource(R.string.simulation_tour_desc_collapse)),
-        TourStep("sim_expand_toggle", stringResource(R.string.simulation_tour_desc_expand)),
-        TourStep("sim_joystick_toggle", stringResource(R.string.simulation_tour_desc_joystick_toggle)),
-        TourStep("sim_joystick_speed", stringResource(R.string.simulation_tour_desc_joystick_speed)),
-        TourStep("sim_cancel_mock", stringResource(R.string.simulation_tour_desc_cancel_mock)),
+private fun rememberSimulationTourSteps(state: SimulationState): List<TourStep> {
+    val mockedSession = state.mockedSession
+    return listOf(
+        TourStep(
+            id = "sim_tap_map",
+            text = stringResource(R.string.simulation_tour_desc_tap_map),
+            kind = TourStepKind.ACTION,
+            // Tapping the map only starts a simulation while no route is loaded.
+            isApplicable = state.loadedRoute == null,
+            isSatisfied = mockedSession != null,
+            isPaused = state.pendingTeleportLatitude != null,
+        ),
+        explanatoryStep(
+            "sim_cancel_mock",
+            stringResource(R.string.simulation_tour_desc_cancel_mock),
+            isApplicable = mockedSession?.mode == SimulationMode.STATIONARY,
+        ),
+        explanatoryStep(
+            "sim_coordinate_text",
+            stringResource(R.string.simulation_tour_desc_coordinate_text),
+            isApplicable = mockedSession != null,
+        ),
+        explanatoryStep("sim_cancel_route", stringResource(R.string.simulation_tour_desc_cancel_route)),
+        explanatoryStep("sim_playback", stringResource(R.string.simulation_tour_desc_playback)),
+        explanatoryStep("sim_switch_mode", stringResource(R.string.simulation_tour_desc_switch_mode)),
+        explanatoryStep("sim_edit_route", stringResource(R.string.simulation_tour_desc_edit_route)),
+        explanatoryStep("sim_playback_speed_selector", stringResource(R.string.simulation_tour_desc_playback_speed)),
+        explanatoryStep("sim_collapse_toggle", stringResource(R.string.simulation_tour_desc_collapse)),
+        explanatoryStep("sim_expand_toggle", stringResource(R.string.simulation_tour_desc_expand)),
+        explanatoryStep("sim_joystick_toggle", stringResource(R.string.simulation_tour_desc_joystick_toggle)),
+        explanatoryStep("sim_joystick_speed", stringResource(R.string.simulation_tour_desc_joystick_speed)),
     )
+}
+
+private fun explanatoryStep(
+    id: String,
+    text: String,
+    isApplicable: Boolean = true,
+) = TourStep(id = id, text = text, targetId = id, isApplicable = isApplicable)
 
 /** Re-centers the map once each time a mocked session starts, or — only while no mocked session is
  *  active — once each time a real-location fix first becomes available. [previousSessionWasNull]/

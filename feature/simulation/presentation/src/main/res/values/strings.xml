@@ -2,7 +2,8 @@
     <string name="simulation_tour_skip_button">Skip</string>
     <string name="simulation_tour_next_button">Next</string>
     <string name="simulation_tour_done_button">Done</string>
-    <string name="simulation_tour_desc_coordinate_pill">Tap anywhere on the map to simulate your location there — no route needed. The coordinates of your simulated location show up here.</string>
+    <string name="simulation_tour_desc_tap_map">Tap anywhere on the map to simulate your location there. A confirmation dialog appears first — the location only starts being simulated once you confirm.</string>
+    <string name="simulation_tour_desc_coordinate_text">These are the coordinates of your simulated location. Tap them to copy them to the clipboard.</string>
     <string name="simulation_tour_desc_cancel_route">Stops the current route and clears it, returning to a map with no route loaded.</string>
     <string name="simulation_tour_desc_playback">Starts, pauses, or resumes the route simulation.</string>
     <string name="simulation_tour_desc_switch_mode">Swaps between the road-following Guided path and the straight-line Free-roam path. Only shown when an alternate path is available for this route.</string>

@@ -3,6 +3,7 @@ package com.routeforge.designsystem.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -47,6 +49,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import com.routeforge.coredomain.TourProgressRepository
 import com.routeforge.coredomain.model.TourSection
+import com.routeforge.coredomain.tour.TourResultOutcome
+import com.routeforge.coredomain.tour.TourStepKind
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -63,16 +67,46 @@ private val BubbleElevation = 8.dp
 private val BubbleGapFromTarget = 12.dp
 private val ScreenEdgeMargin = 16.dp
 
-/** One spotlighted control: [targetId] must match a [Modifier.tourTarget] id registered somewhere
- *  on the same screen, [text] is the explanatory copy shown next to it. */
+/** One stop in a section's tour. An [TourStepKind.EXPLANATORY] step dims the screen and spotlights
+ *  [targetId] (required) with [text]; an [TourStepKind.ACTION] step waits for the user to do
+ *  something real and advances by itself once [isSatisfied]. [targetId] must match a
+ *  [Modifier.tourTarget] id registered on the same screen; for an action step it is the control the
+ *  hint rings, or `null` for the center of the screen.
+ *
+ *  [isApplicable] is the screen-state rule for whether the step applies at all — [TourHost] also
+ *  requires the target to be on screen. [isPaused] (action steps) hides the instruction strip while
+ *  the confirmation the action leads to is open. [result] (action steps) is the callout shown once
+ *  the action is done. */
 data class TourStep(
-    val targetId: String,
+    val id: String,
     val text: String,
+    val kind: TourStepKind = TourStepKind.EXPLANATORY,
+    val targetId: String? = null,
+    val isApplicable: Boolean = true,
+    val isSatisfied: Boolean = false,
+    val isPaused: Boolean = false,
+    val result: TourStepResult? = null,
+) {
+    init {
+        require(kind == TourStepKind.ACTION || targetId != null) { "Explanatory step '$id' needs a target to spotlight" }
+    }
+}
+
+data class TourStepResult(
+    val text: String,
+    val outcome: TourResultOutcome,
+)
+
+data class TourLabels(
+    val skip: String,
+    val next: String,
+    val done: String,
 )
 
 /** Holds each registered target's current on-screen bounds for a single screen's tour — not
- *  shared across screens, so `remember` it once per screen (alongside that screen's own
- *  `SpotlightOverlay`/`Modifier.tourTarget` calls). */
+ *  shared across screens, so [TourHost] creates one per screen. A target leaves the registry when
+ *  its control leaves the composition, so a control that has since disappeared is never offered
+ *  as a step's target. */
 class TourTargetRegistry {
     private val boundsById = mutableStateMapOf<String, Rect>()
 
@@ -83,17 +117,16 @@ class TourTargetRegistry {
         boundsById[id] = bounds
     }
 
+    internal fun unregister(id: String) {
+        boundsById.remove(id)
+    }
+
     internal fun boundsFor(id: String): Rect? = boundsById[id]
 
-    /** Whether [id]'s control is currently on screen — lets a hosting screen filter its full step
-     *  list down to only the controls actually visible right now (e.g. a route-dependent control
-     *  that isn't shown until a route is loaded), without exposing [Rect] itself outside this
+    /** Whether [id]'s control is currently on screen — without exposing [Rect] itself outside this
      *  module. */
     fun isTargetAvailable(id: String): Boolean = boundsById.containsKey(id)
 }
-
-@Composable
-fun rememberTourTargetRegistry(): TourTargetRegistry = remember { TourTargetRegistry() }
 
 /** Reports every section as already seen and ignores [markSeen] — the default for a tour-hosting
  *  screen's `tourProgressRepository` parameter, so a bare `SomeScreen(state = ..., onAction = {})`
@@ -109,26 +142,27 @@ class NoOpTourProgressRepository : TourProgressRepository {
 }
 
 /** Ambient registry for [Modifier.tourTarget] — avoids threading a `TourTargetRegistry` parameter
- *  through every nested composable between a screen's root (where [SpotlightOverlay] is hosted)
- *  and the deeply-nested controls it spotlights (e.g. Simulation's controls live across
+ *  through every nested composable between a screen's root (where [TourHost] is) and the
+ *  deeply-nested controls it points at (e.g. Simulation's controls live across
  *  `RouteProgressCard`/`PlaybackButton`/`WaypointEditSection`/`CoordinatePill`, none of which
  *  otherwise have any reason to know a tour exists). `null` by default — `tourTarget` is then a
  *  no-op, so existing composables are unaffected on any screen that doesn't provide one. */
 val LocalTourTargetRegistry = compositionLocalOf<TourTargetRegistry?> { null }
 
 /** Reports this composable's current on-screen bounds into the ambient [LocalTourTargetRegistry]
- *  under [id] (a no-op if none is provided), so a [SpotlightOverlay] elsewhere on the same screen
- *  can find and highlight it. Bounds are in *screen* coordinates, the one space shared by this
- *  screen's window and the separate full-screen dialog window [SpotlightOverlay] draws in — window
- *  coordinates would be relative to each window's own origin and shift the cutout by the status-bar
- *  height. Pure layout observation — doesn't change anything about the wrapped content's own
- *  behavior. */
+ *  under [id] (a no-op if none is provided), so [TourHost] can find and point at it, and removes
+ *  them when this composable leaves the composition. Bounds are in *screen* coordinates, the one
+ *  space shared by this screen's window and the separate full-screen window [TourModalWindow]
+ *  draws in — window coordinates would be relative to each window's own origin and shift the
+ *  cutout by the status-bar height. Pure layout observation — doesn't change anything about the
+ *  wrapped content's own behavior. */
 fun Modifier.tourTarget(id: String): Modifier =
     composed {
         val registry = LocalTourTargetRegistry.current
         if (registry == null) {
             this
         } else {
+            DisposableEffect(registry, id) { onDispose { registry.unregister(id) } }
             this.onGloballyPositioned { coordinates ->
                 val position = coordinates.positionOnScreen()
                 if (position.isSpecified) {
@@ -138,28 +172,65 @@ fun Modifier.tourTarget(id: String): Modifier =
         }
     }
 
-/** Removes the platform's own dim behind the enclosing dialog window — [SpotlightOverlay] draws its
- *  scrim itself, so a second system dim would double-darken the screen. Deliberately does not touch
- *  the window's size: with `usePlatformDefaultWidth = false` + `decorFitsSystemWindows = false` and
- *  fill-max-size content, Compose's own dialog layout already goes full-screen and sets
- *  `FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS`, but only while the window height is still `WRAP_CONTENT` —
- *  forcing `MATCH_PARENT` here first would skip that. */
+/** Removes the platform's own dim behind the enclosing dialog window — the tour draws its own scrim
+ *  (or none at all for the result callout), so a system dim would darken the screen regardless.
+ *  Deliberately does not touch the window's size: with `usePlatformDefaultWidth = false` +
+ *  `decorFitsSystemWindows = false` and fill-max-size content, Compose's own dialog layout already
+ *  goes full-screen and sets `FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS`, but only while the window height
+ *  is still `WRAP_CONTENT` — forcing `MATCH_PARENT` here first would skip that. */
 @Composable
 private fun DisableDialogWindowDim() {
     val window = (LocalView.current.parent as? DialogWindowProvider)?.window
     SideEffect { window?.setDimAmount(0f) }
 }
 
-/** Dims the whole screen, cuts a rounded-rectangle hole around [steps]'s current target (via
- *  [registry]), and shows an explanatory bubble next to it with Skip/Next actions. Renders nothing
- *  if the current step's target hasn't been registered yet (e.g. it isn't visible in the current
- *  screen state) — there is nothing to spotlight in that case.
+private val TourDialogProperties =
+    DialogProperties(
+        dismissOnBackPress = true,
+        dismissOnClickOutside = false,
+        usePlatformDefaultWidth = false,
+        decorFitsSystemWindows = false,
+    )
+
+/** A full-screen modal window for the parts of a tour that must block everything else: the
+ *  spotlight on an explanatory step and the result callout.
  *
- *  Drawn inside a full-screen modal dialog window rather than inside the hosting screen's own layout:
- *  the app's bottom tab bar belongs to an outer `Scaffold`, so an in-screen overlay could neither dim
- *  nor block it. A modal window covers the entire display (status bar and tab bar included), swallows
- *  every touch outside the bubble, and keeps screen-reader focus on the bubble. System Back counts as
- *  Skip; tapping outside does nothing.
+ *  A separate window rather than a layer inside the hosting screen's own layout: the app's bottom
+ *  tab bar belongs to an outer `Scaffold`, so an in-screen layer could neither dim nor block it. A
+ *  modal window covers the entire display (status bar and tab bar included), swallows every touch
+ *  outside its own content, and keeps screen-reader focus inside it. System Back counts as
+ *  [onDismissRequest] (Skip); tapping outside does nothing. One window serves both phases so it
+ *  doesn't flicker out between a step and its result.
+ *
+ *  [content] gets this window's origin on screen and its size: targets are registered in screen
+ *  coordinates ([Modifier.tourTarget]) and have to be translated into this window's own space. */
+@Composable
+internal fun TourModalWindow(
+    onDismissRequest: () -> Unit,
+    content: @Composable BoxScope.(windowOriginOnScreen: Offset, windowSize: IntSize) -> Unit,
+) {
+    Dialog(onDismissRequest = onDismissRequest, properties = TourDialogProperties) {
+        DisableDialogWindowDim()
+        var windowOriginOnScreen by remember { mutableStateOf(Offset.Zero) }
+        var windowSize by remember { mutableStateOf(IntSize.Zero) }
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .onGloballyPositioned {
+                        val position = it.positionOnScreen()
+                        if (position.isSpecified) windowOriginOnScreen = position
+                        windowSize = it.size
+                    },
+        ) {
+            content(windowOriginOnScreen, windowSize)
+        }
+    }
+}
+
+/** Dims the whole window, cuts a rounded-rectangle hole around [targetBoundsOnScreen], and shows an
+ *  explanatory bubble next to it with Skip/Next (Done on the [isLastStep]) actions. Meant to be the
+ *  content of a [TourModalWindow].
  *
  *  The scrim is drawn into its own compositing layer (`graphicsLayer` forcing offscreen compositing)
  *  so `BlendMode.Clear` can actually punch transparency through it; without that, `BlendMode.Clear`
@@ -167,121 +238,86 @@ private fun DisableDialogWindowDim() {
  *  strings (not an owned string resource) — `core:design-system` has no `res/` of its own; every
  *  component here takes text from its caller, same as [TooltipAnchor]/[StatusPill].
  *
- *  Targets are registered in screen coordinates ([Modifier.tourTarget]); this overlay measures its own
- *  position in that same space ([overlayPositionOnScreen]) and subtracts it before drawing, so the
- *  cutout lines up with the real control regardless of any inset above this window. The bubble clamps
- *  horizontally to [ScreenEdgeMargin] from either screen edge, and flips above the target instead of
- *  below it when there isn't enough room underneath (e.g. a bottom-row control near the screen's
- *  bottom edge) — both measured against the overlay's own size, which also varies by
- *  device/orientation. */
+ *  The bubble clamps horizontally to [ScreenEdgeMargin] from either window edge, and flips above
+ *  the target instead of below it when there isn't enough room underneath (e.g. a bottom-row
+ *  control near the screen's bottom edge) — both measured against the window's own size, which
+ *  also varies by device/orientation. */
 @Composable
-fun SpotlightOverlay(
-    steps: List<TourStep>,
-    currentStepIndex: Int,
-    registry: TourTargetRegistry,
-    skipButtonLabel: String,
-    nextButtonLabel: String,
-    doneButtonLabel: String,
+internal fun SpotlightOverlay(
+    text: String,
+    targetBoundsOnScreen: Rect,
+    windowOriginOnScreen: Offset,
+    windowSize: IntSize,
+    isLastStep: Boolean,
+    labels: TourLabels,
     onNext: () -> Unit,
     onSkip: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    val step = steps.getOrNull(currentStepIndex) ?: return
-    val targetBoundsOnScreen = registry.boundsFor(step.targetId) ?: return
     val density = LocalDensity.current
+    var bubbleSize by remember(text) { mutableStateOf(IntSize.Zero) }
+    val targetBounds = targetBoundsOnScreen.translate(-windowOriginOnScreen)
 
-    Dialog(
-        onDismissRequest = onSkip,
-        properties =
-            DialogProperties(
-                dismissOnBackPress = true,
-                dismissOnClickOutside = false,
-                usePlatformDefaultWidth = false,
-                decorFitsSystemWindows = false,
-            ),
+    Canvas(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen),
     ) {
-        DisableDialogWindowDim()
+        drawRect(color = ScrimColor)
+        val cutoutPaddingPx = with(density) { CutoutPadding.toPx() }
+        val cutoutCornerPx = with(density) { CutoutCornerRadius.toPx() }
+        val cutoutTopLeft = targetBounds.topLeft - Offset(cutoutPaddingPx, cutoutPaddingPx)
+        val cutoutSize = Size(targetBounds.width + cutoutPaddingPx * 2, targetBounds.height + cutoutPaddingPx * 2)
+        drawRoundRect(
+            color = Color.Transparent,
+            topLeft = cutoutTopLeft,
+            size = cutoutSize,
+            cornerRadius = CornerRadius(cutoutCornerPx, cutoutCornerPx),
+            blendMode = BlendMode.Clear,
+        )
+        drawRoundRect(
+            color = Color.White,
+            topLeft = cutoutTopLeft,
+            size = cutoutSize,
+            cornerRadius = CornerRadius(cutoutCornerPx, cutoutCornerPx),
+            style = Stroke(width = with(density) { CutoutBorderWidth.toPx() }),
+        )
+    }
 
-        var overlayPositionOnScreen by remember { mutableStateOf(Offset.Zero) }
-        var overlaySize by remember { mutableStateOf(IntSize.Zero) }
-        var bubbleSize by remember(step.targetId, currentStepIndex) { mutableStateOf(IntSize.Zero) }
-
-        Box(
-            modifier =
-                modifier
-                    .fillMaxSize()
-                    .onGloballyPositioned {
-                        val position = it.positionOnScreen()
-                        if (position.isSpecified) overlayPositionOnScreen = position
-                        overlaySize = it.size
-                    },
+    val bubbleOffset =
+        with(density) {
+            val gapPx = BubbleGapFromTarget.toPx()
+            val marginPx = ScreenEdgeMargin.toPx()
+            val maxLeft = (windowSize.width - bubbleSize.width - marginPx).coerceAtLeast(marginPx)
+            val clampedLeft = targetBounds.left.coerceIn(marginPx, maxLeft)
+            val spaceBelow = windowSize.height - targetBounds.bottom - gapPx
+            val fitsBelow = bubbleSize.height == 0 || spaceBelow >= bubbleSize.height
+            val top =
+                if (fitsBelow) {
+                    targetBounds.bottom + gapPx
+                } else {
+                    (targetBounds.top - gapPx - bubbleSize.height).coerceAtLeast(marginPx)
+                }
+            IntOffset(clampedLeft.roundToInt(), top.roundToInt())
+        }
+    Surface(
+        shape = BubbleShape,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = BubbleElevation,
+        modifier =
+            Modifier
+                .offset { bubbleOffset }
+                .widthIn(max = BubbleMaxWidth)
+                .onGloballyPositioned { bubbleSize = it.size },
+    ) {
+        Column(
+            modifier = Modifier.padding(BubblePadding),
+            verticalArrangement = Arrangement.spacedBy(BubbleSpacing),
         ) {
-            val targetBounds = targetBoundsOnScreen.translate(-overlayPositionOnScreen)
-
-            Canvas(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen),
-            ) {
-                drawRect(color = ScrimColor)
-                val cutoutPaddingPx = with(density) { CutoutPadding.toPx() }
-                val cutoutCornerPx = with(density) { CutoutCornerRadius.toPx() }
-                val cutoutTopLeft = targetBounds.topLeft - Offset(cutoutPaddingPx, cutoutPaddingPx)
-                val cutoutSize = Size(targetBounds.width + cutoutPaddingPx * 2, targetBounds.height + cutoutPaddingPx * 2)
-                drawRoundRect(
-                    color = Color.Transparent,
-                    topLeft = cutoutTopLeft,
-                    size = cutoutSize,
-                    cornerRadius = CornerRadius(cutoutCornerPx, cutoutCornerPx),
-                    blendMode = BlendMode.Clear,
-                )
-                drawRoundRect(
-                    color = Color.White,
-                    topLeft = cutoutTopLeft,
-                    size = cutoutSize,
-                    cornerRadius = CornerRadius(cutoutCornerPx, cutoutCornerPx),
-                    style = Stroke(width = with(density) { CutoutBorderWidth.toPx() }),
-                )
-            }
-
-            val bubbleOffset =
-                with(density) {
-                    val gapPx = BubbleGapFromTarget.toPx()
-                    val marginPx = ScreenEdgeMargin.toPx()
-                    val maxLeft = (overlaySize.width - bubbleSize.width - marginPx).coerceAtLeast(marginPx)
-                    val clampedLeft = targetBounds.left.coerceIn(marginPx, maxLeft)
-                    val spaceBelow = overlaySize.height - targetBounds.bottom - gapPx
-                    val fitsBelow = bubbleSize.height == 0 || spaceBelow >= bubbleSize.height
-                    val top =
-                        if (fitsBelow) {
-                            targetBounds.bottom + gapPx
-                        } else {
-                            (targetBounds.top - gapPx - bubbleSize.height).coerceAtLeast(marginPx)
-                        }
-                    IntOffset(clampedLeft.roundToInt(), top.roundToInt())
-                }
-            Surface(
-                shape = BubbleShape,
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = BubbleElevation,
-                modifier =
-                    Modifier
-                        .offset { bubbleOffset }
-                        .widthIn(max = BubbleMaxWidth)
-                        .onGloballyPositioned { bubbleSize = it.size },
-            ) {
-                Column(
-                    modifier = Modifier.padding(BubblePadding),
-                    verticalArrangement = Arrangement.spacedBy(BubbleSpacing),
-                ) {
-                    Text(text = step.text, style = MaterialTheme.typography.bodyMedium)
-                    Row(horizontalArrangement = Arrangement.End) {
-                        TextButton(onClick = onSkip) { Text(skipButtonLabel) }
-                        val isLastStep = currentStepIndex == steps.lastIndex
-                        TextButton(onClick = onNext) { Text(if (isLastStep) doneButtonLabel else nextButtonLabel) }
-                    }
-                }
+            Text(text = text, style = MaterialTheme.typography.bodyMedium)
+            Row(horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onSkip) { Text(labels.skip) }
+                TextButton(onClick = onNext) { Text(if (isLastStep) labels.done else labels.next) }
             }
         }
     }

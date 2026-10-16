@@ -3,7 +3,6 @@ package com.routeforge.routing.presentation.routerequest
 import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -22,7 +21,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,14 +38,16 @@ import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.TourSection
+import com.routeforge.coredomain.tour.TourResultOutcome
+import com.routeforge.coredomain.tour.TourStepKind
 import com.routeforge.designsystem.components.AutoDismissConfirmationPill
 import com.routeforge.designsystem.components.FabColumn
-import com.routeforge.designsystem.components.LocalTourTargetRegistry
 import com.routeforge.designsystem.components.NoOpTourProgressRepository
-import com.routeforge.designsystem.components.SpotlightOverlay
 import com.routeforge.designsystem.components.TopBanner
+import com.routeforge.designsystem.components.TourHost
+import com.routeforge.designsystem.components.TourLabels
 import com.routeforge.designsystem.components.TourStep
-import com.routeforge.designsystem.components.rememberTourTargetRegistry
+import com.routeforge.designsystem.components.TourStepResult
 import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapMarker
@@ -166,100 +166,111 @@ fun RouteRequestScreen(
 ) {
     val cameraTarget = rememberInitialCameraTarget(state)
     val (markers, polylinePoints) = rememberRouteMarkersAndPolyline(state, onAction)
-    val tourTargetRegistry = rememberTourTargetRegistry()
-    val seenTourSections by tourProgressRepository.observeSeenSections().collectAsStateWithLifecycle()
-    var activeTourStepIndex by remember { mutableStateOf<Int?>(null) }
 
-    LaunchedEffect(seenTourSections) {
-        if (TourSection.ROUTE_CREATION !in seenTourSections) activeTourStepIndex = 0
-    }
+    Scaffold { paddingValues ->
+        TourHost(
+            section = TourSection.ROUTE_CREATION,
+            steps = rememberRouteRequestTourSteps(state),
+            progressRepository = tourProgressRepository,
+            replayCoordinator = tourReplayCoordinator,
+            labels =
+                TourLabels(
+                    skip = stringResource(R.string.routing_tour_skip_button),
+                    next = stringResource(R.string.routing_tour_next_button),
+                    done = stringResource(R.string.routing_tour_done_button),
+                ),
+            isTopMessageVisible = state.errorType != null || showWaypointsUpdatedConfirmation,
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+        ) {
+            RouteForgeMap(
+                markers = markers,
+                polylinePoints = polylinePoints,
+                cameraTarget = cameraTarget,
+                mapStyle = state.mapStyle,
+                onMapTap = { latitude, longitude -> onAction(RouteRequestAction.OnMapTap(latitude, longitude)) },
+                modifier = Modifier.fillMaxSize(),
+            )
 
-    LaunchedEffect(tourReplayCoordinator) {
-        tourReplayCoordinator.replayRequests.collect { section ->
-            if (section == TourSection.ROUTE_CREATION) activeTourStepIndex = 0
-        }
-    }
+            RouteRequestOverlays(
+                state = state,
+                showWaypointsUpdatedConfirmation = showWaypointsUpdatedConfirmation,
+                onDismissWaypointsUpdatedConfirmation = onDismissWaypointsUpdatedConfirmation,
+            )
 
-    val tourSteps = rememberRouteRequestTourSteps()
-    val availableTourSteps = tourSteps.filter { tourTargetRegistry.isTargetAvailable(it.targetId) }
+            RouteRequestLeadingFabs(
+                state = state,
+                onAction = onAction,
+                onImportClick = onImportClick,
+                editState = editState,
+                onEditAction = onEditAction,
+            )
 
-    fun endRouteCreationTour() {
-        activeTourStepIndex = null
-        tourProgressRepository.markSeen(TourSection.ROUTE_CREATION)
-        tourReplayCoordinator.notifyReplayFinished(TourSection.ROUTE_CREATION)
-    }
-
-    CompositionLocalProvider(LocalTourTargetRegistry provides tourTargetRegistry) {
-        Scaffold { paddingValues ->
-            Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-                RouteForgeMap(
-                    markers = markers,
-                    polylinePoints = polylinePoints,
-                    cameraTarget = cameraTarget,
-                    mapStyle = state.mapStyle,
-                    onMapTap = { latitude, longitude -> onAction(RouteRequestAction.OnMapTap(latitude, longitude)) },
-                    modifier = Modifier.fillMaxSize(),
-                )
-
-                RouteRequestOverlays(
-                    state = state,
-                    showWaypointsUpdatedConfirmation = showWaypointsUpdatedConfirmation,
-                    onDismissWaypointsUpdatedConfirmation = onDismissWaypointsUpdatedConfirmation,
-                )
-
-                RouteRequestLeadingFabs(
-                    state = state,
-                    onAction = onAction,
-                    onImportClick = onImportClick,
-                    editState = editState,
-                    onEditAction = onEditAction,
-                )
-
-                RouteRequestTrailingFabs(state = state, onAction = onAction)
-
-                activeTourStepIndex?.let { index ->
-                    val clampedIndex = index.coerceIn(0, (availableTourSteps.size - 1).coerceAtLeast(0))
-                    SpotlightOverlay(
-                        steps = availableTourSteps,
-                        currentStepIndex = clampedIndex,
-                        registry = tourTargetRegistry,
-                        skipButtonLabel = stringResource(R.string.routing_tour_skip_button),
-                        nextButtonLabel = stringResource(R.string.routing_tour_next_button),
-                        doneButtonLabel = stringResource(R.string.routing_tour_done_button),
-                        onNext = {
-                            if (clampedIndex + 1 < availableTourSteps.size) {
-                                activeTourStepIndex = clampedIndex + 1
-                            } else {
-                                endRouteCreationTour()
-                            }
-                        },
-                        onSkip = { endRouteCreationTour() },
-                    )
-                }
-            }
+            RouteRequestTrailingFabs(state = state, onAction = onAction)
         }
     }
 
     RouteRequestDialogs(state = state, onAction = onAction)
 }
 
-/** Every potential Route Creation-tour step (spec 013 FR-002), filtered down by
- *  [RouteRequestScreen] to whichever targets are actually registered before being handed to
- *  [SpotlightOverlay] — e.g. Switch route mode only exists before a route has been computed. These
- *  are fuller explanations written for a first-time visitor, not the controls' short accessible
- *  names. */
+/** Every Route Creation-tour step (spec 014), in order: placing the first two waypoints and pressing
+ *  the mode switch are the action steps; the rest explain controls. [TourHost] skips a step whose
+ *  control isn't on screen — e.g. Switch route mode only exists before a route has been computed.
+ *  These are fuller explanations written for a first-time visitor, not the controls' short
+ *  accessible names. */
 @Composable
-private fun rememberRouteRequestTourSteps(): List<TourStep> =
-    listOf(
-        TourStep("routeReq_status_pill", stringResource(R.string.routing_tour_desc_status_pill)),
-        TourStep("routeReq_import", stringResource(R.string.routing_tour_desc_import)),
-        TourStep("routeReq_add_from_favorites", stringResource(R.string.routing_tour_desc_add_from_favorites)),
-        TourStep("routeReq_undo", stringResource(R.string.routing_tour_desc_undo)),
-        TourStep("routeReq_edit_waypoints", stringResource(R.string.routing_tour_desc_edit_waypoints)),
-        TourStep("routeReq_switch_mode", stringResource(R.string.routing_tour_desc_switch_mode)),
-        TourStep("routeReq_proceed", stringResource(R.string.routing_tour_desc_proceed)),
-        TourStep("routeReq_save_route", stringResource(R.string.routing_tour_desc_save_route)),
+private fun rememberRouteRequestTourSteps(state: RouteRequestState): List<TourStep> {
+    // The no-path error is cleared by the next draft change, so "the attempt resolved without a
+    // path" has to be latched to still count once it is gone. Lives as long as this screen's
+    // composition, which is the tour's own scope — a revisit or a replay starts with it unset.
+    var previewFailureSeen by remember { mutableStateOf(false) }
+    LaunchedEffect(state.errorType) {
+        if (state.errorType == RouteRequestError.MODE_PREVIEW_NO_PATH) previewFailureSeen = true
+    }
+
+    val pointCount = state.draft.points.size
+    val hasEnoughPoints = pointCount >= MIN_WAYPOINTS_TO_PLAY
+    val isGuidedPreview = state.previewMode == RoutePlaybackMode.GUIDED
+    return listOf(
+        TourStep(
+            id = "routeReq_tap_map",
+            text =
+                stringResource(
+                    if (pointCount == 0) R.string.routing_tour_desc_tap_map_two else R.string.routing_tour_desc_tap_map_one_more,
+                ),
+            kind = TourStepKind.ACTION,
+            isSatisfied = hasEnoughPoints,
+            isPaused = state.pendingAddLatitude != null,
+        ),
+        TourStep(
+            id = "routeReq_switch_mode",
+            text = stringResource(R.string.routing_tour_desc_switch_mode_action),
+            kind = TourStepKind.ACTION,
+            targetId = "routeReq_switch_mode",
+            isApplicable = state.route == null && hasEnoughPoints,
+            // Pressing the switch with no road data downloaded only opens the "missing regions"
+            // sheet; the attempt counts once it resolves, with a Guided path or with no path at all.
+            isSatisfied = isGuidedPreview || previewFailureSeen,
+            isPaused = state.missingRegionsWarning != null,
+            result =
+                TourStepResult(
+                    text = stringResource(R.string.routing_tour_desc_switch_mode_result),
+                    // No callout for a change that never happened.
+                    outcome = if (isGuidedPreview) TourResultOutcome.SHOW else TourResultOutcome.SKIP,
+                ),
+        ),
+        explanatoryStep("routeReq_import", stringResource(R.string.routing_tour_desc_import)),
+        explanatoryStep("routeReq_add_from_favorites", stringResource(R.string.routing_tour_desc_add_from_favorites)),
+        explanatoryStep("routeReq_undo", stringResource(R.string.routing_tour_desc_undo)),
+        explanatoryStep("routeReq_edit_waypoints", stringResource(R.string.routing_tour_desc_edit_waypoints)),
+        explanatoryStep("routeReq_proceed", stringResource(R.string.routing_tour_desc_proceed)),
+        explanatoryStep("routeReq_save_route", stringResource(R.string.routing_tour_desc_save_route)),
     )
+}
+
+private fun explanatoryStep(
+    id: String,
+    text: String,
+) = TourStep(id = id, text = text, targetId = id)
 
 /** Centers the map on the draft's first waypoint (or the last known real location, if the draft is
  *  still empty) exactly once — [hasCenteredOnce] stops a later edit from re-centering under the user. */

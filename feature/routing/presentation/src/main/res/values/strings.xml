@@ -2,12 +2,14 @@
     <string name="routing_tour_skip_button">Skip</string>
     <string name="routing_tour_next_button">Next</string>
     <string name="routing_tour_done_button">Done</string>
-    <string name="routing_tour_desc_status_pill">Tap anywhere on the map to add a waypoint there. Once you have 2 or more, the action buttons below appear.</string>
+    <string name="routing_tour_desc_tap_map_two">Tap the map to place two points for your route. A confirmation sheet appears after each tap — confirm it to add the point.</string>
+    <string name="routing_tour_desc_tap_map_one_more">Nice! Tap the map once more to place one more point. Confirm the sheet to add it.</string>
     <string name="routing_tour_desc_import">Imports a route file (JSON or GPX) from your device.</string>
     <string name="routing_tour_desc_add_from_favorites">Adds a saved favorite waypoint to this route.</string>
     <string name="routing_tour_desc_undo">Undoes the last waypoint change. Only appears after you\'ve made an edit.</string>
     <string name="routing_tour_desc_edit_waypoints">Opens the waypoint list to reorder or remove points. Only appears once you have at least two waypoints.</string>
-    <string name="routing_tour_desc_switch_mode">Previews the alternate route mode — Guided (follow roads) or Free-roam (straight line) — before computing the route.</string>
+    <string name="routing_tour_desc_switch_mode_action">Now try the two route modes: press this button to switch from the straight-line path (Free-roam) to the road-following path (Guided).</string>
+    <string name="routing_tour_desc_switch_mode_result">That\'s the difference: Free-roam connects your points in a straight line, while Guided follows real roads. Press the button again any time to switch back.</string>
     <string name="routing_tour_desc_proceed">Computes the route from your waypoints so you can play it.</string>
     <string name="routing_tour_desc_save_route">Saves this route so you can reuse it later from Saved.</string>
     <string name="routing_undo_button">Undo</string>

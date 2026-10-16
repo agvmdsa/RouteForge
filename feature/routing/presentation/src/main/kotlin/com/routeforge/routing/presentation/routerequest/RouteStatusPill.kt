@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.routeforge.designsystem.components.StatusPill
-import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.routing.presentation.R
 
 @Composable
@@ -23,7 +22,7 @@ internal fun RouteStatusPill(
                 route.geometry.size,
             )
         } ?: pluralPointsLabel(state.draft.points.size)
-    StatusPill(modifier = modifier.tourTarget("routeReq_status_pill")) {
+    StatusPill(modifier = modifier) {
         Text(text = text, style = MaterialTheme.typography.bodyMedium)
     }
 }
