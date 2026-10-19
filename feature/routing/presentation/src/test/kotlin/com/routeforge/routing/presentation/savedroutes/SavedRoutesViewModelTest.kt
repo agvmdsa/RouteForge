@@ -13,6 +13,7 @@ import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.coredomain.usecase.ComputeRouteUseCase
 import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
 import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
+import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.presentation.FakeFavoriteRoutesRepository
 import com.routeforge.routing.presentation.FakeRegionCatalog
 import com.routeforge.routing.presentation.FakeRegionUsageTracker
@@ -61,6 +62,7 @@ class SavedRoutesViewModelTest {
                     computeRoute = ComputeRouteUseCase(routingEngine, regionCatalog, RecordRegionUsageUseCase(FakeRegionUsageTracker())),
                     freeRoamRouteBuilder = FreeRoamRouteBuilder(),
                 ),
+            exportRouteFile = ExportRouteFileUseCase(emptyMap()),
             backgroundDispatcher = dispatcher,
         )
 

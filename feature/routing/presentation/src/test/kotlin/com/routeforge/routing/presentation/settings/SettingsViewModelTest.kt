@@ -1,5 +1,6 @@
 package com.routeforge.routing.presentation.settings
 
+import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.MapStyle
@@ -59,6 +60,7 @@ class SettingsViewModelTest {
             getStorageUsageSummary = GetStorageUsageSummaryUseCase(regionCatalog),
             observeMapStyle = ObserveMapStyleUseCase(mapStyleStore),
             setMapStyle = SetMapStyleUseCase(mapStyleStore),
+            tourReplayCoordinator = TourReplayCoordinator(),
         )
 
     @Test
