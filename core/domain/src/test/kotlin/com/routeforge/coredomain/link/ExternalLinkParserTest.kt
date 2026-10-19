@@ -12,6 +12,8 @@ class ExternalLinkParserTest {
         name: String? = null,
     ) = ExternalLink.Place(RoutePoint(latitude, longitude), name)
 
+    private fun route(vararg stops: Pair<Double, Double>) = ExternalLink.Route(stops.map { RoutePoint(it.first, it.second) })
+
     private fun check(
         expected: ExternalLink,
         address: String,
@@ -132,6 +134,51 @@ class ExternalLinkParserTest {
         val address = "https://www.google.com/maps/dir/Brandenburg+Gate/Alexanderplatz/@52.52,13.40,14z"
 
         assertFalse(ExternalLinkParser.parse(address) is ExternalLink.Place)
+    }
+
+    @Test
+    fun `a directions link with coordinate stops is a route in the order of the stops`() {
+        check(route(52.51 to 13.37, 52.52 to 13.41), "https://www.google.com/maps/dir/52.51,13.37/52.52,13.41/")
+        check(
+            route(52.51 to 13.37, 52.52 to 13.41, 52.53 to 13.45),
+            "https://www.google.com/maps/dir/52.51,13.37/52.52,13.41/52.53,13.45/@52.52,13.40,13z",
+        )
+    }
+
+    @Test
+    fun `a directions link with names only takes its stops from the encoded pairs, longitude first`() {
+        val address =
+            "https://www.google.com/maps/dir/Brandenburg+Gate/Alexanderplatz/" +
+                "data=!4m14!4m13!1m5!1m1!1s0x1:0x2!2m2!1d13.3777!2d52.5163!1m5!1m1!1s0x3:0x4!2m2!1d13.4132!2d52.5219!3e0"
+
+        check(route(52.5163 to 13.3777, 52.5219 to 13.4132), address)
+    }
+
+    @Test
+    fun `a stop that is only a name is skipped, never looked up`() {
+        check(
+            route(52.51 to 13.37, 52.53 to 13.45),
+            "https://www.google.com/maps/dir/52.51,13.37/Alexanderplatz/52.53,13.45/",
+        )
+    }
+
+    @Test
+    fun `a directions link with fewer than two stops that have coordinates is not a route`() {
+        assertNone(
+            "https://www.google.com/maps/dir/52.51,13.37/Alexanderplatz/",
+            "https://www.google.com/maps/dir//52.52,13.41/",
+            "https://www.google.com/maps/dir/Brandenburg+Gate/Alexanderplatz/@52.52,13.40,14z/data=!4m8!4m7!1m0!1m0!3e0",
+            "https://www.google.com/maps/dir/",
+            "https://www.google.com/maps/dir/52.51,13.37/91,13/",
+        )
+    }
+
+    @Test
+    fun `the view centre of a directions link is never read as a stop or a place`() {
+        val address = "https://www.google.com/maps/dir/52.51,13.37/Alexanderplatz/@52.52,13.40,14z"
+
+        assertFalse(ExternalLinkParser.parse(address) is ExternalLink.Place)
+        assertFalse(ExternalLinkParser.parse(address) is ExternalLink.Route)
     }
 
     @Test

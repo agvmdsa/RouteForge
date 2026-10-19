@@ -129,4 +129,35 @@ class ResolveSharedTextUseCaseTest {
 
         assertEquals(SharedTextOutcome.Search("Nice spot"), outcome)
     }
+
+    @Test
+    fun `a directions link is read offline into a route`() {
+        val source = FakeRedirectSource()
+
+        val outcome = resolve("Route\nhttps://www.google.com/maps/dir/52.51,13.37/52.52,13.41/", source)
+
+        assertEquals(SharedTextOutcome.Route(listOf(RoutePoint(52.51, 13.37), RoutePoint(52.52, 13.41))), outcome)
+        assertEquals(emptyList<String>(), source.requested)
+    }
+
+    @Test
+    fun `a short link that leads to a directions link is a route`() {
+        val directions = "https://www.google.com/maps/dir/52.51,13.37/52.52,13.41/"
+        val source = FakeRedirectSource(mapOf(shortLink to Result.Success(directions)))
+
+        val outcome = resolve(shortLink, source)
+
+        assertEquals(SharedTextOutcome.Route(listOf(RoutePoint(52.51, 13.37), RoutePoint(52.52, 13.41))), outcome)
+    }
+
+    @Test
+    fun `the first address that can be read wins, whether it is a route or a place`() {
+        val directions = "https://www.google.com/maps/dir/52.51,13.37/52.52,13.41/"
+
+        assertEquals(
+            SharedTextOutcome.Route(listOf(RoutePoint(52.51, 13.37), RoutePoint(52.52, 13.41))),
+            resolve("$directions\ngeo:1,2"),
+        )
+        assertEquals(place(1.0, 2.0), resolve("geo:1,2\n$directions"))
+    }
 }
