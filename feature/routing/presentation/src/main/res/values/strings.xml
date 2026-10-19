@@ -90,6 +90,10 @@
     <string name="routing_add_waypoint_message_named">Add %1$s as a waypoint?</string>
     <string name="routing_add_waypoint_confirm_button">Add waypoint</string>
     <string name="routing_add_waypoint_cancel_button">Cancel</string>
+    <string name="routing_replace_draft_title">Replace the current waypoints?</string>
+    <string name="routing_replace_draft_message">The route you opened will replace the waypoints you have placed.</string>
+    <string name="routing_replace_draft_confirm">Replace</string>
+    <string name="routing_replace_draft_keep">Keep mine</string>
     <string name="routing_save_as_favorite_label">Also save as favorite</string>
     <string name="routing_favorite_name_label">Favorite name</string>
     <string name="routing_save_route_button">Save route as favorite</string>

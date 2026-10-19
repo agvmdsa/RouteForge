@@ -49,6 +49,7 @@ import com.routeforge.designsystem.components.TourLabels
 import com.routeforge.designsystem.components.TourStep
 import com.routeforge.designsystem.components.TourStepResult
 import com.routeforge.designsystem.components.TourTargets
+import com.routeforge.designsystem.components.TwoButtonConfirmationSheet
 import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.map.RouteForgeMapMarker
@@ -544,6 +545,18 @@ private fun RouteRequestDialogs(
             onFavoriteNameChange = { onAction(RouteRequestAction.OnFavoriteNameInputChange(it)) },
             onConfirm = { onAction(RouteRequestAction.OnConfirmAddWaypoint) },
             onDismiss = { onAction(RouteRequestAction.OnDismissAddWaypoint) },
+        )
+    }
+
+    // A route that arrived from another app while waypoints were placed; leaving the sheet keeps them.
+    if (state.pendingReplaceDraft != null) {
+        TwoButtonConfirmationSheet(
+            title = stringResource(R.string.routing_replace_draft_title),
+            message = stringResource(R.string.routing_replace_draft_message),
+            confirmLabel = stringResource(R.string.routing_replace_draft_confirm),
+            dismissLabel = stringResource(R.string.routing_replace_draft_keep),
+            onConfirm = { onAction(RouteRequestAction.OnConfirmReplaceDraft) },
+            onDismiss = { onAction(RouteRequestAction.OnKeepDraft) },
         )
     }
 }
