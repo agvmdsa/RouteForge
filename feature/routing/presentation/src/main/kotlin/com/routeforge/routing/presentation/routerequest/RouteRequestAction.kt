@@ -76,4 +76,10 @@ sealed interface RouteRequestAction {
     data object OnDismissMissingRegionsWarning : RouteRequestAction
 
     data object OnSwitchRouteModeClick : RouteRequestAction
+
+    /** The user chose to replace the placed waypoints with the route that arrived from another app. */
+    data object OnConfirmReplaceDraft : RouteRequestAction
+
+    /** The user chose to keep the placed waypoints and drop the route that arrived. */
+    data object OnKeepDraft : RouteRequestAction
 }

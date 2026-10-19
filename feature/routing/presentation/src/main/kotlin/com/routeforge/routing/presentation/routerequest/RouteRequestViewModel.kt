@@ -8,8 +8,10 @@ import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
+import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
@@ -50,6 +52,7 @@ class RouteRequestViewModel(
     private val favoriteRoutesRepository: FavoriteRoutesRepository,
     private val selectedFavoriteWaypointHolder: SelectedFavoriteWaypointHolder,
     private val pendingSearchWaypointHolder: PendingSearchWaypointHolder,
+    private val pendingIncomingRouteHolder: PendingIncomingRouteHolder,
     observeMapStyle: ObserveMapStyleUseCase,
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
@@ -85,6 +88,14 @@ class RouteRequestViewModel(
                     pendingSearchWaypointHolder.clear()
                 }
             }.launchIn(viewModelScope)
+
+        pendingIncomingRouteHolder.route
+            .onEach { route ->
+                if (route != null) {
+                    receiveIncomingRoute(route)
+                    pendingIncomingRouteHolder.clear()
+                }
+            }.launchIn(viewModelScope)
     }
 
     fun onAction(action: RouteRequestAction) {
@@ -108,6 +119,8 @@ class RouteRequestViewModel(
                 _state.update { it.copy(isSaveAsFavoriteChecked = !it.isSaveAsFavoriteChecked) }
             is RouteRequestAction.OnFavoriteNameInputChange -> _state.update { it.copy(favoriteNameInput = action.value) }
             is RouteRequestAction.OnRouteFileImported -> importRoute(action.bytes, action.format)
+            RouteRequestAction.OnConfirmReplaceDraft -> confirmReplaceDraft()
+            RouteRequestAction.OnKeepDraft -> _state.update { it.copy(pendingReplaceDraft = null) }
             is RouteRequestAction.OnExportRoute -> exportRoute(action.format)
             RouteRequestAction.OnRequestRoute -> requestRoute()
             RouteRequestAction.OnUseRoute -> useRoute()
@@ -268,6 +281,40 @@ class RouteRequestViewModel(
             }
             is Result.Error -> _state.update { it.copy(errorType = result.error.toRouteRequestError()) }
         }
+    }
+
+    /** A route another app handed over: it becomes the draft at once when nothing is placed yet, otherwise the user is asked
+     *  first, so that opening a file never silently throws their waypoints away. A route that cannot be used shows the same
+     *  error as the Import button and changes nothing. */
+    private fun receiveIncomingRoute(route: IncomingRoute) {
+        val points =
+            when (route) {
+                is IncomingRoute.Stops -> route.points
+                is IncomingRoute.GpxFile ->
+                    when (val result = importRouteFile(route.bytes, RouteFileFormat.GPX)) {
+                        is Result.Success -> result.data.points
+                        is Result.Error -> {
+                            _state.update { it.copy(errorType = result.error.toRouteRequestError()) }
+                            return
+                        }
+                    }
+            }
+        if (points.size < MIN_WAYPOINTS_TO_PLAY) {
+            _state.update { it.copy(errorType = RouteRequestError.IMPORT_TOO_FEW_WAYPOINTS) }
+            return
+        }
+        val arrived = RouteDraft(points = points)
+        if (_state.value.draft.points.isEmpty()) {
+            mutateDraft { arrived }
+        } else {
+            _state.update { it.copy(pendingReplaceDraft = arrived) }
+        }
+    }
+
+    private fun confirmReplaceDraft() {
+        val arrived = _state.value.pendingReplaceDraft ?: return
+        _state.update { it.copy(pendingReplaceDraft = null) }
+        mutateDraft { arrived }
     }
 
     private fun exportRoute(format: RouteFileFormat) {

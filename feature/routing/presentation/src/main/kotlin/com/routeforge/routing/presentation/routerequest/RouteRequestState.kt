@@ -38,4 +38,7 @@ data class RouteRequestState(
      *  yet. */
     val isComputingPreview: Boolean = false,
     val mapStyle: MapStyle = MapStyle.DEFAULT,
+    /** A route that arrived from another app while waypoints were already placed; non-null while the "Replace the current
+     *  waypoints?" question is showing. */
+    val pendingReplaceDraft: RouteDraft? = null,
 )
