@@ -24,6 +24,8 @@ data class AddressSearchRoute(
     val initialLatitude: Double? = null,
     val initialLongitude: Double? = null,
     val initialName: String? = null,
+    /** Text that arrived from another app and led to no place: the screen opens with it typed in and searched. */
+    val initialQuery: String? = null,
 )
 
 /** A place that arrived from outside the app, with its name when it has one. */

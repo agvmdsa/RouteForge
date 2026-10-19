@@ -47,8 +47,13 @@ private class FakeGeocodeClient(
      *  to [result] once empty, so every other test (which never touches this) is unaffected. */
     val queuedResponses = mutableListOf<CompletableDeferred<Result<List<PlaceSearchResult>, DataError.Network>>>()
 
-    override suspend fun search(query: String): Result<List<PlaceSearchResult>, DataError.Network> =
-        if (queuedResponses.isNotEmpty()) queuedResponses.removeAt(0).await() else result
+    /** Every query that was asked for, in order. */
+    val queries = mutableListOf<String>()
+
+    override suspend fun search(query: String): Result<List<PlaceSearchResult>, DataError.Network> {
+        queries += query
+        return if (queuedResponses.isNotEmpty()) queuedResponses.removeAt(0).await() else result
+    }
 }
 
 private class FakeFavoriteWaypointsRepository : FavoriteWaypointsRepository {
@@ -96,12 +101,14 @@ class AddressSearchViewModelTest {
     private fun createViewModel(
         sourceContext: SearchSourceContext = SearchSourceContext.TELEPORT_OR_FAVORITE,
         initialPlace: InitialPlace? = null,
+        initialQuery: String? = null,
     ): AddressSearchViewModel =
         AddressSearchViewModel(
             sourceContext = sourceContext,
             referenceLatitude = null,
             referenceLongitude = null,
             initialPlace = initialPlace,
+            initialQuery = initialQuery,
             searchPlaces = SearchPlacesUseCase(geocodeClient, RankSearchResultsUseCase(), LastKnownRealLocationHolder()),
             pendingSearchWaypointHolder = pendingSearchWaypointHolder,
             pendingTeleportTargetHolder = pendingTeleportTargetHolder,
@@ -336,5 +343,43 @@ class AddressSearchViewModelTest {
     @Test
     fun `without an arrived place nothing is pending`() {
         assertNull(createViewModel().state.value.pendingChoiceResult)
+    }
+
+    @Test
+    fun `an initial query fills the field and is searched once on start`() {
+        val viewModel = createViewModel(initialQuery = "Brandenburg Gate Pariser Platz")
+
+        assertEquals("Brandenburg Gate Pariser Platz", viewModel.state.value.query)
+        assertEquals(listOf("Brandenburg Gate Pariser Platz"), geocodeClient.queries)
+        assertTrue(viewModel.state.value.hasSearched)
+        assertEquals(1, viewModel.state.value.results.size)
+    }
+
+    @Test
+    fun `an initial query with no place leaves no choice pending until a result is picked`() {
+        val viewModel = createViewModel(initialQuery = "Brandenburg Gate")
+
+        assertNull(viewModel.state.value.pendingChoiceResult)
+
+        viewModel.onAction(AddressSearchAction.OnSelectResult(0))
+
+        assertEquals("Place", viewModel.state.value.pendingChoiceResult?.name)
+    }
+
+    @Test
+    fun `without an initial query nothing is searched`() {
+        val viewModel = createViewModel(initialQuery = null)
+
+        assertEquals("", viewModel.state.value.query)
+        assertEquals(emptyList<String>(), geocodeClient.queries)
+        assertFalse(viewModel.state.value.hasSearched)
+    }
+
+    @Test
+    fun `a blank initial query is not searched`() {
+        val viewModel = createViewModel(initialQuery = "   ")
+
+        assertEquals(emptyList<String>(), geocodeClient.queries)
+        assertFalse(viewModel.state.value.hasSearched)
     }
 }

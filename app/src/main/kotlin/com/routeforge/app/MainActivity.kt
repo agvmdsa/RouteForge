@@ -123,6 +123,7 @@ class MainActivity : ComponentActivity() {
                                 referenceLatitude = route.referenceLatitude,
                                 referenceLongitude = route.referenceLongitude,
                                 initialPlace = route.initialPlace(),
+                                initialQuery = route.initialQuery,
                                 onNavigateBack = { navController.popBackStack() },
                             )
                         }
