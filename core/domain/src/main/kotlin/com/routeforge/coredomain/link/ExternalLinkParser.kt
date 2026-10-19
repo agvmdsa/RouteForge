@@ -13,6 +13,8 @@ private val GOOGLE_PLACE_NAME = Regex("""/maps/place/([^/]+)""")
 
 private val OSM_HOSTS = setOf("openstreetmap.org", "www.openstreetmap.org")
 private val GOOGLE_HOSTS = setOf("google.com", "www.google.com", "maps.google.com")
+private const val SHORT_LINK_HOST = "maps.app.goo.gl"
+private const val LEGACY_SHORT_LINK_HOST = "goo.gl"
 private val GOOGLE_POSITION_PARAMETERS = listOf("q", "ll", "query")
 
 /** Reads what a link means, in plain Kotlin so that it can be tested without Android. Never throws. */
@@ -47,9 +49,17 @@ object ExternalLinkParser {
         return when (host) {
             in OSM_HOSTS -> readOpenStreetMap(query, fragment)
             in GOOGLE_HOSTS -> if (isMapsPath(host, path)) readGoogleMaps(address, path, query) else ExternalLink.None
+            SHORT_LINK_HOST -> shortLink(address, path)
+            LEGACY_SHORT_LINK_HOST -> if (path.startsWith("/maps/")) shortLink(address, path) else ExternalLink.None
             else -> ExternalLink.None
         }
     }
+
+    /** Only recognised: following it takes the network, which this parser never uses. */
+    private fun shortLink(
+        address: String,
+        path: String,
+    ) = if (path.trim('/').isEmpty()) ExternalLink.None else ExternalLink.ShortLink(address)
 
     private fun isMapsPath(
         host: String,
