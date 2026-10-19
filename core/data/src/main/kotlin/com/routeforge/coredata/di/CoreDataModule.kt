@@ -17,6 +17,7 @@ import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
@@ -34,6 +35,7 @@ val coreDataModule =
         single { DraftWaypointsHolder() }
         single { PendingTeleportTargetHolder() }
         single { PendingSearchWaypointHolder() }
+        single { PendingIncomingRouteHolder() }
         single { SelectedFavoriteWaypointHolder() }
         single { SharedPreferencesFavoriteWaypointsRepository(androidContext()) }.bind<FavoriteWaypointsRepository>()
         single { SharedPreferencesFavoriteRoutesRepository(androidContext()) }.bind<FavoriteRoutesRepository>()
