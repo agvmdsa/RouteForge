@@ -2,6 +2,7 @@ package com.routeforge.coredata.di
 
 import com.routeforge.coredata.AndroidNetworkConnectivityChecker
 import com.routeforge.coredata.HttpClientFactory
+import com.routeforge.coredata.HttpRedirectSource
 import com.routeforge.coredata.PlatformMockLocationAuthorizationChecker
 import com.routeforge.coredata.SharedPreferencesFavoriteRoutesRepository
 import com.routeforge.coredata.SharedPreferencesFavoriteWaypointsRepository
@@ -21,7 +22,11 @@ import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
+import com.routeforge.coredomain.link.RedirectFollower
+import com.routeforge.coredomain.link.RedirectSource
+import com.routeforge.coredomain.link.ResolveSharedTextUseCase
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
 import org.koin.dsl.module
@@ -43,4 +48,7 @@ val coreDataModule =
         single { SharedPreferencesMapStyleStore(androidContext()) }.bind<MapStyleStore>()
         single { SharedPreferencesTourProgressRepository(androidContext(), get()) }.bind<TourProgressRepository>()
         single { TourReplayCoordinator() }
+        single { HttpRedirectSource(get()) }.bind<RedirectSource>()
+        single { RedirectFollower(get()) }
+        factoryOf(::ResolveSharedTextUseCase)
     }
