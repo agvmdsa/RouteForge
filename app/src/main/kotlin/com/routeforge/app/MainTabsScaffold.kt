@@ -15,7 +15,6 @@ import androidx.compose.material3.ShortNavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -116,6 +115,9 @@ private val NavBarEntries: List<NavBarEntry> =
     )
 
 private val Tabs: List<TabItem> = NavBarEntries.filterIsInstance<NavBarEntry.Tab>().map { it.item }
+
+/** The tab whose own root screen is showing, or `null` on a pushed screen and during the first-run setup. */
+internal fun NavDestination.rootTab(): AppTab? = Tabs.firstOrNull { it.isRootDestination(this) }?.tab
 
 /** Navigates to [tabRoute] the way every bottom-tab-bar implementation should (research.md Decision 1
  *  for spec 007): pops back to the graph's start with its state saved, then restores the target tab's
