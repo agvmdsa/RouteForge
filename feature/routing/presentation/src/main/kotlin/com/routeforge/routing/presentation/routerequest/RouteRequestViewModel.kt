@@ -79,7 +79,7 @@ class RouteRequestViewModel(
                         it.copy(
                             pendingAddLatitude = result.latitude,
                             pendingAddLongitude = result.longitude,
-                            pendingAddPlaceName = result.name,
+                            pendingAddPlaceName = result.name.takeIf { it.isNotBlank() },
                         )
                     }
                     pendingSearchWaypointHolder.clear()

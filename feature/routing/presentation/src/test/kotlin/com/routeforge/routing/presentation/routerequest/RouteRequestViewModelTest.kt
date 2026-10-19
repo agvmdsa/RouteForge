@@ -219,6 +219,21 @@ class RouteRequestViewModelTest {
         assertNull(pendingSearchWaypointHolder.selected.value)
     }
 
+    @Test
+    fun `a place that arrived with no name is a pending add with no place name, so the coordinates are shown`() {
+        val viewModel = createViewModel()
+
+        pendingSearchWaypointHolder.set(
+            PlaceSearchResult(name = "", formattedAddress = "", latitude = 52.52, longitude = 13.405, importance = 0.0),
+        )
+
+        val state = viewModel.state.value
+        assertEquals(52.52, state.pendingAddLatitude)
+        assertEquals(13.405, state.pendingAddLongitude)
+        assertNull(state.pendingAddPlaceName)
+        assertNull(pendingSearchWaypointHolder.selected.value)
+    }
+
     // --- Favorite Routes: save a planned route (spec 005-favorite-routes, US1) ---
 
     @Test
