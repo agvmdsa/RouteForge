@@ -135,6 +135,18 @@ class ExternalLinkParserTest {
     }
 
     @Test
+    fun `a short Google Maps link is recognised and left alone`() {
+        check(ExternalLink.ShortLink("https://maps.app.goo.gl/AbCdEf123"), "https://maps.app.goo.gl/AbCdEf123")
+        check(ExternalLink.ShortLink("https://goo.gl/maps/AbCdEf123"), "https://goo.gl/maps/AbCdEf123")
+        check(ExternalLink.ShortLink("http://maps.app.goo.gl/AbCdEf123"), "  http://maps.app.goo.gl/AbCdEf123 ")
+    }
+
+    @Test
+    fun `other shorteners and other goo gl paths are not short Google Maps links`() {
+        assertNone("https://goo.gl/photos/AbCdEf123", "https://goo.gl/", "https://bit.ly/AbCdEf123", "https://g.co/kgs/AbCdEf")
+    }
+
+    @Test
     fun `other hosts, schemes and shapes are not read`() {
         assertNone(
             "https://example.com/maps/@52.52,13.405,15z",
