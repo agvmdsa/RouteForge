@@ -37,6 +37,7 @@ Most "fake GPS" apps on the Play Store connect waypoints with a straight line an
 - **Favorite a whole route** — once you've placed two or more waypoints, save the set as a named favorite route — before you've even computed or played it. Reopen it later from the Saved tab, which computes it and loads it straight onto the Simulate screen.
 - **Manage offline regions** — the Settings tab shows how much space downloaded map data is using, lets you set a storage quota, and the region catalog lets you download or delete coverage for specific areas.
 - **Search** — tap the magnifying-glass icon in the bottom bar from any tab to look up an address or place. From Plan Route, picking a result adds it as a waypoint; from anywhere else, you're offered to teleport to it or save it as a favorite.
+- **Open and share** — choose RouteForge in "Open with" for a `.gpx` file, a `geo:` link, or an OpenStreetMap or Google Maps link, or share a place from Google Maps to it: you get the same choice as from Search (add as a waypoint on Plan Route; teleport or save as a favorite elsewhere). A Google Maps directions link with coordinates, or a `.gpx` file, becomes the Plan Route draft, asking first if you have waypoints placed. Coordinates in a link or in shared text are read offline; only a short `maps.app.goo.gl` link is followed over the internet (a few requests to Google's own hosts, headers only), and if that isn't possible the text is offered to Search instead.
 
 ## Status
 
