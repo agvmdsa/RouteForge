@@ -10,6 +10,7 @@ private val OSM_MAP_FRAGMENT = Regex("""map=\d+(?:\.\d+)?/($NUMBER)/($NUMBER)"""
 private val GOOGLE_PIN = Regex("""!3d($NUMBER)!4d($NUMBER)""")
 private val GOOGLE_VIEW_CENTRE = Regex("""/@($NUMBER),($NUMBER)""")
 private val GOOGLE_PLACE_NAME = Regex("""/maps/place/([^/]+)""")
+private val GOOGLE_ENCODED_STOP = Regex("""!1d($NUMBER)!2d($NUMBER)""")
 
 private val OSM_HOSTS = setOf("openstreetmap.org", "www.openstreetmap.org")
 private val GOOGLE_HOSTS = setOf("google.com", "www.google.com", "maps.google.com")
@@ -80,7 +81,7 @@ object ExternalLinkParser {
         path: String,
         query: Map<String, String>,
     ): ExternalLink {
-        if (path.startsWith("/maps/dir")) return ExternalLink.None
+        if (path.startsWith("/maps/dir")) return readDirections(address, path)
         val pin = GOOGLE_PIN.findAll(address).lastOrNull()?.let { pointOf(it) }
         val fromQuery =
             GOOGLE_POSITION_PARAMETERS.firstNotNullOfOrNull { name ->
@@ -90,6 +91,28 @@ object ExternalLinkParser {
         val point = pin ?: fromQuery ?: centre ?: return ExternalLink.None
         return ExternalLink.Place(point, googlePlaceName(path))
     }
+
+    /**
+     * The stops that have coordinates, in order: the encoded `!1d<longitude>!2d<latitude>` pairs when there are at least two
+     * (names-only links carry their stops there), otherwise the path segments that are `latitude,longitude`. Stops that are
+     * only a name are skipped, and the `@` view centre is never a stop.
+     */
+    private fun readDirections(
+        address: String,
+        path: String,
+    ): ExternalLink {
+        val encoded = GOOGLE_ENCODED_STOP.findAll(address).map { pointOf(it.groupValues[2], it.groupValues[1]) }.toList()
+        val stops = if (encoded.size >= 2) encoded else pathStops(path)
+        return if (stops.size >= 2 && stops.all { it != null }) ExternalLink.Route(stops.filterNotNull()) else ExternalLink.None
+    }
+
+    /** One entry per segment that is a coordinate pair; null for a pair that is out of range. */
+    private fun pathStops(path: String): List<RoutePoint?> =
+        path
+            .removePrefix("/maps/dir")
+            .split('/')
+            .mapNotNull { COORDINATE_PAIR.matchEntire(URLDecoder.decode(it, "UTF-8")) }
+            .map { pointOf(it) }
 
     private fun googlePlaceName(path: String): String? =
         GOOGLE_PLACE_NAME
