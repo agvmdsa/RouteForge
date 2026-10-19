@@ -1,9 +1,10 @@
 package com.routeforge.app
 
-import org.koin.core.module.dsl.viewModelOf
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
 
 val appModule =
     module {
-        viewModelOf(::IncomingItemsViewModel)
+        viewModel { IncomingItemsViewModel(resolveSharedText = get(), applicationContext = androidContext()) }
     }

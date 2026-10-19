@@ -8,6 +8,11 @@ sealed interface IncomingRequest {
     data class Address(
         val value: String,
     ) : IncomingRequest
+
+    /** Text shared with RouteForge from another app's Share sheet. */
+    data class SharedText(
+        val value: String,
+    ) : IncomingRequest
 }
 
 /** What came out of reading a request, kept until a tab is on screen to act on it. */

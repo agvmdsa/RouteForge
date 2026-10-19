@@ -197,8 +197,13 @@ private fun HandleIncomingItems(
                         )
                     IncomingAction.NoCoordinates -> Toast.makeText(context, R.string.external_no_coordinates, Toast.LENGTH_LONG).show()
                     IncomingAction.NotFound -> Toast.makeText(context, R.string.external_place_not_found, Toast.LENGTH_LONG).show()
-                    // A route and a search only come from the share and file paths, added in later steps.
-                    is IncomingAction.LoadRoute, is IncomingAction.OpenSearch -> Unit
+                    is IncomingAction.OpenSearch -> {
+                        val sourceContext =
+                            if (action.onPlanRoute) SearchSourceContext.PLAN_ROUTE else SearchSourceContext.TELEPORT_OR_FAVORITE
+                        navController.navigate(AddressSearchRoute(sourceContext = sourceContext, initialQuery = action.query))
+                    }
+                    // A route only comes from the file and directions paths, added in later steps.
+                    is IncomingAction.LoadRoute -> Unit
                 }
         }
     }
