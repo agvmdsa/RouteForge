@@ -11,6 +11,7 @@ import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.model.FavoriteWaypoint
 import com.routeforge.coredomain.model.PlaceSearchResult
+import com.routeforge.coredomain.model.RoutePoint
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -92,11 +93,15 @@ class AddressSearchViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel(sourceContext: SearchSourceContext = SearchSourceContext.TELEPORT_OR_FAVORITE): AddressSearchViewModel =
+    private fun createViewModel(
+        sourceContext: SearchSourceContext = SearchSourceContext.TELEPORT_OR_FAVORITE,
+        initialPlace: InitialPlace? = null,
+    ): AddressSearchViewModel =
         AddressSearchViewModel(
             sourceContext = sourceContext,
             referenceLatitude = null,
             referenceLongitude = null,
+            initialPlace = initialPlace,
             searchPlaces = SearchPlacesUseCase(geocodeClient, RankSearchResultsUseCase(), LastKnownRealLocationHolder()),
             pendingSearchWaypointHolder = pendingSearchWaypointHolder,
             pendingTeleportTargetHolder = pendingTeleportTargetHolder,
@@ -265,4 +270,71 @@ class AddressSearchViewModelTest {
             assertEquals(listOf(Triple("Home", 5.0, 6.0)), favoriteWaypointsRepository.added)
             assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
         }
+
+    @Test
+    fun `a place that arrived from outside starts as a pending teleport-or-favorite choice`() {
+        val viewModel = createViewModel(initialPlace = InitialPlace(52.52, 13.405, "Brandenburg Gate"))
+
+        val choice = viewModel.state.value.pendingChoiceResult
+        assertEquals("Brandenburg Gate", choice?.name)
+        assertEquals(52.52, choice?.latitude)
+        assertEquals(13.405, choice?.longitude)
+    }
+
+    @Test
+    fun `saving an arrived place as a favorite starts from its name`() {
+        val viewModel = createViewModel(initialPlace = InitialPlace(52.52, 13.405, "Brandenburg Gate"))
+
+        viewModel.onAction(AddressSearchAction.OnChooseSaveAsFavorite)
+
+        assertTrue(viewModel.state.value.isNamingFavorite)
+        assertEquals("Brandenburg Gate", viewModel.state.value.favoriteNameInput)
+    }
+
+    @Test
+    fun `an arrived place with no name has a blank name and the favorite name starts empty`() {
+        val viewModel = createViewModel(initialPlace = InitialPlace(52.52, 13.405, name = null))
+
+        assertEquals("", viewModel.state.value.pendingChoiceResult?.name)
+        viewModel.onAction(AddressSearchAction.OnChooseSaveAsFavorite)
+        assertEquals("", viewModel.state.value.favoriteNameInput)
+    }
+
+    @Test
+    fun `teleporting to an arrived place hands off its coordinates, like a tapped result`() =
+        runTest {
+            val viewModel = createViewModel(initialPlace = InitialPlace(52.52, 13.405, "Brandenburg Gate"))
+            val eventDeferred = async { viewModel.events.first() }
+
+            viewModel.onAction(AddressSearchAction.OnChooseTeleport)
+
+            assertEquals(RoutePoint(latitude = 52.52, longitude = 13.405), pendingTeleportTargetHolder.target.value)
+            assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
+        }
+
+    @Test
+    fun `confirming the favorite name of an arrived place saves it under its coordinates`() {
+        val viewModel = createViewModel(initialPlace = InitialPlace(52.52, 13.405, "Brandenburg Gate"))
+        viewModel.onAction(AddressSearchAction.OnChooseSaveAsFavorite)
+
+        viewModel.onAction(AddressSearchAction.OnConfirmFavoriteName)
+
+        assertEquals(listOf(Triple("Brandenburg Gate", 52.52, 13.405)), favoriteWaypointsRepository.added)
+    }
+
+    @Test
+    fun `an arrived place opened from Plan Route is handed off to route creation without a choice prompt`() =
+        runTest {
+            val viewModel = createViewModel(SearchSourceContext.PLAN_ROUTE, InitialPlace(52.52, 13.405, "Brandenburg Gate"))
+            val eventDeferred = async { viewModel.events.first() }
+
+            assertEquals("Brandenburg Gate", pendingSearchWaypointHolder.selected.value?.name)
+            assertNull(viewModel.state.value.pendingChoiceResult)
+            assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
+        }
+
+    @Test
+    fun `without an arrived place nothing is pending`() {
+        assertNull(createViewModel().state.value.pendingChoiceResult)
+    }
 }

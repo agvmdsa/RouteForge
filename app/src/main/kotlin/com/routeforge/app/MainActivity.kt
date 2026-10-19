@@ -20,6 +20,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.routeforge.addresssearch.presentation.AddressSearchRoot
 import com.routeforge.addresssearch.presentation.AddressSearchRoute
+import com.routeforge.addresssearch.presentation.initialPlace
 import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.model.TourSection
 import com.routeforge.designsystem.theme.RouteForgeTheme
@@ -108,6 +109,7 @@ class MainActivity : ComponentActivity() {
                                 sourceContext = route.sourceContext,
                                 referenceLatitude = route.referenceLatitude,
                                 referenceLongitude = route.referenceLongitude,
+                                initialPlace = route.initialPlace(),
                                 onNavigateBack = { navController.popBackStack() },
                             )
                         }
