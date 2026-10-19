@@ -10,7 +10,6 @@ import com.routeforge.coredomain.usecase.ComputeRouteUseCase
 import com.routeforge.routing.domain.usecase.DeleteRegionUseCase
 import com.routeforge.routing.domain.usecase.DownloadRegionUseCase
 import com.routeforge.routing.domain.usecase.EnforceStorageQuotaUseCase
-import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.GetStorageUsageSummaryUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
 import com.routeforge.routing.domain.usecase.ObserveStorageQuotaUseCase
@@ -62,6 +61,7 @@ val routingPresentationModule =
                 favoriteRoutesRepository = get(),
                 selectedFavoriteWaypointHolder = get(),
                 pendingSearchWaypointHolder = get(),
+                pendingIncomingRouteHolder = get(),
                 observeMapStyle = get(),
             )
         }
