@@ -30,6 +30,7 @@ import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.link.IncomingAction
 import com.routeforge.coredomain.link.IncomingPlacement
+import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.TourSection
 import com.routeforge.designsystem.theme.RouteForgeTheme
@@ -204,8 +205,10 @@ private fun HandleIncomingItems(
                             if (action.onPlanRoute) SearchSourceContext.PLAN_ROUTE else SearchSourceContext.TELEPORT_OR_FAVORITE
                         navController.navigate(AddressSearchRoute(sourceContext = sourceContext, initialQuery = action.query))
                     }
-                    // A route from a directions link, added in a later step.
-                    is IncomingAction.LoadRoute -> Unit
+                    is IncomingAction.LoadRoute -> {
+                        incomingRouteHolder.set(IncomingRoute.Stops(action.stops))
+                        navController.switchToTab(PlanTabRoute)
+                    }
                 }
             is IncomingResult.Route -> {
                 incomingRouteHolder.set(result.route)
