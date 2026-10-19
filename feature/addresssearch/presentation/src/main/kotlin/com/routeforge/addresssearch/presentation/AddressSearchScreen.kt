@@ -36,6 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.NameEntryConfirmationSheet
+import com.routeforge.designsystem.format.formatCoordinates
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.designsystem.theme.Spacing
 import org.koin.androidx.compose.koinViewModel
@@ -50,8 +51,9 @@ fun AddressSearchRoot(
     referenceLatitude: Double?,
     referenceLongitude: Double?,
     onNavigateBack: () -> Unit,
+    initialPlace: InitialPlace? = null,
     viewModel: AddressSearchViewModel =
-        koinViewModel { parametersOf(sourceContext, referenceLatitude, referenceLongitude) },
+        koinViewModel { parametersOf(sourceContext, referenceLatitude, referenceLongitude, initialPlace) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -186,7 +188,10 @@ private fun TeleportOrFavoriteChoiceSheet(
     onChooseSaveAsFavorite: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ConfirmationBottomSheet(title = result.name, onDismiss = onDismiss) {
+    ConfirmationBottomSheet(
+        title = result.name.ifBlank { formatCoordinates(result.latitude, result.longitude) },
+        onDismiss = onDismiss,
+    ) {
         Button(onClick = onChooseTeleport, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.address_search_teleport_button))
         }

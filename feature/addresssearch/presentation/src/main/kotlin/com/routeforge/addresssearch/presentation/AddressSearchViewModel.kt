@@ -7,6 +7,7 @@ import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
+import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.RoutePoint
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -16,7 +17,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** [sourceContext]/[referenceLatitude]/[referenceLongitude] come from the [AddressSearchRoute] the
+/** [sourceContext]/[referenceLatitude]/[referenceLongitude]/[initialPlace] come from the [AddressSearchRoute] the
  *  screen was opened with — passed as plain constructor parameters (via Koin's parameterized
  *  `viewModel { ... }` DSL) rather than a `SavedStateHandle`, since they're immutable for this
  *  screen's whole lifetime. */
@@ -24,6 +25,7 @@ class AddressSearchViewModel(
     sourceContext: SearchSourceContext,
     private val referenceLatitude: Double?,
     private val referenceLongitude: Double?,
+    initialPlace: InitialPlace? = null,
     private val searchPlaces: SearchPlacesUseCase,
     private val pendingSearchWaypointHolder: PendingSearchWaypointHolder,
     private val pendingTeleportTargetHolder: PendingTeleportTargetHolder,
@@ -36,6 +38,20 @@ class AddressSearchViewModel(
     val events = _events.receiveAsFlow()
 
     private var searchJob: Job? = null
+
+    init {
+        initialPlace?.let { place ->
+            choose(
+                PlaceSearchResult(
+                    name = place.name.orEmpty(),
+                    formattedAddress = "",
+                    latitude = place.latitude,
+                    longitude = place.longitude,
+                    importance = 0.0,
+                ),
+            )
+        }
+    }
 
     fun onAction(action: AddressSearchAction) {
         when (action) {
@@ -83,6 +99,11 @@ class AddressSearchViewModel(
 
     private fun selectResult(index: Int) {
         val result = _state.value.results.getOrNull(index) ?: return
+        choose(result)
+    }
+
+    /** Picking a result, or arriving with a place from another app, leads to the same next step. */
+    private fun choose(result: PlaceSearchResult) {
         if (_state.value.sourceContext == SearchSourceContext.PLAN_ROUTE) {
             pendingSearchWaypointHolder.set(result)
             viewModelScope.launch { _events.send(AddressSearchEvent.NavigateBack) }

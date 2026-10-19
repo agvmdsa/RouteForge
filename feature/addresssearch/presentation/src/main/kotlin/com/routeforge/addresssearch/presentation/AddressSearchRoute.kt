@@ -19,4 +19,19 @@ data class AddressSearchRoute(
     val sourceContext: SearchSourceContext,
     val referenceLatitude: Double? = null,
     val referenceLongitude: Double? = null,
+    /** A place that arrived from another app (a link, a share): the screen opens straight on the choice for it. Kept as three
+     *  plain values because a typed route cannot carry a class of its own without extra navigation plumbing. */
+    val initialLatitude: Double? = null,
+    val initialLongitude: Double? = null,
+    val initialName: String? = null,
 )
+
+/** A place that arrived from outside the app, with its name when it has one. */
+data class InitialPlace(
+    val latitude: Double,
+    val longitude: Double,
+    val name: String?,
+)
+
+fun AddressSearchRoute.initialPlace(): InitialPlace? =
+    if (initialLatitude != null && initialLongitude != null) InitialPlace(initialLatitude, initialLongitude, initialName) else null
