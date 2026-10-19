@@ -19,6 +19,7 @@ class RouteForgeApp : Application() {
         startKoin {
             androidContext(this@RouteForgeApp)
             modules(
+                appModule,
                 coreDataModule,
                 addressSearchDataModule,
                 addressSearchPresentationModule,

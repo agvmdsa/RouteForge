@@ -5,4 +5,6 @@
     <string name="tab_search_label">Search</string>
     <string name="tab_saved_label">Saved</string>
     <string name="tab_settings_label">Settings</string>
+    <string name="external_no_coordinates">This link has no coordinates RouteForge can use</string>
+    <string name="external_place_not_found">Couldn\'t find that place</string>
 </resources>
