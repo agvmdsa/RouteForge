@@ -7,5 +7,6 @@
     <string name="tab_settings_label">Settings</string>
     <string name="external_looking_up">Looking up the place…</string>
     <string name="external_no_coordinates">This link has no coordinates RouteForge can use</string>
+    <string name="external_file_unreadable">Couldn\'t read that file</string>
     <string name="external_place_not_found">Couldn\'t find that place</string>
 </resources>

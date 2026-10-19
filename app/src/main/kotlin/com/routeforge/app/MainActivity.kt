@@ -26,6 +26,7 @@ import com.routeforge.addresssearch.presentation.AddressSearchRoute
 import com.routeforge.addresssearch.presentation.SearchSourceContext
 import com.routeforge.addresssearch.presentation.initialPlace
 import com.routeforge.coredomain.TourReplayCoordinator
+import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.link.IncomingAction
 import com.routeforge.coredomain.link.IncomingPlacement
@@ -175,6 +176,7 @@ private fun HandleIncomingItems(
     val rootTab = navController.currentBackStackEntryAsState().value?.destination?.rootTab()
     val context = LocalContext.current
     val searchWaypointHolder: PendingSearchWaypointHolder = koinInject()
+    val incomingRouteHolder: PendingIncomingRouteHolder = koinInject()
     LaunchedEffect(pending, rootTab) {
         if (pending == null || rootTab == null) return@LaunchedEffect
         val result = incomingItems.consume() ?: return@LaunchedEffect
@@ -202,9 +204,14 @@ private fun HandleIncomingItems(
                             if (action.onPlanRoute) SearchSourceContext.PLAN_ROUTE else SearchSourceContext.TELEPORT_OR_FAVORITE
                         navController.navigate(AddressSearchRoute(sourceContext = sourceContext, initialQuery = action.query))
                     }
-                    // A route only comes from the file and directions paths, added in later steps.
+                    // A route from a directions link, added in a later step.
                     is IncomingAction.LoadRoute -> Unit
                 }
+            is IncomingResult.Route -> {
+                incomingRouteHolder.set(result.route)
+                navController.switchToTab(PlanTabRoute)
+            }
+            is IncomingResult.Message -> Toast.makeText(context, result.text, Toast.LENGTH_LONG).show()
         }
     }
 }
