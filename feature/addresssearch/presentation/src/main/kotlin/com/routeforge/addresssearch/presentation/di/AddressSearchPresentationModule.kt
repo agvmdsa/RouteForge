@@ -18,6 +18,7 @@ val addressSearchPresentationModule =
                 referenceLatitude: Double?,
                 referenceLongitude: Double?,
                 initialPlace: InitialPlace?,
+                initialQuery: String?,
             ),
             ->
             AddressSearchViewModel(
@@ -25,6 +26,7 @@ val addressSearchPresentationModule =
                 referenceLatitude = referenceLatitude,
                 referenceLongitude = referenceLongitude,
                 initialPlace = initialPlace,
+                initialQuery = initialQuery,
                 searchPlaces = get(),
                 pendingSearchWaypointHolder = get(),
                 pendingTeleportTargetHolder = get(),

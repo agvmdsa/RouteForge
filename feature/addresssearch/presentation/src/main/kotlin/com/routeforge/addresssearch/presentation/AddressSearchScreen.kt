@@ -52,8 +52,9 @@ fun AddressSearchRoot(
     referenceLongitude: Double?,
     onNavigateBack: () -> Unit,
     initialPlace: InitialPlace? = null,
+    initialQuery: String? = null,
     viewModel: AddressSearchViewModel =
-        koinViewModel { parametersOf(sourceContext, referenceLatitude, referenceLongitude, initialPlace) },
+        koinViewModel { parametersOf(sourceContext, referenceLatitude, referenceLongitude, initialPlace, initialQuery) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 

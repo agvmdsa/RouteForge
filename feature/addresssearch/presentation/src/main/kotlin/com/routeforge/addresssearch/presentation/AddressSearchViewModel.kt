@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** [sourceContext]/[referenceLatitude]/[referenceLongitude]/[initialPlace] come from the [AddressSearchRoute] the
+/** [sourceContext]/[referenceLatitude]/[referenceLongitude]/[initialPlace]/[initialQuery] come from the [AddressSearchRoute] the
  *  screen was opened with — passed as plain constructor parameters (via Koin's parameterized
  *  `viewModel { ... }` DSL) rather than a `SavedStateHandle`, since they're immutable for this
  *  screen's whole lifetime. */
@@ -26,12 +26,16 @@ class AddressSearchViewModel(
     private val referenceLatitude: Double?,
     private val referenceLongitude: Double?,
     initialPlace: InitialPlace? = null,
+    initialQuery: String? = null,
     private val searchPlaces: SearchPlacesUseCase,
     private val pendingSearchWaypointHolder: PendingSearchWaypointHolder,
     private val pendingTeleportTargetHolder: PendingTeleportTargetHolder,
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(AddressSearchState(sourceContext = sourceContext))
+    private val _state =
+        MutableStateFlow(
+            AddressSearchState(sourceContext = sourceContext, query = initialQuery?.takeIf { it.isNotBlank() }.orEmpty()),
+        )
     val state = _state.asStateFlow()
 
     private val _events = Channel<AddressSearchEvent>()
@@ -51,6 +55,8 @@ class AddressSearchViewModel(
                 ),
             )
         }
+        // Text that arrived from another app is searched for once, as if it had been typed and submitted.
+        if (_state.value.query.isNotBlank()) submit()
     }
 
     fun onAction(action: AddressSearchAction) {
