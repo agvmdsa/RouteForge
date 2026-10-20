@@ -100,3 +100,26 @@ jobs:
 
       - name: Run the tests of the CI scripts
         run: bash .github/scripts/tests/run.sh
+
+  # Warnings only: this job never makes a pull request fail (the script exits 0 and the job may not fail the run either).
+  # It does not run for pushes to main or for tags, and so not when the release workflow calls this one.
+  conventions:
+    name: conventions
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+      - name: Check out the pull request's commits
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check the branch name and the commit subjects
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BRANCH: ${{ github.head_ref }}
+        run: bash .github/scripts/check-conventions.sh "$BASE_SHA" "$HEAD_SHA" "$BRANCH"
