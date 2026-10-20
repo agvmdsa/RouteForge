@@ -52,17 +52,17 @@ jobs:
 
       - name: Style
         id: style
-        run: ./gradlew ktlintCheck
+        run: ./gradlew ktlintCheck --continue
 
       - name: Build
         id: build
         if: success() || failure()
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --continue
 
       - name: Unit tests
         id: tests
         if: success() || failure()
-        run: ./gradlew test
+        run: ./gradlew test --continue
 
       - name: Show the first failures on the pull request
         if: failure()
