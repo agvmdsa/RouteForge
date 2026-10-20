@@ -204,7 +204,9 @@ class WaypointEditViewModelTest {
             assertNotNull(viewModel.state.value.missingRegionsWarning)
 
             val events = mutableListOf<WaypointEditEvent>()
-            val job = launch { viewModel.events.collect { events.add(it) } }
+            // Collect eagerly: the events channel is a rendezvous, and a collector that only starts when the test body yields
+            // would not be there when the view model sends.
+            val job = launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.events.collect { events.add(it) } }
 
             viewModel.onAction(WaypointEditAction.OnGoToDownloads)
 
