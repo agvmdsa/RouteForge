@@ -14,6 +14,5 @@ class ImportRouteFileUseCase(
         format: RouteFileFormat,
     ): Result<RouteDraft, RouteFileFailure> = requireCodec(format).parse(bytes)
 
-    private fun requireCodec(format: RouteFileFormat): RouteFileCodec =
-        codecs[format] ?: error("No RouteFileCodec registered for $format")
+    private fun requireCodec(format: RouteFileFormat): RouteFileCodec = codecs[format] ?: error("No RouteFileCodec registered for $format")
 }

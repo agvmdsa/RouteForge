@@ -67,7 +67,11 @@ private fun buildDotDrawable(
 ): BitmapDrawable {
     val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
-    val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorArgb; style = Paint.Style.FILL }
+    val paint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = colorArgb
+            style = Paint.Style.FILL
+        }
     val radius = sizePx / 2f
     canvas.drawCircle(radius, radius, radius, paint)
     return BitmapDrawable(context.resources, bitmap)
@@ -83,7 +87,11 @@ private fun buildNumberedDrawable(
     val bitmap = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     val radius = sizePx / 2f
-    val backgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = backgroundColorArgb; style = Paint.Style.FILL }
+    val backgroundPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = backgroundColorArgb
+            style = Paint.Style.FILL
+        }
     canvas.drawCircle(radius, radius, radius, backgroundPaint)
     val textPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -113,7 +121,11 @@ private fun buildArrowDrawable(
             lineTo(sizePx * 0.1f, sizePx * 0.9f)
             close()
         }
-    val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorArgb; style = Paint.Style.FILL }
+    val fillPaint =
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = colorArgb
+            style = Paint.Style.FILL
+        }
     canvas.drawPath(path, fillPaint)
     val borderPaint =
         Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -221,7 +233,10 @@ fun RouteForgeMap(
     val lifecycleOwner = LocalLifecycleOwner.current
     val currentOnTap by rememberUpdatedState(onMapTap)
     val routeColorArgb = MapColors.RouteLine.toArgb()
-    val regionFillColorArgb = MaterialTheme.colorScheme.primary.copy(alpha = REGION_OVERLAY_FILL_ALPHA).toArgb()
+    val regionFillColorArgb =
+        MaterialTheme.colorScheme.primary
+            .copy(alpha = REGION_OVERLAY_FILL_ALPHA)
+            .toArgb()
 
     val components =
         remember {

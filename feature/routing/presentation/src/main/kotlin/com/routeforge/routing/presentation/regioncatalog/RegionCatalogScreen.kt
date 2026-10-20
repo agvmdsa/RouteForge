@@ -43,13 +43,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routeforge.coredomain.model.Region
+import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.IconBadge
 import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.designsystem.theme.Spacing
-import com.routeforge.coredomain.model.Region
-import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.routing.domain.model.RegionUsage
 import com.routeforge.routing.presentation.R
 import org.koin.androidx.compose.koinViewModel
@@ -68,7 +68,9 @@ fun RegionCatalogRoot(
     var downloadErrorMessage by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
-            when (event) { is RegionCatalogEvent.DownloadFailed -> downloadErrorMessage = event.message }
+            when (event) {
+                is RegionCatalogEvent.DownloadFailed -> downloadErrorMessage = event.message
+            }
         }
     }
     RegionCatalogScreen(

@@ -68,4 +68,3 @@ object GeoMath {
         return LatLng(Math.toDegrees(phi2), Math.toDegrees(lambda2))
     }
 }
-

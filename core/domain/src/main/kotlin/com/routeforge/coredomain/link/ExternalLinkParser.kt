@@ -29,7 +29,12 @@ object ExternalLinkParser {
         }
 
     private fun readGeo(rest: String): ExternalLink {
-        val coordinates = rest.substringBefore('?').substringBefore(';').split(',').map { it.trim() }
+        val coordinates =
+            rest
+                .substringBefore('?')
+                .substringBefore(';')
+                .split(',')
+                .map { it.trim() }
         // A third value is the altitude, which is ignored.
         val inPath = if (coordinates.size >= 2) pointOf(coordinates[0], coordinates[1]) else null
         val fromQuery = queryParameters(rest.substringAfter('?', ""))["q"]?.let { COORDINATE_PAIR.matchEntire(it) }

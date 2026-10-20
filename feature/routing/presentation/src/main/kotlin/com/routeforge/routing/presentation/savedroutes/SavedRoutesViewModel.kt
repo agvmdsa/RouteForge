@@ -6,13 +6,13 @@ import com.routeforge.coredomain.FavoriteRoutesRepository
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.FavoriteRoute
 import com.routeforge.coredomain.model.Route
-import com.routeforge.coredomain.model.RoutePlaybackMode
-import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.coredomain.model.RouteOptions
+import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.autoResolved
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
-import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
+import com.routeforge.routing.domain.model.RouteFileFormat
+import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -40,7 +40,8 @@ class SavedRoutesViewModel(
     val events = _events.receiveAsFlow()
 
     init {
-        favoriteRoutesRepository.observeFavoriteRoutes()
+        favoriteRoutesRepository
+            .observeFavoriteRoutes()
             .onEach { routes -> _state.update { it.copy(routes = routes) } }
             .launchIn(viewModelScope)
     }

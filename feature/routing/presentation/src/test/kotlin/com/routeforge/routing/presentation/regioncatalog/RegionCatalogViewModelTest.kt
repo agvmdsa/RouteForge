@@ -2,13 +2,13 @@ package com.routeforge.routing.presentation.regioncatalog
 
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
-import com.routeforge.coredomain.model.RoutePoint
-import com.routeforge.routing.domain.RegionDownloadEvent
 import com.routeforge.coredomain.model.Region
-import com.routeforge.routing.domain.model.RegionDownloadState
 import com.routeforge.coredomain.model.RegionStatus
-import com.routeforge.routing.domain.usecase.ComputeRegionUsageUseCase
+import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
+import com.routeforge.routing.domain.RegionDownloadEvent
+import com.routeforge.routing.domain.model.RegionDownloadState
+import com.routeforge.routing.domain.usecase.ComputeRegionUsageUseCase
 import com.routeforge.routing.domain.usecase.DeleteRegionUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
 import com.routeforge.routing.presentation.FakeFavoriteRoutesRepository
@@ -165,7 +165,12 @@ class RegionCatalogViewModelTest {
 
         assertNull(viewModel.state.value.downloadingRegionId)
         assertNull(viewModel.state.value.downloadProgress)
-        assertEquals(RegionStatus.DOWNLOADED, viewModel.state.value.regions.first { it.id == downloadableRegion.id }.status)
+        assertEquals(
+            RegionStatus.DOWNLOADED,
+            viewModel.state.value.regions
+                .first { it.id == downloadableRegion.id }
+                .status,
+        )
     }
 
     @Test
@@ -242,7 +247,10 @@ class RegionCatalogViewModelTest {
         viewModel.onAction(RegionCatalogAction.OnDeleteRegionClick(otherRegion.id))
 
         assertEquals(otherRegion, viewModel.state.value.pendingDeleteRegion)
-        assertTrue(viewModel.state.value.deleteRegionUsage?.isInUse != true)
+        assertTrue(
+            viewModel.state.value.deleteRegionUsage
+                ?.isInUse != true,
+        )
 
         viewModel.onAction(RegionCatalogAction.OnConfirmDeleteRegion)
 
@@ -258,8 +266,16 @@ class RegionCatalogViewModelTest {
 
         viewModel.onAction(RegionCatalogAction.OnDeleteRegionClick(otherRegion.id))
 
-        assertEquals(true, viewModel.state.value.deleteRegionUsage?.isInUse)
-        assertEquals(true, viewModel.state.value.deleteRegionUsage?.neededByDraft)
+        assertEquals(
+            true,
+            viewModel.state.value.deleteRegionUsage
+                ?.isInUse,
+        )
+        assertEquals(
+            true,
+            viewModel.state.value.deleteRegionUsage
+                ?.neededByDraft,
+        )
 
         viewModel.onAction(RegionCatalogAction.OnConfirmDeleteRegion)
 

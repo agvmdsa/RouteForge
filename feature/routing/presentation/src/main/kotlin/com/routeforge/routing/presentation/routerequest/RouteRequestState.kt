@@ -2,9 +2,9 @@ package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.coredomain.model.MapStyle
 import com.routeforge.coredomain.model.RealLocation
+import com.routeforge.coredomain.model.RequiredRegionsSummary
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
-import com.routeforge.coredomain.model.RequiredRegionsSummary
 import com.routeforge.routing.domain.model.RouteDraft
 
 data class RouteRequestState(

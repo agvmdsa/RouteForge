@@ -1,11 +1,11 @@
 package com.routeforge.routing.data
 
 import android.util.Log
-import com.routeforge.routing.domain.BrouterTileGrid
 import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.coredomain.RegionDeletionResult
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
+import com.routeforge.routing.domain.BrouterTileGrid
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -64,7 +64,11 @@ class BundledRegionCatalog(
         region.tileIds.sumOf { fileName -> File(segmentDirectory, fileName).let { if (it.exists()) it.length() else 0L } }
 
     override fun deleteRegion(region: Region): RegionDeletionResult =
-        if (region.tileIds.all { fileName -> val file = File(segmentDirectory, fileName); !file.exists() || file.delete() }) {
+        if (region.tileIds.all { fileName ->
+                val file = File(segmentDirectory, fileName)
+                !file.exists() || file.delete()
+            }
+        ) {
             RegionDeletionResult.FULLY_DELETED
         } else {
             RegionDeletionResult.NOT_FULLY_DELETED

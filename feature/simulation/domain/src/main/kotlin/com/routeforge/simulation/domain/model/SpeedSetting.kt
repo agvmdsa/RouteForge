@@ -2,7 +2,9 @@ package com.routeforge.simulation.domain.model
 
 private const val KMH_TO_MPS = 1000.0 / 3600.0
 
-enum class SpeedPresetType(val kilometersPerHour: Double) {
+enum class SpeedPresetType(
+    val kilometersPerHour: Double,
+) {
     WALKING(5.0),
     BICYCLE(15.0),
     MOTORCYCLE(60.0),

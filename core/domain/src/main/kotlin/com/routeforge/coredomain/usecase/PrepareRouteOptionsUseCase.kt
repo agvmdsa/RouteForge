@@ -1,10 +1,10 @@
 package com.routeforge.coredomain.usecase
 
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.model.RouteOptions
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
-import com.routeforge.coredomain.model.RouteOptions
 
 /**
  * FR-001–FR-004: runs the real Guided computation and only exposes it as an option if it

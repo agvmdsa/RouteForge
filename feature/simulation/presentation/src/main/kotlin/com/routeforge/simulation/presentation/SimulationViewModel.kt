@@ -7,10 +7,9 @@ import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
-import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
-import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.simulation.domain.RealLocationFailure
 import com.routeforge.simulation.domain.RealLocationUpdate
 import com.routeforge.simulation.domain.model.ExecutionMode

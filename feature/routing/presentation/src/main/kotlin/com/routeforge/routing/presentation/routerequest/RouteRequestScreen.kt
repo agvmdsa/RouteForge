@@ -59,11 +59,11 @@ import com.routeforge.designsystem.sheets.MissingRegionsWarningSheet
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.routing.domain.model.RouteFileFormat
+import com.routeforge.routing.presentation.R
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditAction
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditEvent
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditState
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditViewModel
-import com.routeforge.routing.presentation.R
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 
@@ -427,7 +427,14 @@ private fun BoxScope.RouteRequestTrailingFabs(
                         CircularProgressIndicator()
                     } else {
                         Icon(
-                            imageVector = if (state.previewMode == RoutePlaybackMode.GUIDED) Icons.Filled.Straighten else Icons.Filled.Signpost,
+                            imageVector =
+                                if (state.previewMode ==
+                                    RoutePlaybackMode.GUIDED
+                                ) {
+                                    Icons.Filled.Straighten
+                                } else {
+                                    Icons.Filled.Signpost
+                                },
                             contentDescription = stringResource(R.string.routing_switch_route_mode_button),
                         )
                     }

@@ -2,7 +2,6 @@ package com.routeforge.routing.domain.usecase
 
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
-import com.routeforge.coredomain.model.FavoriteRoute
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.model.Route

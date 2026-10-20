@@ -1,11 +1,10 @@
 package com.routeforge.coredomain.usecase
 
-import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.model.RoutePlaybackMode
-import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.FakeRegionCatalog
 import com.routeforge.coredomain.FakeRegionUsageTracker
 import com.routeforge.coredomain.FakeRoutingEngine
+import com.routeforge.coredomain.model.RoutePlaybackMode
+import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -26,7 +25,13 @@ class PrepareRouteOptionsUseCaseTest {
         routingEngine.computePathResult =
             com.routeforge.coredomain.model.Route(
                 points = listOf(start, end),
-                geometry = listOf(com.routeforge.coredomain.model.LatLng(1.0, 1.0), com.routeforge.coredomain.model.LatLng(2.0, 2.0)),
+                geometry =
+                    listOf(
+                        com.routeforge.coredomain.model
+                            .LatLng(1.0, 1.0),
+                        com.routeforge.coredomain.model
+                            .LatLng(2.0, 2.0),
+                    ),
                 distanceMeters = 150.0,
             )
 
@@ -62,7 +67,13 @@ class PrepareRouteOptionsUseCaseTest {
         routingEngine.computePathResult =
             com.routeforge.coredomain.model.Route(
                 points = listOf(start, end),
-                geometry = listOf(com.routeforge.coredomain.model.LatLng(1.0, 1.0), com.routeforge.coredomain.model.LatLng(2.0, 2.0)),
+                geometry =
+                    listOf(
+                        com.routeforge.coredomain.model
+                            .LatLng(1.0, 1.0),
+                        com.routeforge.coredomain.model
+                            .LatLng(2.0, 2.0),
+                    ),
                 distanceMeters = 150.0,
             )
 

@@ -1,15 +1,15 @@
 package com.routeforge.coredomain.usecase
 
-import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.model.LatLng
-import com.routeforge.coredomain.model.Route
-import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.FakeRegionCatalog
 import com.routeforge.coredomain.FakeRegionUsageTracker
 import com.routeforge.coredomain.FakeRoutingEngine
+import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.RoutingFailure
+import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
+import com.routeforge.coredomain.model.Route
+import com.routeforge.coredomain.model.RoutePoint
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNotNull

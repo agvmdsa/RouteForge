@@ -1,9 +1,9 @@
 package com.routeforge.routing.presentation
 
-import com.routeforge.coredomain.model.Route
-import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.RoutingEngine
 import com.routeforge.coredomain.model.Region
+import com.routeforge.coredomain.model.Route
+import com.routeforge.coredomain.model.RoutePoint
 
 class FakeRoutingEngine : RoutingEngine {
     var snappableLatitudes: Set<Double> = emptySet()

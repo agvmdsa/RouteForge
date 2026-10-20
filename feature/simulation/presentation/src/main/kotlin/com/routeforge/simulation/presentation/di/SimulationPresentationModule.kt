@@ -41,4 +41,3 @@ val simulationPresentationModule =
         viewModelOf(::SimulationViewModel)
         viewModelOf(::WaypointEditViewModel)
     }
-

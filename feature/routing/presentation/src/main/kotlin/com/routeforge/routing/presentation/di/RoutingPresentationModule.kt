@@ -1,21 +1,21 @@
 package com.routeforge.routing.presentation.di
 
-import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
-import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
-import com.routeforge.coredomain.usecase.SetMapStyleUseCase
-import com.routeforge.routing.domain.usecase.ComputeRegionUsageUseCase
 import com.routeforge.coredomain.usecase.ComputeEditableWaypointRangeUseCase
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.coredomain.usecase.ComputeRouteUseCase
+import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
+import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
+import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
+import com.routeforge.coredomain.usecase.RecomputeRouteForBothModesUseCase
+import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
+import com.routeforge.coredomain.usecase.SetMapStyleUseCase
+import com.routeforge.routing.domain.usecase.ComputeRegionUsageUseCase
 import com.routeforge.routing.domain.usecase.DeleteRegionUseCase
 import com.routeforge.routing.domain.usecase.DownloadRegionUseCase
 import com.routeforge.routing.domain.usecase.EnforceStorageQuotaUseCase
 import com.routeforge.routing.domain.usecase.GetStorageUsageSummaryUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
 import com.routeforge.routing.domain.usecase.ObserveStorageQuotaUseCase
-import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
-import com.routeforge.coredomain.usecase.RecomputeRouteForBothModesUseCase
-import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
 import com.routeforge.routing.domain.usecase.SetStorageQuotaUseCase
 import com.routeforge.routing.presentation.favorites.FavoritesViewModel
 import com.routeforge.routing.presentation.regioncatalog.RegionCatalogViewModel
@@ -88,4 +88,3 @@ val routingPresentationModule =
             )
         }
     }
-

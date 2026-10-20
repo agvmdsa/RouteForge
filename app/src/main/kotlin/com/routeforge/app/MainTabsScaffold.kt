@@ -186,7 +186,13 @@ fun MainTabsScaffold(
                                         selected = false,
                                         onClick = {
                                             val sourceContext =
-                                                if (activeRootTab?.tab == AppTab.PLAN_ROUTE) SearchSourceContext.PLAN_ROUTE else SearchSourceContext.TELEPORT_OR_FAVORITE
+                                                if (activeRootTab?.tab ==
+                                                    AppTab.PLAN_ROUTE
+                                                ) {
+                                                    SearchSourceContext.PLAN_ROUTE
+                                                } else {
+                                                    SearchSourceContext.TELEPORT_OR_FAVORITE
+                                                }
                                             navController.navigate(AddressSearchRoute(sourceContext = sourceContext))
                                         },
                                         icon = {

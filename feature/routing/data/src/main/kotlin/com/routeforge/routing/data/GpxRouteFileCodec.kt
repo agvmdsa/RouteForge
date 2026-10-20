@@ -34,8 +34,18 @@ class GpxRouteFileCodec : RouteFileCodec {
         val points = mutableListOf<RoutePoint>()
         for (match in POINT_TAG_REGEX.findAll(text)) {
             val attributes = match.groupValues[1]
-            val latitude = LATITUDE_ATTRIBUTE_REGEX.find(attributes)?.groupValues?.get(1)?.toDoubleOrNull()
-            val longitude = LONGITUDE_ATTRIBUTE_REGEX.find(attributes)?.groupValues?.get(1)?.toDoubleOrNull()
+            val latitude =
+                LATITUDE_ATTRIBUTE_REGEX
+                    .find(attributes)
+                    ?.groupValues
+                    ?.get(1)
+                    ?.toDoubleOrNull()
+            val longitude =
+                LONGITUDE_ATTRIBUTE_REGEX
+                    .find(attributes)
+                    ?.groupValues
+                    ?.get(1)
+                    ?.toDoubleOrNull()
             if (latitude == null || longitude == null) {
                 return Result.Error(RouteFileFailure.Malformed)
             }

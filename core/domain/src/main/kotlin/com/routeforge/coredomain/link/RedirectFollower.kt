@@ -40,5 +40,10 @@ class RedirectFollower(
         return null
     }
 
-    private fun mayBeRequested(address: String) = HTTPS_HOST.find(address)?.groupValues?.get(1)?.lowercase() in GOOGLE_HOSTS
+    private fun mayBeRequested(address: String) =
+        HTTPS_HOST
+            .find(address)
+            ?.groupValues
+            ?.get(1)
+            ?.lowercase() in GOOGLE_HOSTS
 }

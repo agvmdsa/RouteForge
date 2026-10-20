@@ -3,14 +3,14 @@ package com.routeforge.routing.presentation.savedroutes
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.FavoriteRoute
 import com.routeforge.coredomain.model.LatLng
+import com.routeforge.coredomain.model.Region
+import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
-import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
-import com.routeforge.coredomain.model.Region
-import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.coredomain.usecase.ComputeRouteUseCase
+import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
 import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
 import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
@@ -169,7 +169,8 @@ class SavedRoutesViewModelTest {
     @Test
     fun `using a route where both modes are viable asks the user to choose`() {
         routingEngine.snappableLatitudes = setOf(1.0, 2.0)
-        routingEngine.computePathResult = Route(points = samplePoints, geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 100.0)
+        routingEngine.computePathResult =
+            Route(points = samplePoints, geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 100.0)
         val viewModel = createViewModel()
 
         viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
@@ -181,7 +182,8 @@ class SavedRoutesViewModelTest {
     @Test
     fun `dismissing the mode choice (tap-outside, back, or swipe) clears it instead of leaving the sheet stuck`() {
         routingEngine.snappableLatitudes = setOf(1.0, 2.0)
-        routingEngine.computePathResult = Route(points = samplePoints, geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 100.0)
+        routingEngine.computePathResult =
+            Route(points = samplePoints, geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 100.0)
         val viewModel = createViewModel()
         viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
         assertNotNull(viewModel.state.value.routeOptions)
@@ -216,7 +218,9 @@ class SavedRoutesViewModelTest {
                 Route(points = samplePoints, geometry = listOf(LatLng(1.0, 1.0), LatLng(2.0, 2.0)), distanceMeters = 100.0)
             val viewModel = createViewModel()
             viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
-            val freeRoam = viewModel.state.value.routeOptions?.freeRoam
+            val freeRoam =
+                viewModel.state.value.routeOptions
+                    ?.freeRoam
 
             viewModel.onAction(SavedRoutesAction.OnChooseMode(RoutePlaybackMode.GUIDED))
 
@@ -257,7 +261,14 @@ class SavedRoutesViewModelTest {
         viewModel.onAction(SavedRoutesAction.OnConfirmEdit)
 
         assertEquals(SavedRoutesError.INVALID_NAME, viewModel.state.value.editError)
-        assertEquals("Morning loop", favoriteRoutesRepository.observeFavoriteRoutes().value.first().name)
+        assertEquals(
+            "Morning loop",
+            favoriteRoutesRepository
+                .observeFavoriteRoutes()
+                .value
+                .first()
+                .name,
+        )
     }
 
     @Test
@@ -268,7 +279,14 @@ class SavedRoutesViewModelTest {
 
         viewModel.onAction(SavedRoutesAction.OnConfirmEdit)
 
-        assertEquals("Evening loop", favoriteRoutesRepository.observeFavoriteRoutes().value.first().name)
+        assertEquals(
+            "Evening loop",
+            favoriteRoutesRepository
+                .observeFavoriteRoutes()
+                .value
+                .first()
+                .name,
+        )
         assertNull(viewModel.state.value.editingId)
     }
 

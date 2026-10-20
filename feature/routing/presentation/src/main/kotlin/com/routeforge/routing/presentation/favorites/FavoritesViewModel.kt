@@ -30,7 +30,8 @@ class FavoritesViewModel(
     val events = _events.receiveAsFlow()
 
     init {
-        favoriteWaypointsRepository.observeFavorites()
+        favoriteWaypointsRepository
+            .observeFavorites()
             .onEach { favorites -> _state.update { it.copy(favorites = favorites) } }
             .launchIn(viewModelScope)
     }
@@ -49,7 +50,13 @@ class FavoritesViewModel(
             FavoritesAction.OnDismissDelete -> _state.update { it.copy(pendingDeleteId = null) }
             is FavoritesAction.OnMockHereClick -> onMockHereClick(action.id)
             FavoritesAction.OnConfirmMockHere -> confirmMockHere()
-            FavoritesAction.OnDismissMockHere -> _state.update { it.copy(pendingTeleportFavorite = null, isPendingTeleportBlockedOffline = false) }
+            FavoritesAction.OnDismissMockHere ->
+                _state.update {
+                    it.copy(
+                        pendingTeleportFavorite = null,
+                        isPendingTeleportBlockedOffline = false,
+                    )
+                }
         }
     }
 

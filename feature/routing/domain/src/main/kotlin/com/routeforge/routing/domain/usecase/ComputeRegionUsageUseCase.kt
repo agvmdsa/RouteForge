@@ -22,9 +22,14 @@ class ComputeRegionUsageUseCase(
         fun touches(points: List<RoutePoint>) = computeRequiredRegions(points).regions.any { it.id == region.id }
 
         val neededByDraft = touches(draftWaypointsHolder.points.value)
-        val neededByActiveRoute = lastComputedRouteHolder.route.value?.points?.let(::touches) ?: false
+        val neededByActiveRoute =
+            lastComputedRouteHolder.route.value
+                ?.points
+                ?.let(::touches) ?: false
         val neededBySavedRouteNames =
-            favoriteRoutesRepository.observeFavoriteRoutes().value
+            favoriteRoutesRepository
+                .observeFavoriteRoutes()
+                .value
                 .filter { touches(it.points) }
                 .map { it.name }
 
