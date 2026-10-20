@@ -49,6 +49,19 @@ $WS/core/domain/src/main/kotlin/B.kts:3:1: Unexpected indentation (4) (should be
   assert_contains "$OUT" "::error file=core/domain/src/main/kotlin/B.kts,line=3,col=1,title=ktlint::Unexpected indentation (4) (should be 8) (standard:indent)"
 }
 
+test_the_colour_codes_ktlint_writes_into_its_report_are_ignored() {
+  workspace
+  local esc=$'\033'
+  ktlint_report app "Summary error count (descending) by rule:
+  standard:max-line-length: 1
+${esc}[90m$WS/app/src/main/kotlin/com/routeforge/app/${esc}[0mMainTabsScaffold.kt${esc}[90m:${esc}[0m189${esc}[90m:141:${esc}[0m Exceeded max line length (140) ${esc}[90m(standard:max-line-length)${esc}[0m"
+  annotate
+  assert_status 0
+  assert_eq 1 "$(count '::error')"
+  assert_contains "$OUT" "::error file=app/src/main/kotlin/com/routeforge/app/MainTabsScaffold.kt,line=189,col=141,title=ktlint::Exceeded max line length (140) (standard:max-line-length)"
+  assert_not_contains "$OUT" "::notice"
+}
+
 test_lines_that_are_not_violations_are_ignored() {
   workspace
   ktlint_report app "not a violation

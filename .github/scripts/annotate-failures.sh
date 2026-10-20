@@ -35,6 +35,7 @@ ktlint_total=0
 while IFS= read -r report; do
   [ -z "$report" ] && continue
   while IFS= read -r line; do
+    line=$(printf '%s' "$line" | sed -e $'s/\033\\[[0-9;]*m//g')
     if [[ $line =~ $VIOLATION ]]; then
       ktlint_total=$((ktlint_total + 1))
       if [ "$ktlint_total" -le "$LIMIT" ]; then
