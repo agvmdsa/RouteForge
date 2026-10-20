@@ -1,0 +1,102 @@
+# Checks every change: code style, build, unit tests of every module (and the tests of the CI scripts themselves).
+# Runs on pull requests and on pushes to main, and is called by release.yml before a release is built.
+# Read-only on purpose: no secret is referenced here and nothing is written to the repository.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+# A newer commit on a pull request cancels the older run of that pull request. Every other run (a push to main, the call
+# from the release workflow) gets a group of its own, so it is never cancelled and can never cancel another run.
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('ci-pr-{0}', github.event.pull_request.number) || format('ci-run-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Accept Android SDK licences
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ -x "$SDKMANAGER" ]; then
+            yes | "$SDKMANAGER" --licenses > /dev/null || true
+          else
+            echo "::warning::sdkmanager not found under ANDROID_HOME; relying on the licences already accepted on the runner"
+          fi
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          # Only runs on main write the Gradle cache; pull requests and tags restore it.
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Style
+        id: style
+        run: ./gradlew ktlintCheck
+
+      - name: Build
+        id: build
+        if: success() || failure()
+        run: ./gradlew assembleDebug
+
+      - name: Unit tests
+        id: tests
+        if: success() || failure()
+        run: ./gradlew test
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Checks"
+            echo
+            echo "| Check | Result |"
+            echo "|-------|--------|"
+            echo "| Style | ${{ steps.style.outcome }} |"
+            echo "| Build | ${{ steps.build.outcome }} |"
+            echo "| Unit tests | ${{ steps.tests.outcome }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep failure reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: failure-reports
+          path: |
+            **/build/reports/tests/**
+            **/build/reports/ktlint/**
+          retention-days: 14
+          if-no-files-found: ignore
+
+  script-tests:
+    name: script-tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Run the tests of the CI scripts
+        run: bash .github/scripts/tests/run.sh
