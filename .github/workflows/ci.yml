@@ -66,7 +66,11 @@ jobs:
 
       - name: Show the first failures on the pull request
         if: failure()
-        run: bash .github/scripts/annotate-failures.sh "$GITHUB_WORKSPACE"
+        run: |
+          bash .github/scripts/annotate-failures.sh "$GITHUB_WORKSPACE"
+          # Where the style reports are, for when the annotations above are empty.
+          find "$GITHUB_WORKSPACE" -path '*/build/reports/ktlint*' -type f | head -5 | sed "s|^$GITHUB_WORKSPACE/||" |
+            while read -r file; do echo "::notice title=ktlint report file::$file"; done
 
       - name: Summary
         if: always()
