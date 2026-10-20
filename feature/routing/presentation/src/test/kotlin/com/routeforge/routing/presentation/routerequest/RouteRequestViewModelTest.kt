@@ -10,23 +10,23 @@ import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.PlaceSearchResult
+import com.routeforge.coredomain.model.Region
+import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
-import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
-import com.routeforge.routing.domain.RouteFileCodec
-import com.routeforge.coredomain.model.Region
-import com.routeforge.coredomain.model.RegionStatus
-import com.routeforge.routing.domain.model.RouteDraft
-import com.routeforge.routing.domain.model.RouteFileFailure
-import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.coredomain.usecase.ComputeRouteUseCase
-import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
-import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
+import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
 import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
 import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
+import com.routeforge.routing.domain.RouteFileCodec
+import com.routeforge.routing.domain.model.RouteDraft
+import com.routeforge.routing.domain.model.RouteFileFailure
+import com.routeforge.routing.domain.model.RouteFileFormat
+import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
+import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
 import com.routeforge.routing.presentation.FakeFavoriteRoutesRepository
 import com.routeforge.routing.presentation.FakeFavoriteWaypointsRepository
 import com.routeforge.routing.presentation.FakeMapStyleStore
@@ -213,7 +213,13 @@ class RouteRequestViewModelTest {
         val viewModel = createViewModel()
 
         pendingSearchWaypointHolder.set(
-            PlaceSearchResult(name = "Eiffel Tower", formattedAddress = "Paris, France", latitude = 48.8584, longitude = 2.2945, importance = 0.8),
+            PlaceSearchResult(
+                name = "Eiffel Tower",
+                formattedAddress = "Paris, France",
+                latitude = 48.8584,
+                longitude = 2.2945,
+                importance = 0.8,
+            ),
         )
 
         val state = viewModel.state.value
@@ -747,7 +753,11 @@ class RouteRequestViewModelTest {
 
         assertEquals(placed, viewModel.state.value.draft.points)
         assertEquals(placed, draftWaypointsHolder.points.value)
-        assertEquals(arrivedPoints, viewModel.state.value.pendingReplaceDraft?.points)
+        assertEquals(
+            arrivedPoints,
+            viewModel.state.value.pendingReplaceDraft
+                ?.points,
+        )
     }
 
     @Test
@@ -785,7 +795,11 @@ class RouteRequestViewModelTest {
 
         arrivingFile(later)
 
-        assertEquals(later, viewModel.state.value.pendingReplaceDraft?.points)
+        assertEquals(
+            later,
+            viewModel.state.value.pendingReplaceDraft
+                ?.points,
+        )
     }
 
     @Test
@@ -855,7 +869,11 @@ class RouteRequestViewModelTest {
         pendingIncomingRouteHolder.set(IncomingRoute.Stops(arrivedPoints))
 
         assertEquals(placed, viewModel.state.value.draft.points)
-        assertEquals(arrivedPoints, viewModel.state.value.pendingReplaceDraft?.points)
+        assertEquals(
+            arrivedPoints,
+            viewModel.state.value.pendingReplaceDraft
+                ?.points,
+        )
     }
 
     @Test

@@ -14,18 +14,18 @@ import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
+import com.routeforge.coredomain.model.RouteOptions
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.model.autoResolved
+import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
+import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
+import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
 import com.routeforge.routing.domain.model.RouteDraft
 import com.routeforge.routing.domain.model.RouteFileFailure
 import com.routeforge.routing.domain.model.RouteFileFormat
-import com.routeforge.coredomain.model.RouteOptions
-import com.routeforge.coredomain.model.autoResolved
-import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
-import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
-import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -186,7 +186,6 @@ class RouteRequestViewModel(
         }
     }
 
-
     /** Any draft mutation invalidates a previously computed/chosen route (FR-004's spirit). */
     private fun mutateDraft(transform: (RouteDraft) -> RouteDraft) {
         val wasPreviewingGuided = _state.value.previewMode == RoutePlaybackMode.GUIDED
@@ -235,7 +234,9 @@ class RouteRequestViewModel(
     }
 
     private fun openEditDialog(index: Int) {
-        val point = _state.value.draft.points.getOrNull(index) ?: return
+        val point =
+            _state.value.draft.points
+                .getOrNull(index) ?: return
         _state.update {
             it.copy(
                 editingIndex = index,
@@ -304,7 +305,9 @@ class RouteRequestViewModel(
             return
         }
         val arrived = RouteDraft(points = points)
-        if (_state.value.draft.points.isEmpty()) {
+        if (_state.value.draft.points
+                .isEmpty()
+        ) {
             mutateDraft { arrived }
         } else {
             _state.update { it.copy(pendingReplaceDraft = arrived) }
@@ -479,7 +482,6 @@ class RouteRequestViewModel(
         _state.update { it.copy(route = swapped, chosenMode = targetMode) }
         lastComputedRouteHolder.set(swapped)
     }
-
 }
 
 private fun RouteFileFailure.toRouteRequestError(): RouteRequestError =
@@ -488,4 +490,3 @@ private fun RouteFileFailure.toRouteRequestError(): RouteRequestError =
         is RouteFileFailure.CoordinateOutOfRange -> RouteRequestError.IMPORT_COORDINATE_OUT_OF_RANGE
         RouteFileFailure.Malformed -> RouteRequestError.IMPORT_MALFORMED
     }
-

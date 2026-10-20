@@ -136,7 +136,9 @@ class FavoritesViewModelTest {
         viewModel.onAction(FavoritesAction.OnEditLongitudeChange("10.0"))
         viewModel.onAction(FavoritesAction.OnConfirmEdit)
 
-        val updated = viewModel.state.value.favorites.first { it.id == home.id }
+        val updated =
+            viewModel.state.value.favorites
+                .first { it.id == home.id }
         assertEquals("Work", updated.name)
         assertEquals(9.0, updated.latitude)
         assertEquals(10.0, updated.longitude)
@@ -152,7 +154,11 @@ class FavoritesViewModelTest {
         viewModel.onAction(FavoritesAction.OnConfirmEdit)
 
         assertEquals(FavoritesError.INVALID_NAME, viewModel.state.value.editError)
-        assertEquals(home, viewModel.state.value.favorites.first { it.id == home.id })
+        assertEquals(
+            home,
+            viewModel.state.value.favorites
+                .first { it.id == home.id },
+        )
     }
 
     @Test
@@ -164,7 +170,11 @@ class FavoritesViewModelTest {
         viewModel.onAction(FavoritesAction.OnConfirmEdit)
 
         assertEquals(FavoritesError.INVALID_COORDINATES, viewModel.state.value.editError)
-        assertEquals(home, viewModel.state.value.favorites.first { it.id == home.id })
+        assertEquals(
+            home,
+            viewModel.state.value.favorites
+                .first { it.id == home.id },
+        )
     }
 
     @Test
@@ -174,7 +184,10 @@ class FavoritesViewModelTest {
 
         viewModel.onAction(FavoritesAction.OnConfirmDelete)
 
-        assertTrue(viewModel.state.value.favorites.isEmpty())
+        assertTrue(
+            viewModel.state.value.favorites
+                .isEmpty(),
+        )
         assertNull(viewModel.state.value.pendingDeleteId)
     }
 

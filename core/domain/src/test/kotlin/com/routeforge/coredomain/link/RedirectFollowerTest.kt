@@ -56,6 +56,7 @@ class RedirectFollowerTest {
     fun `makes at most five requests`() =
         runBlocking {
             val addresses = (0..7).map { "https://maps.app.goo.gl/a$it" }
+
             fun follower() = RedirectFollower(FakeRedirectSource(chain(*addresses.toTypedArray())))
 
             // a5 is learnt from the 5th request; a6 would need a 6th.

@@ -28,11 +28,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.routeforge.coredomain.model.Route
+import com.routeforge.coredomain.model.RouteOptions
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.designsystem.components.NameEntryConfirmationSheet
 import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.routing.domain.model.RouteFileFormat
-import com.routeforge.coredomain.model.RouteOptions
 import com.routeforge.routing.presentation.R
 
 private val SwitchModeSpinnerSize = 24.dp

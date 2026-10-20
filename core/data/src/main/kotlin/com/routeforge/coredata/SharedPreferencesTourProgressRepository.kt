@@ -19,8 +19,7 @@ private const val KEY_SEEN_SECTIONS = "seen_sections"
  *  Android's `SharedPreferences`. Reuses [MockLocationAuthorizationChecker] (already a
  *  `core:domain`/`core:data` citizen) rather than `feature:mocklocationsetup`'s own `SetupState`,
  *  since `core:data` must never depend on a feature module. */
-internal fun initialSeenSections(isAuthorized: Boolean): Set<TourSection> =
-    if (isAuthorized) TourSection.entries.toSet() else emptySet()
+internal fun initialSeenSections(isAuthorized: Boolean): Set<TourSection> = if (isAuthorized) TourSection.entries.toSet() else emptySet()
 
 class SharedPreferencesTourProgressRepository(
     context: Context,

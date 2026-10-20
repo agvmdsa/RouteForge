@@ -174,7 +174,12 @@ private fun HandleIncomingItems(
     incomingItems: IncomingItemsViewModel,
 ) {
     val pending by incomingItems.pending.collectAsState()
-    val rootTab = navController.currentBackStackEntryAsState().value?.destination?.rootTab()
+    val rootTab =
+        navController
+            .currentBackStackEntryAsState()
+            .value
+            ?.destination
+            ?.rootTab()
     val context = LocalContext.current
     val searchWaypointHolder: PendingSearchWaypointHolder = koinInject()
     val incomingRouteHolder: PendingIncomingRouteHolder = koinInject()

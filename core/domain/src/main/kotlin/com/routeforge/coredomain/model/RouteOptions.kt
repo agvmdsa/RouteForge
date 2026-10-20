@@ -16,4 +16,3 @@ data class RouteOptions(
  *  caller must show a choice. */
 val RouteOptions.autoResolved: Pair<Route, RoutePlaybackMode>?
     get() = if (guided == null) freeRoam to RoutePlaybackMode.FREE_ROAM else null
-

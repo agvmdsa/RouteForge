@@ -1,9 +1,9 @@
 package com.routeforge.coredomain.usecase
 
-import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RequiredRegionsSummary
+import com.routeforge.coredomain.model.RoutePoint
 
 /** Maps a draft's waypoints to the distinct regions covering them, so callers can tell upfront
  *  whether Guided mode's map data is fully in place before computing a route. */

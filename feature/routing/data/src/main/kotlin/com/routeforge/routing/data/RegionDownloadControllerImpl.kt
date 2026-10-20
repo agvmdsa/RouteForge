@@ -2,12 +2,12 @@ package com.routeforge.routing.data
 
 import com.routeforge.coredata.ForegroundServiceController
 import com.routeforge.coredata.NoOpForegroundServiceController
-import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.RegionCatalog
+import com.routeforge.coredomain.RegionUsageTracker
+import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.model.Region
 import com.routeforge.routing.domain.RegionDownloadController
 import com.routeforge.routing.domain.RegionDownloadEvent
-import com.routeforge.coredomain.RegionUsageTracker
-import com.routeforge.coredomain.model.Region
 import com.routeforge.routing.domain.model.RegionDownloadState
 import com.routeforge.routing.domain.usecase.DownloadRegionUseCase
 import kotlinx.coroutines.CoroutineScope

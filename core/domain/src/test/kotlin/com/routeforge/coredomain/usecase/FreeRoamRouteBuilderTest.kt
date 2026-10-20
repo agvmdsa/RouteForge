@@ -2,8 +2,8 @@ package com.routeforge.coredomain.usecase
 
 import com.routeforge.coredomain.GeoMath
 import com.routeforge.coredomain.model.LatLng
-import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.model.RoutePlaybackMode
+import com.routeforge.coredomain.model.RoutePoint
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

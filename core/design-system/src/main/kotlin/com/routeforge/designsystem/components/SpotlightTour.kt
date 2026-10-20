@@ -51,9 +51,9 @@ import com.routeforge.coredomain.TourProgressRepository
 import com.routeforge.coredomain.model.TourSection
 import com.routeforge.coredomain.tour.TourResultOutcome
 import com.routeforge.coredomain.tour.TourStepKind
-import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlin.math.roundToInt
 
 private val ScrimColor = Color.Black.copy(alpha = 0.72f)
 private val CutoutPadding = 8.dp

@@ -159,7 +159,9 @@ fun FavoritesScreen(
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = { onAction(FavoritesAction.OnConfirmEdit) }) { Text(stringResource(R.string.routing_save_button)) }
-                    TextButton(onClick = { onAction(FavoritesAction.OnDismissEdit) }) { Text(stringResource(R.string.routing_cancel_button)) }
+                    TextButton(
+                        onClick = { onAction(FavoritesAction.OnDismissEdit) },
+                    ) { Text(stringResource(R.string.routing_cancel_button)) }
                 }
             }
         }

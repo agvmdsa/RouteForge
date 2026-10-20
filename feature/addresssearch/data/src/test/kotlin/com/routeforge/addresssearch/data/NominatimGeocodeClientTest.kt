@@ -32,7 +32,13 @@ class NominatimGeocodeClientTest {
                 ]
                 """.trimIndent()
             val engine =
-                MockEngine { respond(content = body, status = HttpStatusCode.OK, headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())) }
+                MockEngine {
+                    respond(
+                        content = body,
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                    )
+                }
             val client = NominatimGeocodeClient(mockClient(engine))
 
             val result = client.search("Eiffel Tower")
@@ -48,7 +54,13 @@ class NominatimGeocodeClientTest {
     fun `an empty results array maps to an empty, successful list`() =
         runTest {
             val engine =
-                MockEngine { respond(content = "[]", status = HttpStatusCode.OK, headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())) }
+                MockEngine {
+                    respond(
+                        content = "[]",
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                    )
+                }
             val client = NominatimGeocodeClient(mockClient(engine))
 
             val result = client.search("asdkjhaskjdh")
@@ -63,7 +75,11 @@ class NominatimGeocodeClientTest {
             val engine =
                 MockEngine { request ->
                     requestedLimit = request.url.parameters["limit"]
-                    respond(content = "[]", status = HttpStatusCode.OK, headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()))
+                    respond(
+                        content = "[]",
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                    )
                 }
             val client = NominatimGeocodeClient(mockClient(engine))
 

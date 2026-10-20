@@ -1,7 +1,6 @@
 package com.routeforge.simulation.presentation
 
 import android.Manifest
-import android.graphics.Color as AndroidColor
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -71,9 +70,10 @@ import com.routeforge.simulation.presentation.waypointedit.WaypointEditAction
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditEvent
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditState
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditViewModel
-import kotlin.math.roundToInt
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
+import kotlin.math.roundToInt
+import android.graphics.Color as AndroidColor
 
 private const val MIN_SPEED_KMH = 0f
 private const val MAX_SPEED_KMH = 150f
@@ -469,7 +469,11 @@ private fun BoxScope.SimulationTopOverlays(
     if (state.isBlockedByAuthorization) {
         TopBanner(
             contentPadding = Spacing.ScreenContent,
-            modifier = Modifier.align(Alignment.TopCenter).padding(top = Spacing.BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
+            modifier =
+                Modifier
+                    .align(
+                        Alignment.TopCenter,
+                    ).padding(top = Spacing.BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
         ) {
             Text(stringResource(R.string.simulation_error_not_authorized))
             Button(onClick = { onAction(SimulationAction.OnOpenSetupClick) }) {
@@ -479,7 +483,11 @@ private fun BoxScope.SimulationTopOverlays(
     } else {
         state.errorType?.let { errorType ->
             TopBanner(
-                modifier = Modifier.align(Alignment.TopCenter).padding(top = Spacing.BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
+                modifier =
+                    Modifier
+                        .align(
+                            Alignment.TopCenter,
+                        ).padding(top = Spacing.BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
             ) {
                 Text(text = errorType.toMessage())
             }

@@ -1,12 +1,12 @@
 package com.routeforge.routing.domain.usecase
 
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.coredomain.RegionDeletionResult
 import com.routeforge.coredomain.RegionUsageTracker
-import com.routeforge.routing.domain.StorageQuotaStore
+import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.RegionStatus
+import com.routeforge.routing.domain.StorageQuotaStore
 
 /** Silently removes least-recently-used downloaded regions until total usage is at or under the
  *  configured budget (FR-006), never touching a region needed by the current route draft or the
@@ -48,7 +48,10 @@ class EnforceStorageQuotaUseCase(
 
     private fun protectedRegionIds(): Set<String> {
         val draftPoints = draftWaypointsHolder.points.value
-        val activeRoutePoints = lastComputedRouteHolder.route.value?.points.orEmpty()
+        val activeRoutePoints =
+            lastComputedRouteHolder.route.value
+                ?.points
+                .orEmpty()
         return (draftPoints + activeRoutePoints)
             .mapNotNull { point -> regionCatalog.regionContaining(point.latitude, point.longitude)?.id }
             .toSet()

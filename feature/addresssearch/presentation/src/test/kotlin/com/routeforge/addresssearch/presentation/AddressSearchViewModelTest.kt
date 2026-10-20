@@ -150,7 +150,10 @@ class AddressSearchViewModelTest {
             viewModel.onAction(AddressSearchAction.OnSubmit)
 
             assertEquals(AddressSearchError.NETWORK_FAILURE, viewModel.state.value.errorType)
-            assertTrue(viewModel.state.value.results.isEmpty())
+            assertTrue(
+                viewModel.state.value.results
+                    .isEmpty(),
+            )
         }
 
     /** FR-005: a stale search response must never land after a newer query's results —
@@ -302,7 +305,11 @@ class AddressSearchViewModelTest {
     fun `an arrived place with no name has a blank name and the favorite name starts empty`() {
         val viewModel = createViewModel(initialPlace = InitialPlace(52.52, 13.405, name = null))
 
-        assertEquals("", viewModel.state.value.pendingChoiceResult?.name)
+        assertEquals(
+            "",
+            viewModel.state.value.pendingChoiceResult
+                ?.name,
+        )
         viewModel.onAction(AddressSearchAction.OnChooseSaveAsFavorite)
         assertEquals("", viewModel.state.value.favoriteNameInput)
     }
@@ -363,7 +370,11 @@ class AddressSearchViewModelTest {
 
         viewModel.onAction(AddressSearchAction.OnSelectResult(0))
 
-        assertEquals("Place", viewModel.state.value.pendingChoiceResult?.name)
+        assertEquals(
+            "Place",
+            viewModel.state.value.pendingChoiceResult
+                ?.name,
+        )
     }
 
     @Test

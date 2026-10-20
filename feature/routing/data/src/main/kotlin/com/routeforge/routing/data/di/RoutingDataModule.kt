@@ -1,5 +1,9 @@
 package com.routeforge.routing.data.di
 
+import com.routeforge.coredata.AndroidForegroundServiceController
+import com.routeforge.coredomain.RegionCatalog
+import com.routeforge.coredomain.RegionUsageTracker
+import com.routeforge.coredomain.RoutingEngine
 import com.routeforge.routing.data.BrouterRoutingEngine
 import com.routeforge.routing.data.BundledRegionCatalog
 import com.routeforge.routing.data.GpxRouteFileCodec
@@ -9,13 +13,9 @@ import com.routeforge.routing.data.RegionDownloadControllerImpl
 import com.routeforge.routing.data.RegionDownloadForegroundService
 import com.routeforge.routing.data.SharedPreferencesRegionUsageTracker
 import com.routeforge.routing.data.SharedPreferencesStorageQuotaStore
-import com.routeforge.coredata.AndroidForegroundServiceController
-import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.routing.domain.RegionDownloadController
 import com.routeforge.routing.domain.RegionDownloader
-import com.routeforge.coredomain.RegionUsageTracker
 import com.routeforge.routing.domain.RouteFileCodec
-import com.routeforge.coredomain.RoutingEngine
 import com.routeforge.routing.domain.StorageQuotaStore
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
@@ -72,4 +72,3 @@ val routingDataModule =
         single { ImportRouteFileUseCase(get()) }
         single { ExportRouteFileUseCase(get()) }
     }
-

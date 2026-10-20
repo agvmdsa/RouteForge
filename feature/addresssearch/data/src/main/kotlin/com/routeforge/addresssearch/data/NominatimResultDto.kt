@@ -1,8 +1,8 @@
 package com.routeforge.addresssearch.data
 
 import com.routeforge.coredomain.model.PlaceSearchResult
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /** Matches Nominatim's `format=jsonv2` response shape (only the fields this app actually uses). */
 @Serializable

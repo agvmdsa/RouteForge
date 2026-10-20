@@ -3,11 +3,11 @@ package com.routeforge.routing.presentation.regioncatalog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.coredomain.model.RegionStatus
+import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.RegionDownloadController
 import com.routeforge.routing.domain.RegionDownloadEvent
-import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.routing.domain.usecase.ComputeRegionUsageUseCase
-import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.usecase.DeleteRegionUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
 import kotlinx.coroutines.channels.Channel
@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 class RegionCatalogViewModel(
     private val observeRegionCatalog: ObserveRegionCatalogUseCase,

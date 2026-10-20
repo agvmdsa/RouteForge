@@ -12,6 +12,5 @@ class ExportRouteFileUseCase(
         format: RouteFileFormat,
     ): ByteArray = requireCodec(format).serialize(route)
 
-    private fun requireCodec(format: RouteFileFormat): RouteFileCodec =
-        codecs[format] ?: error("No RouteFileCodec registered for $format")
+    private fun requireCodec(format: RouteFileFormat): RouteFileCodec = codecs[format] ?: error("No RouteFileCodec registered for $format")
 }

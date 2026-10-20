@@ -51,15 +51,15 @@ import com.routeforge.designsystem.components.TooltipAnchor
 import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.speed.SpeedSelectorDialog
 import com.routeforge.designsystem.theme.Spacing
+import com.routeforge.simulation.presentation.R
 import com.routeforge.simulation.presentation.SimulationAction
 import com.routeforge.simulation.presentation.SimulationState
-import com.routeforge.simulation.presentation.R
 import com.routeforge.simulation.presentation.WaypointEditTriggerButton
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditAction
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditState
+import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.roundToInt
-import kotlinx.coroutines.launch
 
 private val ProgressCardShape = RoundedCornerShape(20.dp)
 private val ProgressCardElevation = 4.dp

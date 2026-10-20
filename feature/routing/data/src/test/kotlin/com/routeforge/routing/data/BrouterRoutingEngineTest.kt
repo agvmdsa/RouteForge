@@ -1,8 +1,8 @@
 package com.routeforge.routing.data
 
-import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
+import com.routeforge.coredomain.model.RoutePoint
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test

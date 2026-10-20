@@ -5,8 +5,8 @@ import com.routeforge.coredata.toNetworkError
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.EmptyResult
 import com.routeforge.coredomain.Result
-import com.routeforge.routing.domain.RegionDownloader
 import com.routeforge.coredomain.model.Region
+import com.routeforge.routing.domain.RegionDownloader
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.plugins.onDownload

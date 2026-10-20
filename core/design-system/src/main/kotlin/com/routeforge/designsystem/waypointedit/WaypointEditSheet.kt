@@ -29,7 +29,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.routeforge.coredomain.model.ModeAvailability
 import com.routeforge.designsystem.theme.Spacing
+
 private const val DEFAULT_SHEET_HEIGHT_FRACTION = 0.5f
+
 /** A fixed estimate, not measured — reserved in [listHeight] up front, the instant
  *  [hasUnappliedReorder] turns true, rather than discovered reactively via [onSizeChanged] after
  *  the fact. Measuring it reactively doesn't work here: on the very first frame the row appears,

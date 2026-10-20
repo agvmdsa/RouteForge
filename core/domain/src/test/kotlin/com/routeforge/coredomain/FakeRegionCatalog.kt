@@ -2,7 +2,6 @@ package com.routeforge.coredomain
 
 import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.coredomain.RegionDeletionResult
-
 import com.routeforge.coredomain.model.Region
 
 class FakeRegionCatalog(
