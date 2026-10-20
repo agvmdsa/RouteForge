@@ -73,6 +73,24 @@ test_only_the_first_ten_violations_are_shown_and_the_rest_is_counted() {
   assert_contains "$OUT" "first 10"
 }
 
+test_a_report_in_an_unknown_format_is_shown_as_it_is_instead_of_nothing() {
+  workspace
+  ktlint_report core/domain "Lint error > Something unexpected happened
+second line of the report"
+  annotate
+  assert_status 0
+  assert_eq 0 "$(count '::error')"
+  assert_contains "$OUT" "::notice title=ktlint report::core/domain/build/reports/ktlint/ktlintMainSourceSetCheck/ktlintMainSourceSetCheck.txt: Lint error > Something unexpected happened"
+  assert_contains "$OUT" "second line of the report"
+}
+
+test_an_empty_ktlint_report_prints_nothing() {
+  workspace
+  ktlint_report app ""
+  annotate
+  assert_empty "$OUT"
+}
+
 test_a_failed_test_becomes_an_error_with_its_class_and_name() {
   workspace
   junit_report feature/simulation/presentation '<?xml version="1.0" encoding="UTF-8"?>
