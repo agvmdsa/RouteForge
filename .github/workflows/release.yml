@@ -1,0 +1,76 @@
+# Publishes a Release when a tag vX.Y.Z is pushed.
+#
+#   prepare       checks the tag (form, version limits, version larger than every other tag, commit on main, no published Release)
+#   ci            the same checks as a pull request (calls ci.yml)
+#   build-signed  builds the release APK and signs it; the only job that can read the signing secrets, and it cannot write
+#   publish       creates the Release; the only job that can write, and it cannot read the signing secrets
+#
+# The four secrets are secrets of the repository environment "release", which the owner restricts to tags v*, so a run
+# started from a branch never receives them. See docs/RELEASING.md.
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      version_name: ${{ steps.version.outputs.version_name }}
+      version_code: ${{ steps.version.outputs.version_code }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check the tag and derive the version
+        id: version
+        run: |
+          if ! output=$(bash .github/scripts/release-version.sh "$GITHUB_REF_NAME" 2>"$RUNNER_TEMP/release-version.err"); then
+            echo "::error title=Release refused::$(cat "$RUNNER_TEMP/release-version.err")"
+            exit 1
+          fi
+          echo "$output" >> "$GITHUB_OUTPUT"
+          echo "$output"
+
+      - name: Check the commit is on the main branch
+        run: |
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error title=Release refused::$GITHUB_REF_NAME is not on the main branch (commit $GITHUB_SHA is not reachable from origin/main)"
+            exit 1
+          fi
+
+      - name: Check there is no published Release for the tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if reply=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$GITHUB_REF_NAME" 2>&1); then
+            echo "::error title=Release refused::A Release for $GITHUB_REF_NAME already exists; it was left unchanged"
+            exit 1
+          fi
+          case "$reply" in
+            *"Not Found"* | *"404"*) echo "No Release for $GITHUB_REF_NAME yet." ;;
+            *)
+              echo "::error title=Release refused::Could not check whether a Release for $GITHUB_REF_NAME exists: $reply"
+              exit 1
+              ;;
+          esac
+
+  ci:
+    name: ci
+    needs: prepare
+    uses: ./.github/workflows/ci.yml
+
