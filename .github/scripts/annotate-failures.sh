@@ -27,6 +27,10 @@ unxml() {
 
 VIOLATION='^(.+\.kts?):([0-9]+):([0-9]+): (.*)$'
 
+ktlint_reports() {
+  find "$root" -path '*/build/reports/ktlint/*' -name '*.txt' 2>/dev/null | sort
+}
+
 ktlint_total=0
 while IFS= read -r report; do
   [ -z "$report" ] && continue
@@ -40,7 +44,21 @@ while IFS= read -r report; do
       fi
     fi
   done < "$report"
-done < <(find "$root" -path '*/build/reports/ktlint/*' -name '*.txt' 2>/dev/null | sort)
+done < <(ktlint_reports)
+# A report in a format this script does not know must not make the failure invisible: show its first lines as they are.
+if [ "$ktlint_total" -eq 0 ]; then
+  shown=0
+  while IFS= read -r report; do
+    [ -z "$report" ] && continue
+    while IFS= read -r line; do
+      [ -z "$line" ] && continue
+      shown=$((shown + 1))
+      if [ "$shown" -le "$LIMIT" ]; then
+        printf '::notice title=ktlint report::%s: %s\n' "${report#"$root"/}" "$(escape "$line")"
+      fi
+    done < "$report"
+  done < <(ktlint_reports)
+fi
 if [ "$ktlint_total" -gt "$LIMIT" ]; then
   printf '::notice title=ktlint::%s violations in total; the first %s are shown (the full report is in the failure-reports artifact)\n' "$ktlint_total" "$LIMIT"
 fi
