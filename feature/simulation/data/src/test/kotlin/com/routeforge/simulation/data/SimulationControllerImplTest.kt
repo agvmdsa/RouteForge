@@ -12,6 +12,7 @@ import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.domain.model.SimulationStatus
 import com.routeforge.simulation.domain.model.SpeedSetting
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -193,7 +194,9 @@ class SimulationControllerImplTest {
                     mockLocationPublisher = publisher,
                     mockLocationAuthorizationChecker = authorizationChecker,
                     lastKnownRealLocationHolder = lastKnownRealLocationHolder,
-                    coroutineScope = this,
+                    // This session loops forever, so its tick loop must not be a child of the test itself; the background scope is
+                    // cancelled when the test body finishes.
+                    coroutineScope = this.backgroundScope,
                     completionAutoStopDelayMillis = 5_000L,
                 )
 
@@ -256,7 +259,8 @@ class SimulationControllerImplTest {
         runTest {
             val controller = createController()
             controller.startRoute(longRoute, speedSetting = SpeedSetting.Manual(10f))
-            val authorizationLostDeferred = async { controller.authorizationLost.first() }
+            // Subscribe before the tick: the flow has no replay, so a collector started later would miss the event.
+            val authorizationLostDeferred = async(start = CoroutineStart.UNDISPATCHED) { controller.authorizationLost.first() }
 
             authorizationChecker.authorized = false
             controller.tick(elapsedSeconds = 1.0)
