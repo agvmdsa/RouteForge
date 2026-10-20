@@ -74,3 +74,108 @@ jobs:
     needs: prepare
     uses: ./.github/workflows/ci.yml
 
+  build-signed:
+    name: build-signed
+    needs: [prepare, ci]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Accept Android SDK licences
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ -x "$SDKMANAGER" ]; then
+            yes | "$SDKMANAGER" --licenses > /dev/null || true
+          else
+            echo "::warning::sdkmanager not found under ANDROID_HOME; relying on the licences already accepted on the runner"
+          fi
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Check the signing secrets and decode the key
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          missing=""
+          for name in RELEASE_KEYSTORE_BASE64 RELEASE_KEYSTORE_PASSWORD RELEASE_KEY_ALIAS RELEASE_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              missing="$missing $name"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error title=Release refused::These signing secrets are missing or empty (check they are secrets of the release environment, not of the repository):$missing"
+            exit 1
+          fi
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+          if [ ! -s "$RUNNER_TEMP/release.keystore" ]; then
+            echo "::error title=Release refused::RELEASE_KEYSTORE_BASE64 did not decode to a key store"
+            exit 1
+          fi
+
+      - name: Build the signed release APK
+        env:
+          ROUTEFORGE_KEYSTORE_FILE: ${{ runner.temp }}/release.keystore
+          ROUTEFORGE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          ROUTEFORGE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          ROUTEFORGE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+          VERSION_NAME: ${{ needs.prepare.outputs.version_name }}
+          VERSION_CODE: ${{ needs.prepare.outputs.version_code }}
+        run: ./gradlew assembleRelease -Prouteforge.versionName="$VERSION_NAME" -Prouteforge.versionCode="$VERSION_CODE"
+
+      - name: Verify the signature and the version, name the files
+        env:
+          TAG: ${{ github.ref_name }}
+          VERSION_NAME: ${{ needs.prepare.outputs.version_name }}
+          VERSION_CODE: ${{ needs.prepare.outputs.version_code }}
+        run: |
+          APK=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
+          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)
+          echo "Using $APK and $BUILD_TOOLS"
+          if ! "${BUILD_TOOLS}apksigner" verify --print-certs "$APK"; then
+            echo "::error title=Release refused::The release APK is not validly signed"
+            exit 1
+          fi
+          BADGING=$("${BUILD_TOOLS}aapt2" dump badging "$APK" | head -n 1)
+          echo "$BADGING"
+          case "$BADGING" in
+            *"versionCode='$VERSION_CODE'"*"versionName='$VERSION_NAME'"*) ;;
+            *)
+              echo "::error title=Release refused::The APK does not carry version $VERSION_NAME ($VERSION_CODE)"
+              exit 1
+              ;;
+          esac
+          mkdir -p dist
+          cp "$APK" "dist/RouteForge-$TAG.apk"
+          (cd dist && sha256sum "RouteForge-$TAG.apk" > "RouteForge-$TAG.apk.sha256" && cat "RouteForge-$TAG.apk.sha256")
+
+      - name: Keep the files for publishing
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-files
+          path: dist/*
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Remove the key file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"
+
