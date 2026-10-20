@@ -64,6 +64,10 @@ jobs:
         if: success() || failure()
         run: ./gradlew test
 
+      - name: Show the first failures on the pull request
+        if: failure()
+        run: bash .github/scripts/annotate-failures.sh "$GITHUB_WORKSPACE"
+
       - name: Summary
         if: always()
         run: |
