@@ -179,3 +179,49 @@ jobs:
         if: always()
         run: rm -f "$RUNNER_TEMP/release.keystore"
 
+  publish:
+    name: publish
+    needs: [prepare, build-signed]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+    steps:
+      - name: Get the files
+        uses: actions/download-artifact@v8
+        with:
+          name: release-files
+          path: dist
+
+      - name: Refuse a published Release, replace a leftover draft
+        run: |
+          existing=$(gh api "repos/$GH_REPO/releases" --paginate --jq ".[] | select(.tag_name == \"$TAG\") | \"\(.id) \(.draft)\"")
+          echo "$existing" | while read -r id draft; do
+            [ -z "$id" ] && continue
+            if [ "$draft" = "true" ]; then
+              echo "Deleting the unpublished draft $id left by an earlier run for $TAG"
+              gh api -X DELETE "repos/$GH_REPO/releases/$id"
+            fi
+          done
+          if echo "$existing" | grep -q ' false$'; then
+            echo "::error title=Release refused::A published Release for $TAG already exists; it was left unchanged"
+            exit 1
+          fi
+
+      - name: Create the Release as a draft, then publish it
+        run: |
+          gh release create "$TAG" --draft --verify-tag --generate-notes --title "RouteForge $TAG" \
+            "dist/RouteForge-$TAG.apk" "dist/RouteForge-$TAG.apk.sha256"
+          gh release edit "$TAG" --draft=false
+
+      - name: Remove an unpublished draft left by this run
+        if: failure() || cancelled()
+        run: |
+          ids=$(gh api "repos/$GH_REPO/releases" --paginate --jq ".[] | select(.draft and .tag_name == \"$TAG\") | .id") || true
+          for id in $ids; do
+            gh api -X DELETE "repos/$GH_REPO/releases/$id" || true
+          done
