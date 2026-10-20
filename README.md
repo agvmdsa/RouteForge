@@ -9,6 +9,10 @@
   road-following routes — computed fully offline, on-device, no server or API key required.
 </p>
 
+<p align="center">
+  <a href="https://github.com/agvmdsa/RouteForge/actions/workflows/ci.yml"><img src="https://github.com/agvmdsa/RouteForge/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status of the main branch"></a>
+</p>
+
 ## Why
 
 Most "fake GPS" apps on the Play Store connect waypoints with a straight line and ignore basic physical consistency (speed, bearing, accuracy), which makes the simulated position trivially inconsistent with real sensor data. RouteForge aims to do this properly:
@@ -44,6 +48,8 @@ Most "fake GPS" apps on the Play Store connect waypoints with a straight line an
 ## Status
 
 Early stage — actively being designed and built. Not yet on the Play Store.
+
+Every pull request is checked automatically (code style, build and unit tests), and a release is published from a tag; see [docs/RELEASING.md](docs/RELEASING.md).
 
 ## License
 
