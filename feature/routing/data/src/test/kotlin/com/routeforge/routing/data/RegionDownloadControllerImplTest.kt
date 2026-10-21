@@ -107,12 +107,12 @@ private class FakeRegionUsageTracker : RegionUsageTracker {
 }
 
 private class FakeStorageQuotaStore : StorageQuotaStore {
-    private val _maxBytes = MutableStateFlow<Long?>(null)
+    private val maxBytesState = MutableStateFlow<Long?>(null)
 
-    override fun observeMaxBytes(): StateFlow<Long?> = _maxBytes
+    override fun observeMaxBytes(): StateFlow<Long?> = maxBytesState
 
     override fun setMaxBytes(maxBytes: Long?) {
-        _maxBytes.value = maxBytes
+        maxBytesState.value = maxBytes
     }
 }
 

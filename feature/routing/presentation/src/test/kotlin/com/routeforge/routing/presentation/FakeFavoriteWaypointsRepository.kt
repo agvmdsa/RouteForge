@@ -8,10 +8,10 @@ import kotlinx.coroutines.flow.StateFlow
 class FakeFavoriteWaypointsRepository(
     initialFavorites: List<FavoriteWaypoint> = emptyList(),
 ) : FavoriteWaypointsRepository {
-    private val _favorites = MutableStateFlow(initialFavorites)
+    private val favoritesState = MutableStateFlow(initialFavorites)
     private var nextId = 0
 
-    override fun observeFavorites(): StateFlow<List<FavoriteWaypoint>> = _favorites
+    override fun observeFavorites(): StateFlow<List<FavoriteWaypoint>> = favoritesState
 
     override fun add(
         name: String,
@@ -19,7 +19,7 @@ class FakeFavoriteWaypointsRepository(
         longitude: Double,
     ): FavoriteWaypoint {
         val favorite = FavoriteWaypoint(id = "fake-${nextId++}", name = name, latitude = latitude, longitude = longitude)
-        _favorites.value = _favorites.value + favorite
+        favoritesState.value = favoritesState.value + favorite
         return favorite
     }
 
@@ -29,13 +29,13 @@ class FakeFavoriteWaypointsRepository(
         latitude: Double,
         longitude: Double,
     ) {
-        _favorites.value =
-            _favorites.value.map { favorite ->
+        favoritesState.value =
+            favoritesState.value.map { favorite ->
                 if (favorite.id == id) favorite.copy(name = name, latitude = latitude, longitude = longitude) else favorite
             }
     }
 
     override fun delete(id: String) {
-        _favorites.value = _favorites.value.filterNot { it.id == id }
+        favoritesState.value = favoritesState.value.filterNot { it.id == id }
     }
 }

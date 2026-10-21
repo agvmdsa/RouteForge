@@ -113,7 +113,7 @@ data class TourLabels(
  *  point at them. */
 object TourTargets {
     /** The Saved tab in the bottom bar. */
-    const val SavedTab = "app_tab_saved"
+    const val SAVED_TAB = "app_tab_saved"
 }
 
 /** Holds each registered target's current on-screen bounds for a single screen's tour — not

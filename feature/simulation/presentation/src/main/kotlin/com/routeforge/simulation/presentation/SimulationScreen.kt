@@ -267,7 +267,7 @@ private fun rememberSimulationTourSteps(state: SimulationState): List<TourStep> 
         explanatoryStep("sim_joystick_speed", stringResource(R.string.simulation_tour_desc_joystick_speed)),
         // The Saved tab sits in the app's bottom bar, outside this screen — the tour finds it through
         // the shell's own registry.
-        TourStep(id = "sim_saved_tab", text = stringResource(R.string.simulation_tour_desc_saved_tab), targetId = TourTargets.SavedTab),
+        TourStep(id = "sim_saved_tab", text = stringResource(R.string.simulation_tour_desc_saved_tab), targetId = TourTargets.SAVED_TAB),
     )
 }
 

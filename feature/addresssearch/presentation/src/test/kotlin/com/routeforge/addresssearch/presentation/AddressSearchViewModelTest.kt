@@ -58,9 +58,9 @@ private class FakeGeocodeClient(
 
 private class FakeFavoriteWaypointsRepository : FavoriteWaypointsRepository {
     val added = mutableListOf<Triple<String, Double, Double>>()
-    private val _favorites = MutableStateFlow(emptyList<FavoriteWaypoint>())
+    private val favoritesState = MutableStateFlow(emptyList<FavoriteWaypoint>())
 
-    override fun observeFavorites(): StateFlow<List<FavoriteWaypoint>> = _favorites
+    override fun observeFavorites(): StateFlow<List<FavoriteWaypoint>> = favoritesState
 
     override fun add(
         name: String,

@@ -176,7 +176,7 @@ fun MainTabsScaffold(
                                         label = { Text(stringResource(entry.item.labelRes)) },
                                         modifier =
                                             if (entry.item.tab == AppTab.SAVED) {
-                                                Modifier.tourTarget(TourTargets.SavedTab)
+                                                Modifier.tourTarget(TourTargets.SAVED_TAB)
                                             } else {
                                                 Modifier
                                             },
