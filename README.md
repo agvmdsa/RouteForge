@@ -10,6 +10,14 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/agvmdsa/RouteForge/releases/latest"><img src="docs/download-apk.svg" width="320" alt="Download the latest RouteForge APK"></a>
+</p>
+
+<p align="center">
+  <sub>Signed release · SHA-256 checksum next to every file · <a href="#install">how to install</a></sub>
+</p>
+
+<p align="center">
   <a href="https://github.com/agvmdsa/RouteForge/actions/workflows/ci.yml"><img src="https://github.com/agvmdsa/RouteForge/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status of the main branch"></a>
 </p>
 
@@ -28,6 +36,15 @@ Most "fake GPS" apps on the Play Store connect waypoints with a straight line an
 - **Favorites, not just one-off routes** — save a single location or a whole planned route by name and reuse it later, without re-tapping every point again.
 - **Offline map data you control** — download only the regions you actually need, with a storage quota you set and manage yourself.
 - **No ads, open source.**
+
+## Install
+
+1. Tap **Download APK** above (or open the [latest release](https://github.com/agvmdsa/RouteForge/releases/latest)) and download `RouteForge-vX.Y.Z.apk`; the file name carries the version.
+2. Open the file. Android asks to allow installing apps from your browser or file manager: allow it for this install.
+3. Open RouteForge. Its guided setup takes you through choosing it as the mock location app in Developer options.
+4. Optional: download the `.sha256` file next to the APK and check it with `shasum -a 256 -c RouteForge-vX.Y.Z.apk.sha256`.
+
+RouteForge needs Android 8.0 or newer and is not on the Play Store yet. A newer release installs over an older one and updates it in place, because every release is signed with the same key.
 
 ## Basic usage
 
