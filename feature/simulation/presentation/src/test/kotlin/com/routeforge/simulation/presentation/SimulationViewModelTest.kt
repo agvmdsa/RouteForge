@@ -334,7 +334,7 @@ class SimulationViewModelTest {
     }
 
     @Test
-    fun `confirming the start route dialog while unauthorized reports a distinct error, closes the dialog, and never calls the controller`() {
+    fun `confirming the start route dialog while unauthorized reports a distinct error, closes it, and never calls the controller`() {
         authorizationChecker.authorized = false
         lastComputedRouteHolder.set(sampleRoute)
         val viewModel = createViewModel()
@@ -395,9 +395,10 @@ class SimulationViewModelTest {
 
         assertTrue(!viewModel.state.value.isStartRouteDialogOpen)
         assertEquals(1, controller.startRouteCalls.size)
-        assertEquals(sampleRoute, controller.startRouteCalls.first().route)
-        assertEquals(5.0f, controller.startRouteCalls.first().speedSetting.metersPerSecond, 0.001f)
-        assertEquals(ExecutionMode.Once, controller.startRouteCalls.first().executionMode)
+        val call = controller.startRouteCalls.first()
+        assertEquals(sampleRoute, call.route)
+        assertEquals(5.0f, call.speedSetting.metersPerSecond, 0.001f)
+        assertEquals(ExecutionMode.Once, call.executionMode)
     }
 
     @Test

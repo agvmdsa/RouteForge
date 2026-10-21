@@ -42,11 +42,11 @@ private val ArrowShaftWidth = 10.dp
 private val ArrowOutlineWidth = 3.dp
 private val ArrowGapFromCircle = 10.dp
 private val ArrowBobDistance = 12.dp
-private const val PulseMillis = 900
-private const val MinPulseScale = 0.92f
-private const val MaxPulseScale = 1.08f
-private const val StaticPhase = 0.5f
-private const val CircleFillAlpha = 0.18f
+private const val PULSE_MILLIS = 900
+private const val MIN_PULSE_SCALE = 0.92f
+private const val MAX_PULSE_SCALE = 1.08f
+private const val STATIC_PHASE = 0.5f
+private const val CIRCLE_FILL_ALPHA = 0.18f
 
 /** The no-dimming "do this here" highlight an action step shows: a pulsing circle with a bobbing
  *  arrow pointing at it. Fills its parent, draws only, and has no pointer input — touches fall
@@ -67,12 +67,12 @@ fun TourActionHint(
 ) {
     val phase: State<Float> =
         if (rememberReducedMotion()) {
-            rememberUpdatedState(StaticPhase)
+            rememberUpdatedState(STATIC_PHASE)
         } else {
             rememberInfiniteTransition(label = "tourActionHint").animateFloat(
                 initialValue = 0f,
                 targetValue = 1f,
-                animationSpec = infiniteRepeatable(tween(PulseMillis, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+                animationSpec = infiniteRepeatable(tween(PULSE_MILLIS, easing = FastOutSlowInEasing), RepeatMode.Reverse),
                 label = "tourActionHintPhase",
             )
         }
@@ -96,9 +96,9 @@ fun TourActionHint(
             } else {
                 CenterCircleRadius.toPx()
             }
-        val radius = baseRadius * lerp(MinPulseScale, MaxPulseScale, phase.value)
+        val radius = baseRadius * lerp(MIN_PULSE_SCALE, MAX_PULSE_SCALE, phase.value)
 
-        drawCircle(color = accent.copy(alpha = CircleFillAlpha), radius = radius, center = center)
+        drawCircle(color = accent.copy(alpha = CIRCLE_FILL_ALPHA), radius = radius, center = center)
         drawCircle(color = Color.White, radius = radius, center = center, style = Stroke(width = RingOutlineWidth.toPx()))
         drawCircle(color = accent, radius = radius, center = center, style = Stroke(width = RingWidth.toPx()))
 

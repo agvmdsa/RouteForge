@@ -128,7 +128,7 @@ class SimulationControllerImplTest {
     }
 
     @Test
-    fun `a route reaching its truly final completion keeps reporting the final point, then automatically ends once the completion-auto-stop delay elapses`() =
+    fun `a finished route keeps reporting its final point, then ends by itself once the completion-auto-stop delay elapses`() =
         runTest {
             val controller =
                 SimulationControllerImpl(
@@ -164,7 +164,7 @@ class SimulationControllerImplTest {
         }
 
     @Test
-    fun `a manual stop before the completion-auto-stop delay elapses ends the session immediately, and the later-elapsing scheduled callback is a harmless no-op`() =
+    fun `a manual stop before the completion-auto-stop delay ends the session at once, and the later scheduled callback is a no-op`() =
         runTest {
             val controller =
                 SimulationControllerImpl(

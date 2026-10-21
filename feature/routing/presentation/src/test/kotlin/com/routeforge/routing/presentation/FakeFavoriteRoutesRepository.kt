@@ -9,17 +9,17 @@ import kotlinx.coroutines.flow.StateFlow
 class FakeFavoriteRoutesRepository(
     initialFavoriteRoutes: List<FavoriteRoute> = emptyList(),
 ) : FavoriteRoutesRepository {
-    private val _favoriteRoutes = MutableStateFlow(initialFavoriteRoutes)
+    private val favoriteRoutesState = MutableStateFlow(initialFavoriteRoutes)
     private var nextId = 0
 
-    override fun observeFavoriteRoutes(): StateFlow<List<FavoriteRoute>> = _favoriteRoutes
+    override fun observeFavoriteRoutes(): StateFlow<List<FavoriteRoute>> = favoriteRoutesState
 
     override fun add(
         name: String,
         points: List<RoutePoint>,
     ): FavoriteRoute {
         val favoriteRoute = FavoriteRoute(id = "fake-${nextId++}", name = name, points = points)
-        _favoriteRoutes.value = _favoriteRoutes.value + favoriteRoute
+        favoriteRoutesState.value = favoriteRoutesState.value + favoriteRoute
         return favoriteRoute
     }
 
@@ -27,13 +27,13 @@ class FakeFavoriteRoutesRepository(
         id: String,
         name: String,
     ) {
-        _favoriteRoutes.value =
-            _favoriteRoutes.value.map { favoriteRoute ->
+        favoriteRoutesState.value =
+            favoriteRoutesState.value.map { favoriteRoute ->
                 if (favoriteRoute.id == id) favoriteRoute.copy(name = name) else favoriteRoute
             }
     }
 
     override fun delete(id: String) {
-        _favoriteRoutes.value = _favoriteRoutes.value.filterNot { it.id == id }
+        favoriteRoutesState.value = favoriteRoutesState.value.filterNot { it.id == id }
     }
 }

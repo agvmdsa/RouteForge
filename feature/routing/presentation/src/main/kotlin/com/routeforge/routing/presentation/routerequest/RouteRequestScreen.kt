@@ -269,7 +269,7 @@ private fun rememberRouteRequestTourSteps(state: RouteRequestState): List<TourSt
         explanatoryStep("routeReq_save_route", stringResource(R.string.routing_tour_desc_save_route)),
         // The Saved tab sits in the app's bottom bar, outside this screen — the tour finds it through
         // the shell's own registry.
-        TourStep(id = "routeReq_saved_tab", text = stringResource(R.string.routing_tour_desc_saved_tab), targetId = TourTargets.SavedTab),
+        TourStep(id = "routeReq_saved_tab", text = stringResource(R.string.routing_tour_desc_saved_tab), targetId = TourTargets.SAVED_TAB),
     )
 }
 

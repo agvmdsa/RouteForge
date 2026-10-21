@@ -62,7 +62,12 @@ class WaypointEditViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(UnconfinedTestDispatcher())
-        routingEngine.computePathResult = Route(points = points, geometry = points.map { LatLng(it.latitude, it.longitude) }, distanceMeters = 1.0)
+        routingEngine.computePathResult =
+            Route(
+                points = points,
+                geometry = points.map { LatLng(it.latitude, it.longitude) },
+                distanceMeters = 1.0,
+            )
     }
 
     @AfterEach
