@@ -20,6 +20,8 @@ import com.routeforge.routing.domain.usecase.SetStorageQuotaUseCase
 import com.routeforge.routing.presentation.favorites.FavoritesViewModel
 import com.routeforge.routing.presentation.regioncatalog.RegionCatalogViewModel
 import com.routeforge.routing.presentation.regioncoveragemap.RegionCoverageMapViewModel
+import com.routeforge.routing.presentation.routerequest.RouteComputer
+import com.routeforge.routing.presentation.routerequest.RouteModePreviewer
 import com.routeforge.routing.presentation.routerequest.RouteRequestViewModel
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditViewModel
 import com.routeforge.routing.presentation.savedroutes.SavedRoutesViewModel
@@ -48,14 +50,27 @@ val routingPresentationModule =
         factoryOf(::ComputeEditableWaypointRangeUseCase)
         factoryOf(::ObserveMapStyleUseCase)
         factoryOf(::SetMapStyleUseCase)
+        factory {
+            RouteModePreviewer(
+                prepareRouteOptions = get(),
+                computeRequiredRegions = get(),
+                lastComputedRouteHolder = get(),
+            )
+        }
+        factory {
+            RouteComputer(
+                prepareRouteOptions = get(),
+                computeRequiredRegions = get(),
+                lastComputedRouteHolder = get(),
+            )
+        }
         viewModel {
             RouteRequestViewModel(
-                prepareRouteOptions = get(),
-                lastComputedRouteHolder = get(),
+                routeModePreviewer = get(),
+                routeComputer = get(),
                 importRouteFile = get(),
                 exportRouteFile = get(),
                 lastKnownRealLocationHolder = get(),
-                computeRequiredRegions = get(),
                 draftWaypointsHolder = get(),
                 favoriteWaypointsRepository = get(),
                 favoriteRoutesRepository = get(),
