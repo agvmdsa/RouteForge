@@ -54,7 +54,7 @@ private const val READ_ONLY_ALPHA = 0.5f
  *  is the caller's responsibility, not this component's (spec 008's `/speckit-analyze` finding
  *  C5) — [onDelete] is only ever invoked for a tap/swipe the caller already decided to allow. */
 @Composable
-fun WaypointReorderList(
+internal fun WaypointReorderList(
     items: List<WaypointListItem>,
     onReorder: (fromIndex: Int, toIndex: Int) -> Unit,
     onDelete: (id: Int) -> Unit,

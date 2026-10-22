@@ -3,7 +3,7 @@ package com.routeforge.coredomain.link
 import com.routeforge.coredomain.model.RoutePoint
 
 /** What one address (a link) means. */
-sealed interface ExternalLink {
+internal sealed interface ExternalLink {
     /** One position, with the place's name when the address carries it. */
     data class Place(
         val point: RoutePoint,
