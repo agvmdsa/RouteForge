@@ -3,29 +3,15 @@ package com.routeforge.routing.presentation.routerequest
 import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.FileUpload
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Signpost
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Straighten
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -33,21 +19,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.TourProgressRepository
 import com.routeforge.coredomain.TourReplayCoordinator
-import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.TourSection
-import com.routeforge.designsystem.components.AutoDismissConfirmationPill
-import com.routeforge.designsystem.components.FabColumn
 import com.routeforge.designsystem.components.NoOpTourProgressRepository
-import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.components.TourHost
 import com.routeforge.designsystem.components.TourLabels
 import com.routeforge.designsystem.components.TwoButtonConfirmationSheet
-import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.map.RouteForgeMap
 import com.routeforge.designsystem.sheets.AddWaypointConfirmationSheet
 import com.routeforge.designsystem.sheets.MissingRegionsWarningSheet
 import com.routeforge.designsystem.theme.RouteForgeTheme
-import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.presentation.R
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditAction
@@ -205,126 +185,6 @@ internal fun RouteRequestScreen(
     RouteRequestDialogs(state = state, onAction = onAction)
 }
 
-/** Status pill, error banner, and the transient "waypoints updated" confirmation — the map's
- *  top-anchored overlays, as opposed to the bottom-anchored FAB columns. */
-@Composable
-private fun BoxScope.RouteRequestOverlays(
-    state: RouteRequestState,
-    showWaypointsUpdatedConfirmation: Boolean,
-    onDismissWaypointsUpdatedConfirmation: () -> Unit,
-) {
-    RouteStatusPill(
-        state = state,
-        modifier = Modifier.align(Alignment.TopCenter).padding(top = Spacing.ScreenContent),
-    )
-
-    state.errorType?.let { errorType ->
-        TopBanner(
-            modifier =
-                Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = Spacing.BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
-        ) {
-            Text(text = errorType.toMessage())
-        }
-    }
-
-    AutoDismissConfirmationPill(
-        message = stringResource(R.string.routing_waypoints_updated_message),
-        isVisible = showWaypointsUpdatedConfirmation,
-        onDismiss = onDismissWaypointsUpdatedConfirmation,
-        modifier = Modifier.align(Alignment.TopCenter).padding(top = Spacing.BannerTopOffset),
-    )
-}
-
-/** Bottom-start FAB column: import, add-from-favorites, undo (when available), and the waypoint
- *  reorder/edit sheet trigger. */
-@Composable
-private fun BoxScope.RouteRequestLeadingFabs(
-    state: RouteRequestState,
-    onAction: (RouteRequestAction) -> Unit,
-    onImportClick: () -> Unit,
-    editState: WaypointEditState,
-    onEditAction: (WaypointEditAction) -> Unit,
-) {
-    FabColumn(alignment = Alignment.BottomStart) {
-        FloatingActionButton(onClick = onImportClick, modifier = Modifier.tourTarget("routeReq_import")) {
-            Icon(Icons.Filled.FileUpload, contentDescription = stringResource(R.string.routing_import_button))
-        }
-        FloatingActionButton(
-            onClick = { onAction(RouteRequestAction.OnOpenFavoritesClick) },
-            modifier = Modifier.tourTarget("routeReq_add_from_favorites"),
-        ) {
-            Icon(Icons.Filled.Star, contentDescription = stringResource(R.string.routing_add_from_favorites_button))
-        }
-        if (state.draft.canUndo) {
-            FloatingActionButton(
-                onClick = { onAction(RouteRequestAction.OnUndo) },
-                modifier = Modifier.tourTarget("routeReq_undo"),
-            ) {
-                Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = stringResource(R.string.routing_undo_button))
-            }
-        }
-        WaypointEditSection(
-            points = state.draft.points,
-            chosenMode = state.chosenMode ?: state.route?.mode,
-            editState = editState,
-            onEditAction = onEditAction,
-        )
-    }
-}
-
-/** Bottom-end FAB column: mode-switch preview, the proceed/compute button, and save-route —
- *  all gated on there being enough waypoints to play at all. */
-@Composable
-private fun BoxScope.RouteRequestTrailingFabs(
-    state: RouteRequestState,
-    onAction: (RouteRequestAction) -> Unit,
-) {
-    FabColumn(alignment = Alignment.BottomEnd) {
-        if (state.draft.points.size >= MIN_WAYPOINTS_TO_PLAY) {
-            if (state.route == null) {
-                FloatingActionButton(
-                    onClick = { onAction(RouteRequestAction.OnSwitchRouteModeClick) },
-                    modifier = Modifier.tourTarget("routeReq_switch_mode"),
-                ) {
-                    if (state.isComputingPreview) {
-                        CircularProgressIndicator()
-                    } else {
-                        Icon(
-                            imageVector =
-                                if (state.previewMode ==
-                                    RoutePlaybackMode.GUIDED
-                                ) {
-                                    Icons.Filled.Straighten
-                                } else {
-                                    Icons.Filled.Signpost
-                                },
-                            contentDescription = stringResource(R.string.routing_switch_route_mode_button),
-                        )
-                    }
-                }
-            }
-            FloatingActionButton(
-                onClick = { onAction(RouteRequestAction.OnRequestRoute) },
-                modifier = Modifier.tourTarget("routeReq_proceed"),
-            ) {
-                if (state.isComputing) {
-                    CircularProgressIndicator()
-                } else {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.routing_proceed_button))
-                }
-            }
-            FloatingActionButton(
-                onClick = { onAction(RouteRequestAction.OnSaveRouteClick) },
-                modifier = Modifier.tourTarget("routeReq_save_route"),
-            ) {
-                Icon(Icons.Filled.Bookmark, contentDescription = stringResource(R.string.routing_save_route_button))
-            }
-        }
-    }
-}
-
 /** The screen's modal sheets — each gated on its own nullable/boolean state field, shown at most
  *  one at a time in practice since they correspond to mutually-exclusive user flows. */
 @Composable
@@ -432,17 +292,6 @@ private fun RouteRequestDialogs(
         )
     }
 }
-
-@Composable
-private fun RouteRequestError.toMessage(): String =
-    when (this) {
-        RouteRequestError.INVALID_EDIT_COORDINATES -> stringResource(R.string.routing_error_invalid_edit_coordinates)
-        RouteRequestError.TOO_FEW_WAYPOINTS_TO_PLAY -> stringResource(R.string.routing_error_too_few_waypoints)
-        RouteRequestError.IMPORT_TOO_FEW_WAYPOINTS -> stringResource(R.string.routing_error_import_too_few_waypoints)
-        RouteRequestError.IMPORT_COORDINATE_OUT_OF_RANGE -> stringResource(R.string.routing_error_import_coordinate_out_of_range)
-        RouteRequestError.IMPORT_MALFORMED -> stringResource(R.string.routing_error_import_malformed)
-        RouteRequestError.MODE_PREVIEW_NO_PATH -> stringResource(R.string.routing_error_mode_preview_no_path)
-    }
 
 @Preview
 @Composable
