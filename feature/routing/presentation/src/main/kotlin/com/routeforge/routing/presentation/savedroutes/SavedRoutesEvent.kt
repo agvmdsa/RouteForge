@@ -2,7 +2,7 @@ package com.routeforge.routing.presentation.savedroutes
 
 import com.routeforge.routing.domain.model.RouteFileFormat
 
-sealed interface SavedRoutesEvent {
+internal sealed interface SavedRoutesEvent {
     data object NavigateBack : SavedRoutesEvent
 
     data object NavigateToRegionCatalog : SavedRoutesEvent

@@ -5,9 +5,9 @@ import com.routeforge.coredomain.model.RequiredRegionsSummary
 import com.routeforge.coredomain.model.RouteOptions
 import com.routeforge.routing.domain.model.RouteFileFormat
 
-enum class SavedRoutesError { INVALID_NAME }
+internal enum class SavedRoutesError { INVALID_NAME }
 
-data class SavedRoutesState(
+internal data class SavedRoutesState(
     val routes: List<FavoriteRoute> = emptyList(),
     val isComputingId: String? = null,
     val routeOptions: RouteOptions? = null,

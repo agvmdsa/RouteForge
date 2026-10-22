@@ -7,7 +7,7 @@ import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.routing.domain.model.RouteDraft
 
-data class RouteRequestState(
+internal data class RouteRequestState(
     val draft: RouteDraft = RouteDraft(),
     val editingIndex: Int? = null,
     val editLatitudeInput: String = "",

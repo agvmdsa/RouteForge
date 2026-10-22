@@ -31,13 +31,13 @@ private val OverlayLabelShape = RoundedCornerShape(16.dp)
 private val OverlayLabelContentPadding = 12.dp
 
 @Composable
-fun RegionCoverageMapRoot(viewModel: RegionCoverageMapViewModel = koinViewModel()) {
+internal fun RegionCoverageMapRoot(viewModel: RegionCoverageMapViewModel = koinViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     RegionCoverageMapScreen(state = state, onAction = viewModel::onAction)
 }
 
 @Composable
-fun RegionCoverageMapScreen(
+internal fun RegionCoverageMapScreen(
     state: RegionCoverageMapState,
     onAction: (RegionCoverageMapAction) -> Unit,
 ) {

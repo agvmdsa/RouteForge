@@ -55,7 +55,7 @@ private val CardPadding = 16.dp
 private val EmptyStateIconBadgeSize = 72.dp
 
 @Composable
-fun FavoritesRoot(
+internal fun FavoritesRoot(
     isPickerMode: Boolean,
     onDone: () -> Unit,
     viewModel: FavoritesViewModel = koinViewModel { parametersOf(isPickerMode) },
@@ -72,7 +72,7 @@ fun FavoritesRoot(
 }
 
 @Composable
-fun FavoritesScreen(
+internal fun FavoritesScreen(
     state: FavoritesState,
     onAction: (FavoritesAction) -> Unit,
 ) {

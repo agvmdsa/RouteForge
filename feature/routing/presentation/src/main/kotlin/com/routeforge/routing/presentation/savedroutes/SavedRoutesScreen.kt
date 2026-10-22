@@ -70,7 +70,7 @@ private const val JSON_MIME_TYPE = "application/json"
 private const val GPX_MIME_TYPE = "application/gpx+xml"
 
 @Composable
-fun SavedRoutesRoot(
+internal fun SavedRoutesRoot(
     onDone: () -> Unit,
     onOpenRegionCatalog: () -> Unit,
     viewModel: SavedRoutesViewModel = koinViewModel(),
@@ -118,7 +118,7 @@ private fun writePendingExport(
 }
 
 @Composable
-fun SavedRoutesScreen(
+internal fun SavedRoutesScreen(
     state: SavedRoutesState,
     onAction: (SavedRoutesAction) -> Unit,
 ) {

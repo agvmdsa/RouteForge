@@ -57,7 +57,7 @@ private val MapStyleOptions: List<Pair<MapStyle, Int>> =
     )
 
 @Composable
-fun SettingsRoot(
+internal fun SettingsRoot(
     onManageDownloadsClick: () -> Unit,
     viewModel: SettingsViewModel = koinViewModel(),
 ) {
@@ -67,7 +67,7 @@ fun SettingsRoot(
 }
 
 @Composable
-fun SettingsScreen(
+internal fun SettingsScreen(
     state: SettingsState,
     onAction: (SettingsAction) -> Unit,
     onManageDownloadsClick: () -> Unit = {},

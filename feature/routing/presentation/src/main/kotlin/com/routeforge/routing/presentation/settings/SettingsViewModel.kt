@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class SettingsViewModel(
+internal class SettingsViewModel(
     private val observeStorageQuota: ObserveStorageQuotaUseCase,
     private val setStorageQuota: SetStorageQuotaUseCase,
     private val getStorageUsageSummary: GetStorageUsageSummaryUseCase,

@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.update
 /** Read-only snapshot of the region catalog at the time this screen opens — no live refresh
  *  needed, since nothing on this screen can change which regions are downloaded. [mapStyle] is
  *  likewise read once (not reactively), consistent with that same choice. */
-class RegionCoverageMapViewModel(
+internal class RegionCoverageMapViewModel(
     observeRegionCatalog: ObserveRegionCatalogUseCase,
     observeMapStyle: ObserveMapStyleUseCase,
 ) : ViewModel() {

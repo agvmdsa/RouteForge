@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class FavoritesViewModel(
+internal class FavoritesViewModel(
     isPickerMode: Boolean,
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
     private val pendingTeleportTargetHolder: PendingTeleportTargetHolder,

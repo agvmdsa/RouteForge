@@ -2,7 +2,7 @@ package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.routing.domain.model.RouteFileFormat
 
-sealed interface RouteRequestEvent {
+internal sealed interface RouteRequestEvent {
     data object GoToSimulate : RouteRequestEvent
 
     class ExportReady(

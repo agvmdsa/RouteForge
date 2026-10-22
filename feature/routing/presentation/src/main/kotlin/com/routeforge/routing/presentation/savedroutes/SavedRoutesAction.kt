@@ -3,7 +3,7 @@ package com.routeforge.routing.presentation.savedroutes
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.routing.domain.model.RouteFileFormat
 
-sealed interface SavedRoutesAction {
+internal sealed interface SavedRoutesAction {
     data class OnEditClick(
         val id: String,
     ) : SavedRoutesAction
