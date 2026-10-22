@@ -4,18 +4,9 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.SportsEsports
-import androidx.compose.material3.Button
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -32,24 +23,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.TourProgressRepository
 import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.model.TourSection
-import com.routeforge.designsystem.components.AutoDismissConfirmationPill
-import com.routeforge.designsystem.components.FabColumn
 import com.routeforge.designsystem.components.NoOpTourProgressRepository
-import com.routeforge.designsystem.components.TooltipAnchor
-import com.routeforge.designsystem.components.TopBanner
 import com.routeforge.designsystem.components.TourHost
 import com.routeforge.designsystem.components.TourLabels
-import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.map.RouteForgeMap
-import com.routeforge.designsystem.speed.SpeedSelectorDialog
-import com.routeforge.designsystem.speed.SpeedSelectorFab
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.simulation.presentation.components.CancelMockConfirmationSheet
 import com.routeforge.simulation.presentation.components.CancelRouteConfirmationSheet
-import com.routeforge.simulation.presentation.components.CoordinatePill
 import com.routeforge.simulation.presentation.components.FavoriteTeleportCancelRouteSheet
-import com.routeforge.simulation.presentation.components.Joystick
 import com.routeforge.simulation.presentation.components.JoystickInterruptSheet
 import com.routeforge.simulation.presentation.components.RouteProgressCard
 import com.routeforge.simulation.presentation.components.StartRouteDialog
@@ -61,11 +43,6 @@ import com.routeforge.simulation.presentation.waypointedit.WaypointEditState
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditViewModel
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
-import kotlin.math.roundToInt
-
-private const val MIN_SPEED_KMH = 0f
-private const val MAX_SPEED_KMH = 150f
-private val SpeedSelectorRangeKmh = MIN_SPEED_KMH..MAX_SPEED_KMH
 
 @Composable
 internal fun SimulationRoot(
@@ -213,121 +190,6 @@ internal fun SimulationScreen(
     SimulationDialogs(state = state, onAction = onAction)
 }
 
-/** Top-anchored overlays: the coordinate pill, the authorization/error banner, and the transient
- *  "waypoints updated" confirmation. */
-@Composable
-private fun BoxScope.SimulationTopOverlays(
-    state: SimulationState,
-    showWaypointsUpdatedConfirmation: Boolean,
-    onDismissWaypointsUpdatedConfirmation: () -> Unit,
-    onAction: (SimulationAction) -> Unit,
-) {
-    Box(
-        modifier =
-            Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .padding(top = Spacing.ScreenContent, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
-        contentAlignment = Alignment.Center,
-    ) {
-        CoordinatePill(
-            mockedSession = state.mockedSession,
-            isSearchingRealLocation = state.isSearchingRealLocation,
-            hasKnownRealLocation = state.realLocation != null,
-            onCancelMockClick = { onAction(SimulationAction.OnCancelMockClick) },
-        )
-    }
-
-    if (state.isBlockedByAuthorization) {
-        TopBanner(
-            contentPadding = Spacing.ScreenContent,
-            modifier =
-                Modifier
-                    .align(
-                        Alignment.TopCenter,
-                    ).padding(top = Spacing.BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
-        ) {
-            Text(stringResource(R.string.simulation_error_not_authorized))
-            Button(onClick = { onAction(SimulationAction.OnOpenSetupClick) }) {
-                Text(stringResource(R.string.simulation_go_to_setup_button))
-            }
-        }
-    } else {
-        state.errorType?.let { errorType ->
-            TopBanner(
-                modifier =
-                    Modifier
-                        .align(
-                            Alignment.TopCenter,
-                        ).padding(top = Spacing.BannerTopOffset, start = Spacing.ScreenContent, end = Spacing.ScreenContent),
-            ) {
-                Text(text = errorType.toMessage())
-            }
-        }
-    }
-
-    AutoDismissConfirmationPill(
-        message = stringResource(R.string.simulation_waypoints_updated_message),
-        isVisible = showWaypointsUpdatedConfirmation,
-        onDismiss = onDismissWaypointsUpdatedConfirmation,
-        modifier = Modifier.align(Alignment.TopCenter).padding(top = Spacing.BannerTopOffset),
-    )
-}
-
-/** Bottom-start FAB column (joystick speed selector, joystick toggle) plus the joystick itself and
- *  its speed dialog — grouped together since the dialog's open/closed state is only ever toggled
- *  from this column's own FAB. Route playback no longer has controls here (spec 011) — the
- *  joystick and an active route remain mutually exclusive, so this column is only ever shown when
- *  no route is loaded. */
-@Composable
-private fun BoxScope.SimulationMovementControls(
-    state: SimulationState,
-    onAction: (SimulationAction) -> Unit,
-) {
-    if (state.loadedRoute != null) return
-    var isJoystickSpeedDialogOpen by remember { mutableStateOf(false) }
-    FabColumn(alignment = Alignment.BottomStart) {
-        if (state.isJoystickVisible) {
-            val joystickSpeedDescription = stringResource(R.string.simulation_joystick_speed_button)
-            TooltipAnchor(tooltipText = joystickSpeedDescription) {
-                SpeedSelectorFab(
-                    onClick = { isJoystickSpeedDialogOpen = true },
-                    contentDescription = joystickSpeedDescription,
-                    modifier = Modifier.tourTarget("sim_joystick_speed"),
-                )
-            }
-        }
-        val joystickToggleDescription = stringResource(R.string.simulation_joystick_label)
-        TooltipAnchor(tooltipText = joystickToggleDescription) {
-            FloatingActionButton(
-                onClick = { onAction(SimulationAction.OnToggleJoystick) },
-                modifier = Modifier.tourTarget("sim_joystick_toggle"),
-            ) {
-                Icon(Icons.Filled.SportsEsports, contentDescription = joystickToggleDescription)
-            }
-        }
-    }
-
-    if (state.isJoystickVisible) {
-        Joystick(
-            onDrag = { bearing -> onAction(SimulationAction.OnJoystickDrag(bearing)) },
-            onReleased = { onAction(SimulationAction.OnJoystickReleased) },
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = Spacing.ScreenContent),
-        )
-        if (isJoystickSpeedDialogOpen) {
-            SpeedSelectorDialog(
-                title = stringResource(R.string.simulation_joystick_speed_dialog_title),
-                speedLabel = stringResource(R.string.simulation_speed_value_label, state.joystickSpeedKmh.roundToInt()),
-                confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
-                speedKmh = state.joystickSpeedKmh,
-                onSpeedChange = { kmh -> onAction(SimulationAction.OnJoystickSpeedChange(kmh)) },
-                onDismiss = { isJoystickSpeedDialogOpen = false },
-                speedRangeKmh = SpeedSelectorRangeKmh,
-            )
-        }
-    }
-}
-
 /** The screen's modal sheets/dialogs — each gated on its own nullable/boolean state field, shown
  *  at most one at a time in practice since they correspond to mutually-exclusive user flows. */
 @Composable
@@ -391,18 +253,6 @@ private fun SimulationDialogs(
         )
     }
 }
-
-@Composable
-private fun SimulationErrorType.toMessage(): String =
-    when (this) {
-        SimulationErrorType.NOT_AUTHORIZED -> stringResource(R.string.simulation_error_not_authorized)
-        SimulationErrorType.INVALID_SPEED -> stringResource(R.string.simulation_error_invalid_speed)
-        SimulationErrorType.INVALID_EXECUTION_TIMES -> stringResource(R.string.simulation_error_invalid_execution_times)
-        SimulationErrorType.JOYSTICK_NO_REAL_FIX -> stringResource(R.string.simulation_joystick_no_fix_message)
-        SimulationErrorType.REAL_LOCATION_PROVIDER_DISABLED -> stringResource(R.string.simulation_error_real_location_provider_disabled)
-        SimulationErrorType.REAL_LOCATION_PERMISSION_DENIED -> stringResource(R.string.simulation_error_real_location_permission_denied)
-        SimulationErrorType.REAL_LOCATION_TIMED_OUT -> stringResource(R.string.simulation_error_real_location_timed_out)
-    }
 
 @Preview
 @Composable
