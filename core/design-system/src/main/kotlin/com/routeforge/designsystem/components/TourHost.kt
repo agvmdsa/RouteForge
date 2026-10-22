@@ -161,39 +161,64 @@ fun TourHost(
         }
 
         val step = steps.getOrNull(current.index) ?: return@Box
-        when (current.phase) {
-            TourPhase.ARRIVING -> Unit
-            TourPhase.WAITING -> ActionStepHint(step, registry, labels, isTopMessageVisible, onSkip = ::skip)
-            TourPhase.PRESENTING, TourPhase.RESULT -> {
-                val isLastStep = statuses.drop(current.index + 1).none { it.isApplicable }
-                TourModalWindow(onDismissRequest = ::skip) { windowOriginOnScreen, windowSize ->
-                    if (current.phase == TourPhase.PRESENTING) {
-                        val bounds = step.targetId?.let(registry::boundsFor)
-                        if (bounds != null) {
-                            SpotlightOverlay(
-                                text = step.text,
-                                targetBoundsOnScreen = bounds,
-                                windowOriginOnScreen = windowOriginOnScreen,
-                                windowSize = windowSize,
-                                isLastStep = isLastStep,
-                                labels = labels,
-                                onNext = ::next,
-                                onSkip = ::skip,
-                            )
-                        }
-                    } else {
-                        ResultCallout(
-                            text = step.result?.text.orEmpty(),
-                            contentOriginOnScreen = contentOriginOnScreen,
+        TourPhaseOverlay(
+            step = step,
+            current = current,
+            statuses = statuses,
+            registry = registry,
+            labels = labels,
+            isTopMessageVisible = isTopMessageVisible,
+            contentOriginOnScreen = { contentOriginOnScreen },
+            onNext = ::next,
+            onSkip = ::skip,
+        )
+    }
+}
+
+@Composable
+private fun TourPhaseOverlay(
+    step: TourStep,
+    current: TourPosition,
+    statuses: List<TourStepStatus>,
+    registry: TourTargetRegistry,
+    labels: TourLabels,
+    isTopMessageVisible: Boolean,
+    contentOriginOnScreen: () -> Offset,
+    onNext: () -> Unit,
+    onSkip: () -> Unit,
+) {
+    when (current.phase) {
+        TourPhase.ARRIVING -> Unit
+        TourPhase.WAITING -> ActionStepHint(step, registry, labels, isTopMessageVisible, onSkip = onSkip)
+        TourPhase.PRESENTING, TourPhase.RESULT -> {
+            val isLastStep = statuses.drop(current.index + 1).none { it.isApplicable }
+            TourModalWindow(onDismissRequest = onSkip) { windowOriginOnScreen, windowSize ->
+                if (current.phase == TourPhase.PRESENTING) {
+                    val bounds = step.targetId?.let(registry::boundsFor)
+                    if (bounds != null) {
+                        SpotlightOverlay(
+                            text = step.text,
+                            targetBoundsOnScreen = bounds,
                             windowOriginOnScreen = windowOriginOnScreen,
                             windowSize = windowSize,
                             isLastStep = isLastStep,
                             labels = labels,
-                            isTopMessageVisible = isTopMessageVisible,
-                            onNext = ::next,
-                            onSkip = ::skip,
+                            onNext = onNext,
+                            onSkip = onSkip,
                         )
                     }
+                } else {
+                    ResultCallout(
+                        text = step.result?.text.orEmpty(),
+                        contentOriginOnScreen = contentOriginOnScreen(),
+                        windowOriginOnScreen = windowOriginOnScreen,
+                        windowSize = windowSize,
+                        isLastStep = isLastStep,
+                        labels = labels,
+                        isTopMessageVisible = isTopMessageVisible,
+                        onNext = onNext,
+                        onSkip = onSkip,
+                    )
                 }
             }
         }
