@@ -40,7 +40,7 @@ private val CardSpacing = 16.dp
 internal val IconBadgeSize = 72.dp
 
 @Composable
-fun MockLocationSetupRoot(
+internal fun MockLocationSetupRoot(
     onSetupReady: () -> Unit,
     viewModel: MockLocationSetupViewModel = koinViewModel(),
 ) {
@@ -70,7 +70,7 @@ fun MockLocationSetupRoot(
 }
 
 @Composable
-fun MockLocationSetupScreen(
+internal fun MockLocationSetupScreen(
     state: MockLocationSetupState,
     onAction: (MockLocationSetupAction) -> Unit,
 ) {

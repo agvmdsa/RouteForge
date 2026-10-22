@@ -8,7 +8,7 @@ import com.routeforge.coredomain.model.RoutePoint
  *  state to [com.routeforge.simulation.presentation.SimulationState] — research.md Decision 9 —
  *  so [com.routeforge.simulation.presentation.SimulationViewModel] doesn't grow this feature's own
  *  half-dozen fields directly. */
-data class WaypointEditState(
+internal data class WaypointEditState(
     val isOpen: Boolean = false,
     val isSessionActive: Boolean = false,
     val points: List<RoutePoint> = emptyList(),

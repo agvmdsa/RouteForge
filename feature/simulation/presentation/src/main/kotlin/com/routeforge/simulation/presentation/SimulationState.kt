@@ -8,7 +8,7 @@ import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.simulation.domain.model.SimulationSession
 import com.routeforge.simulation.domain.model.SpeedPresetType
 
-enum class SimulationErrorType {
+internal enum class SimulationErrorType {
     NOT_AUTHORIZED,
     INVALID_SPEED,
     INVALID_EXECUTION_TIMES,
@@ -18,9 +18,9 @@ enum class SimulationErrorType {
     REAL_LOCATION_TIMED_OUT,
 }
 
-enum class ExecutionModeSelection { ONCE, TIMES, LOOP, PING_PONG }
+internal enum class ExecutionModeSelection { ONCE, TIMES, LOOP, PING_PONG }
 
-data class SimulationState(
+internal data class SimulationState(
     val mockedSession: SimulationSession? = null,
     val realLocation: RealLocation? = null,
     val isSearchingRealLocation: Boolean = false,

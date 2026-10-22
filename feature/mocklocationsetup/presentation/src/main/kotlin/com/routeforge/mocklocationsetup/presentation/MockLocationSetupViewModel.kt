@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class MockLocationSetupViewModel(
+internal class MockLocationSetupViewModel(
     private val observeSetupState: ObserveSetupStateUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(MockLocationSetupState())

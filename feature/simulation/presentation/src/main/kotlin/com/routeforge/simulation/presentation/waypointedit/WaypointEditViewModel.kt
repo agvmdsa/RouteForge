@@ -24,7 +24,7 @@ private const val MIN_EDITABLE_WAYPOINTS = 2
  *  confirmed map-tap add, delete) cancels any in-flight recompute (FR-017) and re-runs
  *  [RecomputeRouteForBothModesUseCase]; a successful result is reported via [events] for
  *  [com.routeforge.simulation.presentation.SimulationViewModel] to apply to the live session. */
-class WaypointEditViewModel(
+internal class WaypointEditViewModel(
     private val recomputeRouteForBothModes: RecomputeRouteForBothModesUseCase,
     private val computeEditableWaypointRange: ComputeEditableWaypointRangeUseCase,
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,

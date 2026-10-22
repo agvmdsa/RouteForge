@@ -80,7 +80,7 @@ private const val MAX_SPEED_KMH = 150f
 private val SpeedSelectorRangeKmh = MIN_SPEED_KMH..MAX_SPEED_KMH
 
 @Composable
-fun SimulationRoot(
+internal fun SimulationRoot(
     onOpenSetup: () -> Unit,
     onOpenRegionCatalog: () -> Unit,
     viewModel: SimulationViewModel = koinViewModel(),
@@ -150,7 +150,7 @@ fun SimulationRoot(
 }
 
 @Composable
-fun SimulationScreen(
+internal fun SimulationScreen(
     state: SimulationState,
     onAction: (SimulationAction) -> Unit,
     editState: WaypointEditState = WaypointEditState(),

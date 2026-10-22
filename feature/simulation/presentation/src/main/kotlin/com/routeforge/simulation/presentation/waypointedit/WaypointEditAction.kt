@@ -2,7 +2,7 @@ package com.routeforge.simulation.presentation.waypointedit
 
 import com.routeforge.coredomain.model.Route
 
-sealed interface WaypointEditAction {
+internal sealed interface WaypointEditAction {
     data class OnOpen(
         val route: Route,
         val distanceTraveledMeters: Double?,

@@ -22,7 +22,7 @@ import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEdi
  *  only tap meaning) opening the shared reorder-list sheet. Plan Route's existing map-tap-add/
  *  marker-drag-move paths are untouched by this feature. */
 @Composable
-fun WaypointEditSection(
+internal fun WaypointEditSection(
     points: List<RoutePoint>,
     chosenMode: RoutePlaybackMode?,
     editState: WaypointEditState,

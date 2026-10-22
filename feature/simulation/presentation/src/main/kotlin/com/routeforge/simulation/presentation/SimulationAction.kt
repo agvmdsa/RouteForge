@@ -1,6 +1,6 @@
 package com.routeforge.simulation.presentation
 
-sealed interface SimulationAction {
+internal sealed interface SimulationAction {
     data class OnMapTap(
         val latitude: Double,
         val longitude: Double,
