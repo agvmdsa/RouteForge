@@ -25,7 +25,7 @@ private const val ESTIMATED_TILE_SIZE_BYTES = 40_000_000L
  * names on well-known areas) or a tile computed on the fly via [BrouterTileGrid] for anywhere else
  * in the world. Also tracks on-disk download state by checking which `.rd5` files actually exist.
  */
-class BundledRegionCatalog(
+internal class BundledRegionCatalog(
     val segmentDirectory: File,
     private val profileDirectory: File,
     private val openAsset: (String) -> InputStream,

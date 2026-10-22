@@ -5,7 +5,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import com.routeforge.coredomain.NetworkConnectivityChecker
 
-class AndroidNetworkConnectivityChecker(
+internal class AndroidNetworkConnectivityChecker(
     private val context: Context,
 ) : NetworkConnectivityChecker {
     override fun isConnected(): Boolean {

@@ -39,7 +39,7 @@ private const val RESUME_REQUEST_CODE = 2
 private const val STOP_REQUEST_CODE = 3
 private const val CONTENT_REQUEST_CODE = 4
 
-class SimulationForegroundService : Service() {
+internal class SimulationForegroundService : Service() {
     private val simulationController: SimulationController by inject()
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 

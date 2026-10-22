@@ -24,7 +24,7 @@ private val LONGITUDE_ATTRIBUTE_REGEX = Regex("""lon\s*=\s*"([^"]*)"""")
  * which made a SAX-based parser fail under `./gradlew test` despite working fine standalone.
  * GPX point tags have a fixed, simple shape, so a regex is both correct and dependency-free here.
  */
-class GpxRouteFileCodec : RouteFileCodec {
+internal class GpxRouteFileCodec : RouteFileCodec {
     override fun parse(bytes: ByteArray): Result<RouteDraft, RouteFileFailure> {
         val text = bytes.decodeToString()
         if (!text.contains("<gpx", ignoreCase = true)) {

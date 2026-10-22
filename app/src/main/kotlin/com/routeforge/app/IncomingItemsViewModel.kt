@@ -27,7 +27,7 @@ private const val READ_BUFFER_BYTES = 8 * 1024
  * language change) neither loses it, nor shows it again, nor interrupts the lookup of a short link or the reading of a file
  * that is under way.
  */
-class IncomingItemsViewModel(
+internal class IncomingItemsViewModel(
     private val resolveSharedText: ResolveSharedTextUseCase,
     private val applicationContext: Context,
 ) : ViewModel() {

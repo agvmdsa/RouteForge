@@ -7,7 +7,7 @@ import com.routeforge.coredomain.MockLocationAuthorizationChecker
 
 private const val MOCK_LOCATION_PROBE_PROVIDER = "com.routeforge.coredata.probe"
 
-class PlatformMockLocationAuthorizationChecker(
+internal class PlatformMockLocationAuthorizationChecker(
     private val context: Context,
 ) : MockLocationAuthorizationChecker {
     override fun isAuthorized(): Boolean {

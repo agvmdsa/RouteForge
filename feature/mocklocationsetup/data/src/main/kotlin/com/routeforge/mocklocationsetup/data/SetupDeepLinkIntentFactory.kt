@@ -9,7 +9,7 @@ internal fun resolveSettingsAction(
     isActionResolvable: (String) -> Boolean,
 ): String = if (isActionResolvable(primaryAction)) primaryAction else Settings.ACTION_SETTINGS
 
-class SetupDeepLinkIntentFactory(
+internal class SetupDeepLinkIntentFactory(
     private val packageManager: PackageManager,
 ) {
     private val isActionResolvable: (String) -> Boolean = { action ->

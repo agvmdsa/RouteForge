@@ -142,7 +142,7 @@ internal fun NavController.switchToTab(tabRoute: TabRoute) {
  *  only enabled in that exact situation; everywhere else (a pushed sub-screen, or Simulate's own root),
  *  it stays disabled and the platform default back behavior proceeds unmodified. */
 @Composable
-fun MainTabsScaffold(
+internal fun MainTabsScaffold(
     navController: NavController,
     content: @Composable (PaddingValues) -> Unit,
 ) {

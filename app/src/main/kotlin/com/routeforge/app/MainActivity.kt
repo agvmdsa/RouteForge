@@ -52,7 +52,7 @@ import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.compose.koinInject
 
-class MainActivity : ComponentActivity() {
+internal class MainActivity : ComponentActivity() {
     private val observeSetupState: ObserveSetupStateUseCase by inject()
     private val incomingItems: IncomingItemsViewModel by viewModel()
 

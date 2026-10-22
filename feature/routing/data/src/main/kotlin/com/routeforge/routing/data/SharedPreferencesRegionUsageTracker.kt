@@ -11,12 +11,12 @@ private const val PREFS_NAME = "routeforge_region_usage"
 private const val KEY_USAGE_JSON = "usage_json"
 
 @Serializable
-data class RegionUsageRecord(
+internal data class RegionUsageRecord(
     val lastUsedAtMillis: Long,
     val useCount: Int,
 )
 
-class SharedPreferencesRegionUsageTracker(
+internal class SharedPreferencesRegionUsageTracker(
     private val context: Context,
 ) : RegionUsageTracker {
     private val json = Json { ignoreUnknownKeys = true }

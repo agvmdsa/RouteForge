@@ -21,7 +21,7 @@ import kotlin.math.roundToInt
 private const val NOTIFICATION_CHANNEL_ID = "region_download_active"
 private const val NOTIFICATION_ID = 2001
 
-class RegionDownloadForegroundService : Service() {
+internal class RegionDownloadForegroundService : Service() {
     private val regionDownloadController: RegionDownloadController by inject()
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 

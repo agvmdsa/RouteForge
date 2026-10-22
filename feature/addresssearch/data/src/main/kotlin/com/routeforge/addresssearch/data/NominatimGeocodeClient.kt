@@ -21,7 +21,7 @@ import java.net.UnknownHostException
 private const val TAG = "NominatimGeocodeClient"
 private const val SEARCH_URL = "https://nominatim.openstreetmap.org/search"
 
-class NominatimGeocodeClient(
+internal class NominatimGeocodeClient(
     private val httpClient: HttpClient,
 ) : GeocodeClient {
     override suspend fun search(query: String): Result<List<PlaceSearchResult>, DataError.Network> =

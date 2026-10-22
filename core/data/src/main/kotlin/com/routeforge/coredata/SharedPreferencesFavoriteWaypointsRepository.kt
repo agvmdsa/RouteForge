@@ -19,7 +19,7 @@ private data class FavoriteWaypointRecord(
     val longitude: Double,
 )
 
-class SharedPreferencesFavoriteWaypointsRepository(
+internal class SharedPreferencesFavoriteWaypointsRepository(
     context: Context,
 ) : FavoriteWaypointsRepository {
     private val store =
