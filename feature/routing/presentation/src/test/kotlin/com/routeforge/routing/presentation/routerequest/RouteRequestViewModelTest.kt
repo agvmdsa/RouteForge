@@ -75,6 +75,12 @@ class RouteRequestViewModelTest {
     private val pendingSearchWaypointHolder = PendingSearchWaypointHolder()
     private val pendingIncomingRouteHolder = PendingIncomingRouteHolder()
     private val draftWaypointsHolder = DraftWaypointsHolder()
+    private val prepareRouteOptions =
+        PrepareRouteOptionsUseCase(
+            computeRoute = ComputeRouteUseCase(routingEngine, regionCatalog, RecordRegionUsageUseCase(FakeRegionUsageTracker())),
+            freeRoamRouteBuilder = FreeRoamRouteBuilder(),
+        )
+    private val computeRequiredRegions = ComputeRequiredRegionsUseCase(regionCatalog)
 
     @BeforeEach
     fun setUp() {
@@ -88,16 +94,23 @@ class RouteRequestViewModelTest {
 
     private fun createViewModel(): RouteRequestViewModel =
         RouteRequestViewModel(
-            prepareRouteOptions =
-                PrepareRouteOptionsUseCase(
-                    computeRoute = ComputeRouteUseCase(routingEngine, regionCatalog, RecordRegionUsageUseCase(FakeRegionUsageTracker())),
-                    freeRoamRouteBuilder = FreeRoamRouteBuilder(),
+            routeModePreviewer =
+                RouteModePreviewer(
+                    prepareRouteOptions = prepareRouteOptions,
+                    computeRequiredRegions = computeRequiredRegions,
+                    lastComputedRouteHolder = lastComputedRouteHolder,
+                    backgroundDispatcher = dispatcher,
                 ),
-            lastComputedRouteHolder = lastComputedRouteHolder,
+            routeComputer =
+                RouteComputer(
+                    prepareRouteOptions = prepareRouteOptions,
+                    computeRequiredRegions = computeRequiredRegions,
+                    lastComputedRouteHolder = lastComputedRouteHolder,
+                    backgroundDispatcher = dispatcher,
+                ),
             importRouteFile = ImportRouteFileUseCase(codecs),
             exportRouteFile = ExportRouteFileUseCase(codecs),
             lastKnownRealLocationHolder = LastKnownRealLocationHolder(),
-            computeRequiredRegions = ComputeRequiredRegionsUseCase(regionCatalog),
             draftWaypointsHolder = draftWaypointsHolder,
             favoriteWaypointsRepository = favoriteWaypointsRepository,
             favoriteRoutesRepository = favoriteRoutesRepository,
@@ -105,7 +118,6 @@ class RouteRequestViewModelTest {
             pendingSearchWaypointHolder = pendingSearchWaypointHolder,
             pendingIncomingRouteHolder = pendingIncomingRouteHolder,
             observeMapStyle = ObserveMapStyleUseCase(FakeMapStyleStore()),
-            backgroundDispatcher = dispatcher,
         )
 
     private fun RouteRequestViewModel.tapAndConfirm(

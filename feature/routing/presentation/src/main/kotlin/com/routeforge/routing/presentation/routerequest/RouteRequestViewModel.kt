@@ -6,28 +6,19 @@ import com.routeforge.coredomain.FavoriteRoutesRepository
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.IncomingRoute
-import com.routeforge.coredomain.model.LatLng
-import com.routeforge.coredomain.model.Route
-import com.routeforge.coredomain.model.RouteOptions
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
-import com.routeforge.coredomain.model.autoResolved
-import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
-import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
 import com.routeforge.routing.domain.model.RouteDraft
 import com.routeforge.routing.domain.model.RouteFileFailure
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -36,17 +27,15 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 internal const val MIN_WAYPOINTS_TO_PLAY = 2
 
 internal class RouteRequestViewModel(
-    private val prepareRouteOptions: PrepareRouteOptionsUseCase,
-    private val lastComputedRouteHolder: LastComputedRouteHolder,
+    private val routeModePreviewer: RouteModePreviewer,
+    private val routeComputer: RouteComputer,
     private val importRouteFile: ImportRouteFileUseCase,
     private val exportRouteFile: ExportRouteFileUseCase,
     lastKnownRealLocationHolder: LastKnownRealLocationHolder,
-    private val computeRequiredRegions: ComputeRequiredRegionsUseCase,
     private val draftWaypointsHolder: DraftWaypointsHolder,
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
     private val favoriteRoutesRepository: FavoriteRoutesRepository,
@@ -54,7 +43,6 @@ internal class RouteRequestViewModel(
     private val pendingSearchWaypointHolder: PendingSearchWaypointHolder,
     private val pendingIncomingRouteHolder: PendingIncomingRouteHolder,
     observeMapStyle: ObserveMapStyleUseCase,
-    private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val _state = MutableStateFlow(RouteRequestState(lastKnownLocation = lastKnownRealLocationHolder.location.value))
     val state = _state.asStateFlow()
@@ -122,7 +110,7 @@ internal class RouteRequestViewModel(
             RouteRequestAction.OnConfirmReplaceDraft -> confirmReplaceDraft()
             RouteRequestAction.OnKeepDraft -> _state.update { it.copy(pendingReplaceDraft = null) }
             is RouteRequestAction.OnExportRoute -> exportRoute(action.format)
-            RouteRequestAction.OnRequestRoute -> requestRoute()
+            RouteRequestAction.OnRequestRoute -> routeComputer.requestRoute(_state, viewModelScope)
             RouteRequestAction.OnUseRoute -> useRoute()
             RouteRequestAction.OnOpenRegionCatalog -> {
                 _state.update { it.copy(missingRegionsWarning = null, pendingModePreviewTarget = null) }
@@ -135,9 +123,10 @@ internal class RouteRequestViewModel(
                 val hasOfficialRoute = _state.value.route != null
                 _state.update { it.copy(missingRegionsWarning = null, pendingModePreviewTarget = null) }
                 when {
-                    previewTarget != null && hasOfficialRoute -> attemptModePreview(previewTarget)
-                    previewTarget != null -> computeDraftPreview(_state.value.draft.points)
-                    else -> proceedWithRouteComputation(_state.value.draft.points)
+                    previewTarget != null && hasOfficialRoute ->
+                        routeModePreviewer.attemptModePreview(previewTarget, _state, viewModelScope)
+                    previewTarget != null -> routeModePreviewer.computeDraftPreview(_state.value.draft.points, _state, viewModelScope)
+                    else -> routeComputer.proceedWithRouteComputation(_state.value.draft.points, _state, viewModelScope)
                 }
             }
             RouteRequestAction.OnDismissMissingRegionsWarning ->
@@ -146,7 +135,7 @@ internal class RouteRequestViewModel(
             is RouteRequestAction.OnRouteNameInputChange -> _state.update { it.copy(routeNameInput = action.value) }
             RouteRequestAction.OnConfirmSaveRoute -> confirmSaveRoute()
             RouteRequestAction.OnDismissSaveRoute -> dismissSaveRoute()
-            RouteRequestAction.OnSwitchRouteModeClick -> onSwitchRouteModeClick()
+            RouteRequestAction.OnSwitchRouteModeClick -> routeModePreviewer.onSwitchRouteModeClick(_state, viewModelScope)
         }
     }
 
@@ -208,21 +197,7 @@ internal class RouteRequestViewModel(
         // A Guided preview that was already on screen should carry over and recompute with the
         // new point list, rather than silently dropping back to the default free-roam view —
         // the user has to explicitly turn it off (OnSwitchRouteModeClick) to lose it.
-        if (wasPreviewingGuided) refreshGuidedPreview()
-    }
-
-    private fun refreshGuidedPreview() {
-        val points = _state.value.draft.points
-        if (points.size < 2) {
-            _state.update { it.copy(previewMode = null, previewRoute = null) }
-            return
-        }
-        val requiredRegions = computeRequiredRegions(points)
-        if (!requiredRegions.isFullyDownloaded) {
-            _state.update { it.copy(missingRegionsWarning = requiredRegions, pendingModePreviewTarget = RoutePlaybackMode.GUIDED) }
-        } else {
-            computeDraftPreview(points)
-        }
+        if (wasPreviewingGuided) routeModePreviewer.refreshGuidedPreview(_state, viewModelScope)
     }
 
     /** Applies a committed edit from the shared reorder-list sheet (spec 008) via the same
@@ -326,161 +301,13 @@ internal class RouteRequestViewModel(
         viewModelScope.launch { _events.send(RouteRequestEvent.ExportReady(bytes, format)) }
     }
 
-    /** FR + region-awareness: before computing, checks whether the map data Guided mode needs is
-     *  actually downloaded, so the user learns about missing regions up front instead of Guided
-     *  silently failing to compute later. */
-    private fun requestRoute() {
-        val points = _state.value.draft.points
-        if (points.size < MIN_WAYPOINTS_TO_PLAY) {
-            _state.update { it.copy(errorType = RouteRequestError.TOO_FEW_WAYPOINTS_TO_PLAY) }
-            return
-        }
-
-        val requiredRegions = computeRequiredRegions(points)
-        if (!requiredRegions.isFullyDownloaded) {
-            _state.update { it.copy(missingRegionsWarning = requiredRegions) }
-            return
-        }
-        proceedWithRouteComputation(points)
-    }
-
-    private fun proceedWithRouteComputation(points: List<RoutePoint>) {
-        // FR-004: a fresh evaluation always clears any previously locked mode/choice. The mode the
-        // user already picked via the preview switch (or Free-roam, its implicit default) carries
-        // straight through instead of asking again with a mode-choice sheet — they already made
-        // this call once.
-        val preferredMode = _state.value.previewMode ?: RoutePlaybackMode.FREE_ROAM
-        _state.update {
-            it.copy(
-                isComputing = true,
-                errorType = null,
-                chosenMode = null,
-                route = null,
-                previewMode = null,
-                previewRoute = null,
-            )
-        }
-        viewModelScope.launch {
-            val options = withContext(backgroundDispatcher) { prepareRouteOptions(points) }
-            val autoResolved = options.autoResolved
-            if (autoResolved != null) {
-                // FR-003: Guided isn't computable — skip straight to Free-roam, no choice shown.
-                finalizeRoute(autoResolved.first, autoResolved.second, options)
-            } else if (preferredMode == RoutePlaybackMode.GUIDED && options.guided != null) {
-                finalizeRoute(options.guided!!, RoutePlaybackMode.GUIDED, options)
-            } else {
-                finalizeRoute(options.freeRoam, RoutePlaybackMode.FREE_ROAM, options)
-            }
-        }
-    }
-
-    private fun finalizeRoute(
-        route: Route,
-        mode: RoutePlaybackMode,
-        options: RouteOptions,
-    ) {
-        val withAlternate =
-            when (mode) {
-                RoutePlaybackMode.GUIDED ->
-                    route.copy(alternateGeometry = options.freeRoam.geometry, alternateDistanceMeters = options.freeRoam.distanceMeters)
-                RoutePlaybackMode.FREE_ROAM ->
-                    route.copy(alternateGeometry = options.guided?.geometry, alternateDistanceMeters = options.guided?.distanceMeters)
-            }
-        _state.update { it.copy(isComputing = false, chosenMode = mode, route = withAlternate) }
-        lastComputedRouteHolder.set(withAlternate)
-    }
-
     /** The user explicitly confirms they're done previewing/exporting and wants to play this
      *  route — navigates straight to Simulate with no extra "go to the map?" confirmation; the
      *  mode and route are already fully decided by this point, so that question added nothing.
-     *  The route is already in [lastComputedRouteHolder] from [finalizeRoute]. */
+     *  The route is already in the last-computed-route holder, put there by [RouteComputer]. */
     private fun useRoute() {
         _state.value.route ?: return
         viewModelScope.launch { _events.send(RouteRequestEvent.GoToSimulate) }
-    }
-
-    /** Lets the user preview/switch between Guided and Free-roam at any planning-time point —
-     *  before an official route is computed (toggles [RouteRequestState.previewRoute], independent
-     *  of [RouteRequestState.route], never opens the ready sheet), or after ([route] already
-     *  computed). Neither case needs confirmation — switching modes while planning has no real
-     *  consequence (nothing is being played). Only Simulate's execution-time switch asks to
-     *  confirm, since that one affects a live session. */
-    private fun onSwitchRouteModeClick() {
-        val route = _state.value.route
-        if (route != null) {
-            val targetMode = if (route.mode == RoutePlaybackMode.GUIDED) RoutePlaybackMode.FREE_ROAM else RoutePlaybackMode.GUIDED
-            val alternateGeometry = route.alternateGeometry
-            val alternateDistance = route.alternateDistanceMeters
-            if (alternateGeometry != null && alternateDistance != null) {
-                applyModeSwitch(route, targetMode, alternateGeometry, alternateDistance)
-            } else {
-                val requiredRegions = computeRequiredRegions(route.points)
-                if (!requiredRegions.isFullyDownloaded) {
-                    _state.update { it.copy(missingRegionsWarning = requiredRegions, pendingModePreviewTarget = targetMode) }
-                } else {
-                    attemptModePreview(targetMode)
-                }
-            }
-            return
-        }
-
-        if (_state.value.previewMode == RoutePlaybackMode.GUIDED) {
-            _state.update { it.copy(previewMode = null, previewRoute = null) }
-            return
-        }
-        refreshGuidedPreview()
-    }
-
-    /** Computes a live Guided preview for the current draft (no official route exists yet) — the
-     *  missing-regions check, if needed, already ran in [onSwitchRouteModeClick] or was just
-     *  dismissed via "continue anyway". On failure (genuinely no viable path), surfaces
-     *  [RouteRequestError.MODE_PREVIEW_NO_PATH]. */
-    private fun computeDraftPreview(points: List<RoutePoint>) {
-        _state.update { it.copy(isComputingPreview = true) }
-        viewModelScope.launch {
-            val options = withContext(backgroundDispatcher) { prepareRouteOptions(points) }
-            val guided = options.guided
-            if (guided == null) {
-                _state.update { it.copy(isComputingPreview = false, errorType = RouteRequestError.MODE_PREVIEW_NO_PATH) }
-                return@launch
-            }
-            _state.update { it.copy(isComputingPreview = false, previewMode = RoutePlaybackMode.GUIDED, previewRoute = guided) }
-        }
-    }
-
-    /** Computes [targetMode]'s geometry on demand (the missing-regions check, if needed, already ran
-     *  in [onSwitchRouteModeClick] or was just dismissed via "continue anyway"). On success, applies
-     *  it immediately via [applyModeSwitch] — no confirmation while planning, see
-     *  [onSwitchRouteModeClick]. On failure (genuinely no viable path, not a download problem),
-     *  surfaces [RouteRequestError.MODE_PREVIEW_NO_PATH] instead. */
-    private fun attemptModePreview(targetMode: RoutePlaybackMode) {
-        val route = _state.value.route ?: return
-        _state.update { it.copy(isComputingPreview = true) }
-        viewModelScope.launch {
-            val options = withContext(backgroundDispatcher) { prepareRouteOptions(route.points) }
-            val targetRoute =
-                when (targetMode) {
-                    RoutePlaybackMode.GUIDED -> options.guided
-                    RoutePlaybackMode.FREE_ROAM -> options.freeRoam
-                }
-            if (targetRoute == null) {
-                _state.update { it.copy(isComputingPreview = false, errorType = RouteRequestError.MODE_PREVIEW_NO_PATH) }
-                return@launch
-            }
-            _state.update { it.copy(isComputingPreview = false) }
-            applyModeSwitch(route, targetMode, targetRoute.geometry, targetRoute.distanceMeters)
-        }
-    }
-
-    private fun applyModeSwitch(
-        route: Route,
-        targetMode: RoutePlaybackMode,
-        alternateGeometry: List<LatLng>,
-        alternateDistanceMeters: Double,
-    ) {
-        val swapped = route.swapToMode(targetMode, alternateGeometry, alternateDistanceMeters)
-        _state.update { it.copy(route = swapped, chosenMode = targetMode) }
-        lastComputedRouteHolder.set(swapped)
     }
 }
 
