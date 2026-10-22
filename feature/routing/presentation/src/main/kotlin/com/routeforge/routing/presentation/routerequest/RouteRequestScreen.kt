@@ -17,7 +17,6 @@ import androidx.compose.material.icons.filled.Straighten
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,14 +27,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.TourProgressRepository
 import com.routeforge.coredomain.TourReplayCoordinator
-import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.TourSection
 import com.routeforge.designsystem.components.AutoDismissConfirmationPill
@@ -47,8 +44,6 @@ import com.routeforge.designsystem.components.TourLabels
 import com.routeforge.designsystem.components.TwoButtonConfirmationSheet
 import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.map.RouteForgeMap
-import com.routeforge.designsystem.map.RouteForgeMapMarker
-import com.routeforge.designsystem.map.RouteForgeMapMarkerIcon
 import com.routeforge.designsystem.sheets.AddWaypointConfirmationSheet
 import com.routeforge.designsystem.sheets.MissingRegionsWarningSheet
 import com.routeforge.designsystem.theme.RouteForgeTheme
@@ -208,68 +203,6 @@ internal fun RouteRequestScreen(
     }
 
     RouteRequestDialogs(state = state, onAction = onAction)
-}
-
-/** Centers the map on the draft's first waypoint (or the last known real location, if the draft is
- *  still empty) exactly once — [hasCenteredOnce] stops a later edit from re-centering under the user. */
-@Composable
-private fun rememberInitialCameraTarget(state: RouteRequestState): LatLng? {
-    var hasCenteredOnce by remember { mutableStateOf(false) }
-    var cameraTarget by remember { mutableStateOf<LatLng?>(null) }
-    LaunchedEffect(state.draft.points.size, state.lastKnownLocation) {
-        if (hasCenteredOnce) return@LaunchedEffect
-        val first = state.draft.points.firstOrNull()
-        val target =
-            first?.let { LatLng(it.latitude, it.longitude) }
-                ?: state.lastKnownLocation?.let { LatLng(it.latitude, it.longitude) }
-        if (target != null) {
-            cameraTarget = target
-            hasCenteredOnce = true
-        }
-    }
-    return cameraTarget
-}
-
-/** Builds the map's markers and polyline, substituting a marker's live drag position into the
- *  polyline while it's being dragged so the line visibly follows the gesture before [onAction]'s
- *  [RouteRequestAction.OnMarkerDragged] commits it. */
-@Composable
-private fun rememberRouteMarkersAndPolyline(
-    state: RouteRequestState,
-    onAction: (RouteRequestAction) -> Unit,
-): Pair<List<RouteForgeMapMarker>, List<LatLng>> {
-    val markerBackground = MaterialTheme.colorScheme.primary.toArgb()
-    val markerText = MaterialTheme.colorScheme.onPrimary.toArgb()
-    var draggingIndex by remember { mutableStateOf<Int?>(null) }
-    var draggingPosition by remember { mutableStateOf<LatLng?>(null) }
-    val markers =
-        state.draft.points.mapIndexed { index, point ->
-            RouteForgeMapMarker(
-                id = index,
-                latitude = point.latitude,
-                longitude = point.longitude,
-                icon = RouteForgeMapMarkerIcon.Numbered(index + 1, markerBackground, markerText),
-                draggable = true,
-                onClick = { onAction(RouteRequestAction.OnMarkerClick(index)) },
-                onDrag = { latitude, longitude ->
-                    draggingIndex = index
-                    draggingPosition = LatLng(latitude, longitude)
-                },
-                onDragEnd = { latitude, longitude ->
-                    draggingIndex = null
-                    draggingPosition = null
-                    onAction(RouteRequestAction.OnMarkerDragged(index, latitude, longitude))
-                },
-            )
-        }
-    val liveDraggingPosition = draggingPosition
-    val polylinePoints =
-        if (draggingIndex != null && liveDraggingPosition != null) {
-            state.draft.points.mapIndexed { i, p -> if (i == draggingIndex) liveDraggingPosition else LatLng(p.latitude, p.longitude) }
-        } else {
-            state.route?.geometry ?: state.previewRoute?.geometry ?: state.draft.points.map { LatLng(it.latitude, it.longitude) }
-        }
-    return markers to polylinePoints
 }
 
 /** Status pill, error banner, and the transient "waypoints updated" confirmation — the map's
