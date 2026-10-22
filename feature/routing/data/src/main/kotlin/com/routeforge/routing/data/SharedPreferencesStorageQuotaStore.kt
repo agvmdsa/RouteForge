@@ -11,7 +11,7 @@ private const val UNLIMITED_SENTINEL = -1L
 
 /** `null` (Unlimited) is stored as [UNLIMITED_SENTINEL] since [android.content.SharedPreferences]
  *  has no native nullable-Long API. */
-class SharedPreferencesStorageQuotaStore(
+internal class SharedPreferencesStorageQuotaStore(
     context: Context,
 ) : StorageQuotaStore {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

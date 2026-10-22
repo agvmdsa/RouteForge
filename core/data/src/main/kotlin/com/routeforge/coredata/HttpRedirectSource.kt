@@ -21,7 +21,7 @@ private val ABSOLUTE_WEB_ADDRESS = Regex("""^https?://""", RegexOption.IGNORE_CA
  * followed (that is the caller's decision, within its limits) and the body is never read. What leaves the device is the
  * address asked for and the app's identification, nothing about the device or its position.
  */
-class HttpRedirectSource(
+internal class HttpRedirectSource(
     client: HttpClient,
 ) : RedirectSource {
     private val client = client.config { followRedirects = false }

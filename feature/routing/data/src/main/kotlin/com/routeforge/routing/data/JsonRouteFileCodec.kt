@@ -26,7 +26,7 @@ private data class WaypointJson(
 )
 
 /** FR-011–FR-015: JSON route file format, per the documented `{name, id, waypoints[]}` schema. */
-class JsonRouteFileCodec : RouteFileCodec {
+internal class JsonRouteFileCodec : RouteFileCodec {
     private val json = Json { ignoreUnknownKeys = true }
 
     override fun parse(bytes: ByteArray): Result<RouteDraft, RouteFileFailure> {

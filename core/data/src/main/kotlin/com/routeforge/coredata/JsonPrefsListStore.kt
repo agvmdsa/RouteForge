@@ -14,7 +14,7 @@ import kotlinx.serialization.json.Json
  *  only supplies its own record type, domain<->record mapping, and a tag for diagnostics. A
  *  corrupted or schema-mismatched stored value is discarded (logged, not thrown) rather than
  *  crashing the app at construction time. */
-class JsonPrefsListStore<Domain, Record : Any>(
+internal class JsonPrefsListStore<Domain, Record : Any>(
     context: Context,
     prefsName: String,
     private val key: String,

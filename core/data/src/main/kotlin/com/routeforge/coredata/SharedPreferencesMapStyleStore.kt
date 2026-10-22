@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 private const val PREFS_NAME = "routeforge_map_style"
 private const val KEY_MAP_STYLE = "map_style"
 
-class SharedPreferencesMapStyleStore(
+internal class SharedPreferencesMapStyleStore(
     context: Context,
 ) : MapStyleStore {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

@@ -25,7 +25,7 @@ private const val TAG = "HttpRegionDownloader"
 private const val SEGMENT_BASE_URL = "https://brouter.de/brouter/segments4/"
 private const val DOWNLOAD_BUFFER_SIZE_BYTES = 8 * 1024
 
-class HttpRegionDownloader(
+internal class HttpRegionDownloader(
     private val httpClient: HttpClient,
     private val regionCatalog: BundledRegionCatalog,
 ) : RegionDownloader {

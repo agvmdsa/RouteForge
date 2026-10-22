@@ -41,7 +41,7 @@ private fun FavoriteRouteRecord.toDomain(): FavoriteRoute =
         points = points.map { RoutePoint(it.latitude, it.longitude, it.snappedLatitude, it.snappedLongitude) },
     )
 
-class SharedPreferencesFavoriteRoutesRepository(
+internal class SharedPreferencesFavoriteRoutesRepository(
     context: Context,
 ) : FavoriteRoutesRepository {
     private val store =

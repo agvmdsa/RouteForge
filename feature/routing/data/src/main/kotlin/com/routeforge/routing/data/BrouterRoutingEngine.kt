@@ -13,7 +13,7 @@ import com.routeforge.coredomain.model.RoutePoint
 import java.io.File
 import btools.router.RoutingEngine as BrouterEngine
 
-class BrouterRoutingEngine(
+internal class BrouterRoutingEngine(
     private val segmentDir: File,
     private val profileFile: File,
 ) : RoutingEngine {

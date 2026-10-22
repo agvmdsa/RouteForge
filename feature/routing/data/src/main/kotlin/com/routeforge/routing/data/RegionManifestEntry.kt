@@ -5,7 +5,7 @@ import com.routeforge.coredomain.model.RegionStatus
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class RegionManifestEntry(
+internal data class RegionManifestEntry(
     val id: String,
     val displayName: String,
     val minLatitude: Double,

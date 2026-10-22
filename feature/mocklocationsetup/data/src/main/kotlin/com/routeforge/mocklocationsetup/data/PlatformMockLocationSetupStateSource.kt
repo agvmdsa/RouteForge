@@ -7,7 +7,7 @@ import android.provider.Settings
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
 import com.routeforge.mocklocationsetup.domain.MockLocationSetupStateSource
 
-class PlatformMockLocationSetupStateSource(
+internal class PlatformMockLocationSetupStateSource(
     private val context: Context,
     private val deepLinkIntentFactory: SetupDeepLinkIntentFactory,
     private val mockLocationAuthorizationChecker: MockLocationAuthorizationChecker,

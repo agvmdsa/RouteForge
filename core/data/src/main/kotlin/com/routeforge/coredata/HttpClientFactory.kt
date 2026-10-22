@@ -15,7 +15,7 @@ private const val REQUEST_TIMEOUT_MILLIS = 20_000L
 
 private val JsonConfig = Json { ignoreUnknownKeys = true }
 
-object HttpClientFactory {
+internal object HttpClientFactory {
     fun create(): HttpClient =
         HttpClient(OkHttp) {
             install(ContentNegotiation) { json(JsonConfig) }

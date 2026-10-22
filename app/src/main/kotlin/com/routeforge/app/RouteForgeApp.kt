@@ -13,7 +13,7 @@ import com.routeforge.simulation.presentation.di.simulationPresentationModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 
-class RouteForgeApp : Application() {
+internal class RouteForgeApp : Application() {
     override fun onCreate() {
         super.onCreate()
         startKoin {

@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class RegionDownloadControllerImpl(
+internal class RegionDownloadControllerImpl(
     private val downloadRegion: DownloadRegionUseCase,
     private val regionCatalog: RegionCatalog,
     private val regionUsageTracker: RegionUsageTracker,
