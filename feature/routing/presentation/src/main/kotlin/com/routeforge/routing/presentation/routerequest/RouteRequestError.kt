@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation.routerequest
 
-enum class RouteRequestError {
+internal enum class RouteRequestError {
     INVALID_EDIT_COORDINATES,
     TOO_FEW_WAYPOINTS_TO_PLAY,
     IMPORT_TOO_FEW_WAYPOINTS,

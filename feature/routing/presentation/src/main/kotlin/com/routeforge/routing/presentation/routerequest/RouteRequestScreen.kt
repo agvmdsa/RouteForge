@@ -71,7 +71,7 @@ private const val JSON_MIME_TYPE = "application/json"
 private const val GPX_MIME_TYPE = "application/gpx+xml"
 
 @Composable
-fun RouteRequestRoot(
+internal fun RouteRequestRoot(
     onGoToSimulate: () -> Unit,
     onOpenRegionCatalog: () -> Unit,
     onOpenFavorites: () -> Unit,
@@ -155,7 +155,7 @@ private fun writePendingExport(
 }
 
 @Composable
-fun RouteRequestScreen(
+internal fun RouteRequestScreen(
     state: RouteRequestState,
     onAction: (RouteRequestAction) -> Unit,
     onImportClick: () -> Unit = {},

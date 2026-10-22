@@ -29,7 +29,7 @@ private enum class SavedSubSection { ROUTES, FAVORITES }
  *  it across tab switches for free (FR-004); "Routes" is only the default the very first time this
  *  screen is composed in a session. */
 @Composable
-fun SavedRoot(
+internal fun SavedRoot(
     onGoToSimulate: () -> Unit,
     onOpenRegionCatalog: () -> Unit,
 ) {

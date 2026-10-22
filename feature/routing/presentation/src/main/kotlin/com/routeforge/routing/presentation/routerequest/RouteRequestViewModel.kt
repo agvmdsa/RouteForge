@@ -38,9 +38,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-const val MIN_WAYPOINTS_TO_PLAY = 2
+internal const val MIN_WAYPOINTS_TO_PLAY = 2
 
-class RouteRequestViewModel(
+internal class RouteRequestViewModel(
     private val prepareRouteOptions: PrepareRouteOptionsUseCase,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
     private val importRouteFile: ImportRouteFileUseCase,

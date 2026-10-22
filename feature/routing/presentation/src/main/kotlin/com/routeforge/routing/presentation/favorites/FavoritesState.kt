@@ -2,9 +2,9 @@ package com.routeforge.routing.presentation.favorites
 
 import com.routeforge.coredomain.model.FavoriteWaypoint
 
-enum class FavoritesError { INVALID_NAME, INVALID_COORDINATES }
+internal enum class FavoritesError { INVALID_NAME, INVALID_COORDINATES }
 
-data class FavoritesState(
+internal data class FavoritesState(
     val favorites: List<FavoriteWaypoint> = emptyList(),
     val isPickerMode: Boolean = false,
     val editingId: String? = null,

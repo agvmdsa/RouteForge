@@ -18,7 +18,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 
-class RegionCatalogViewModel(
+internal class RegionCatalogViewModel(
     private val observeRegionCatalog: ObserveRegionCatalogUseCase,
     private val regionDownloadController: RegionDownloadController,
     private val computeRequiredRegions: ComputeRequiredRegionsUseCase,

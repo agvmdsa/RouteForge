@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class SavedRoutesViewModel(
+internal class SavedRoutesViewModel(
     private val favoriteRoutesRepository: FavoriteRoutesRepository,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
     private val computeRequiredRegions: ComputeRequiredRegionsUseCase,

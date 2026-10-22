@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation.regioncoveragemap
 
-sealed interface RegionCoverageMapAction {
+internal sealed interface RegionCoverageMapAction {
     data class OnMapTapped(
         val latitude: Double,
         val longitude: Double,

@@ -2,7 +2,7 @@ package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.routing.domain.model.RouteFileFormat
 
-sealed interface RouteRequestAction {
+internal sealed interface RouteRequestAction {
     data class OnMapTap(
         val latitude: Double,
         val longitude: Double,

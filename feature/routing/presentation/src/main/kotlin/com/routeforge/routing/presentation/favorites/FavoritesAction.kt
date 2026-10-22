@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation.favorites
 
-sealed interface FavoritesAction {
+internal sealed interface FavoritesAction {
     data class OnFavoriteSelected(
         val id: String,
     ) : FavoritesAction

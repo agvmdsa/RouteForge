@@ -1,5 +1,5 @@
 package com.routeforge.routing.presentation.favorites
 
-sealed interface FavoritesEvent {
+internal sealed interface FavoritesEvent {
     data object NavigateBack : FavoritesEvent
 }

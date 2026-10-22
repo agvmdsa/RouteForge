@@ -3,7 +3,7 @@ package com.routeforge.routing.presentation.settings
 import com.routeforge.coredomain.model.MapStyle
 import com.routeforge.coredomain.model.TourSection
 
-sealed interface SettingsAction {
+internal sealed interface SettingsAction {
     data class OnQuotaSelected(
         val quotaBytes: Long?,
     ) : SettingsAction

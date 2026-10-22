@@ -60,7 +60,7 @@ private val CardPadding = 20.dp
 private val EmptyStateIconBadgeSize = 72.dp
 
 @Composable
-fun RegionCatalogRoot(
+internal fun RegionCatalogRoot(
     viewModel: RegionCatalogViewModel = koinViewModel(),
     onOpenCoverageMap: () -> Unit = {},
 ) {
@@ -82,7 +82,7 @@ fun RegionCatalogRoot(
 }
 
 @Composable
-fun RegionCatalogScreen(
+internal fun RegionCatalogScreen(
     state: RegionCatalogState,
     onAction: (RegionCatalogAction) -> Unit,
     onOpenCoverageMap: () -> Unit = {},
