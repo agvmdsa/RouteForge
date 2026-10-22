@@ -153,6 +153,14 @@ internal fun SavedRoutesScreen(
         }
     }
 
+    SavedRoutesDialogs(state = state, onAction = onAction)
+}
+
+@Composable
+private fun SavedRoutesDialogs(
+    state: SavedRoutesState,
+    onAction: (SavedRoutesAction) -> Unit,
+) {
     state.routeOptions?.let { options ->
         ModeChoiceSheet(
             options = options,
@@ -334,5 +342,13 @@ private fun SavedRoutesScreenPreview() {
 private fun SavedRoutesScreenEmptyPreview() {
     RouteForgeTheme {
         SavedRoutesScreen(state = SavedRoutesState(), onAction = {})
+    }
+}
+
+@Preview
+@Composable
+private fun SavedRoutesDialogsPreview() {
+    RouteForgeTheme {
+        SavedRoutesDialogs(state = SavedRoutesState(pendingDeleteId = "1"), onAction = {})
     }
 }
