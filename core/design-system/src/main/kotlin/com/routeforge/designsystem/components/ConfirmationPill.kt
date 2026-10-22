@@ -20,7 +20,7 @@ private const val DEFAULT_AUTO_DISMISS_DURATION_MILLIS = 2_500L
  *  built on [StatusPill] so it reads as the same family of pill as this app's other status pills.
  *  The caller owns timing — there is no built-in auto-dismiss here. */
 @Composable
-fun ConfirmationPill(
+internal fun ConfirmationPill(
     message: String,
     modifier: Modifier = Modifier,
 ) {

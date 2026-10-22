@@ -61,7 +61,7 @@ private const val CIRCLE_FILL_ALPHA = 0.18f
  *  every map style (FR-019). With reduced motion (system "remove animations") it is drawn static.
  *  Decorative: no semantics of its own, so a screen reader doesn't announce it separately. */
 @Composable
-fun TourActionHint(
+internal fun TourActionHint(
     modifier: Modifier = Modifier,
     targetBoundsOnScreen: Rect? = null,
 ) {

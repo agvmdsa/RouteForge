@@ -19,7 +19,7 @@ private const val LEGACY_SHORT_LINK_HOST = "goo.gl"
 private val GOOGLE_POSITION_PARAMETERS = listOf("q", "ll", "query")
 
 /** Reads what a link means, in plain Kotlin so that it can be tested without Android. Never throws. */
-object ExternalLinkParser {
+internal object ExternalLinkParser {
     fun parse(address: String): ExternalLink = runCatching { read(address.trim()) }.getOrDefault(ExternalLink.None)
 
     private fun read(address: String): ExternalLink =

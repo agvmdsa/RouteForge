@@ -48,7 +48,7 @@ internal fun tourTopOffset(isTopMessageVisible: Boolean): Dp =
  *  The text is a polite live region so a screen reader announces it when it appears and again when
  *  it changes (FR-019). Takes label strings as parameters — `core:design-system` has no resources. */
 @Composable
-fun TourInstructionStrip(
+internal fun TourInstructionStrip(
     text: String,
     skipLabel: String,
     onSkip: () -> Unit,
