@@ -5,28 +5,11 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Signpost
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Straighten
-import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,10 +17,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
@@ -46,30 +27,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import com.routeforge.coredomain.model.RoutePlaybackMode
-import com.routeforge.designsystem.components.TooltipAnchor
-import com.routeforge.designsystem.components.tourTarget
 import com.routeforge.designsystem.speed.SpeedSelectorDialog
 import com.routeforge.designsystem.theme.Spacing
 import com.routeforge.simulation.presentation.R
 import com.routeforge.simulation.presentation.SimulationAction
 import com.routeforge.simulation.presentation.SimulationState
-import com.routeforge.simulation.presentation.WaypointEditTriggerButton
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditAction
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditState
 import kotlinx.coroutines.launch
-import java.util.Locale
 import kotlin.math.roundToInt
 
 private val ProgressCardShape = RoundedCornerShape(20.dp)
 private val ProgressCardElevation = 4.dp
-private val ProgressCardPadding = 16.dp
-private val ProgressCardCollapsedHorizontalPadding = 16.dp
-private val ProgressCardCollapsedVerticalPadding = 8.dp
-private val ProgressCardRowSpacing = 8.dp
-private val ToggleIconButtonSize = 32.dp
-private val ControlIconButtonSize = 48.dp
-private const val METERS_PER_KILOMETER = 1_000.0
+internal val ToggleIconButtonSize = 32.dp
+internal val ControlIconButtonSize = 48.dp
 
 /** How far past the card's resting position (bottom-center, set by the caller's own
  *  `Box.align`/padding) a drag is allowed to settle once released. Factors in the card's own
@@ -170,156 +141,49 @@ internal fun RouteProgressCard(
                 },
     ) {
         if (isExpanded) {
-            Column(
-                modifier = Modifier.padding(ProgressCardPadding),
-                verticalArrangement = Arrangement.spacedBy(ProgressCardRowSpacing),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
-                ) {
-                    Icon(Icons.Filled.DirectionsCar, contentDescription = null)
-                    Text(
-                        text = stringResource(R.string.simulation_route_progress_eta, etaLabel),
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.weight(1f),
-                    )
-                    val collapseDescription = stringResource(R.string.simulation_route_progress_collapse)
-                    TooltipAnchor(tooltipText = collapseDescription) {
-                        IconButton(
-                            onClick = { isExpanded = false },
-                            modifier = Modifier.size(ToggleIconButtonSize).tourTarget("sim_collapse_toggle"),
-                        ) {
-                            Icon(Icons.Filled.ExpandLess, contentDescription = collapseDescription)
-                        }
-                    }
-                }
-                LinearProgressIndicator(
-                    progress = { progress.fractionComplete },
-                    modifier = Modifier.fillMaxWidth(),
-                    strokeCap = StrokeCap.Round,
-                )
-                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = stringResource(R.string.simulation_route_progress_remaining, remainingMeters.toKilometersLabel()),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        text =
-                            stringResource(
-                                R.string.simulation_route_progress_traveled_of_total,
-                                progress.traveledMeters.toKilometersLabel(),
-                                progress.totalMeters.toKilometersLabel(),
-                            ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
-                ) {
-                    val cancelDescription = stringResource(R.string.simulation_cancel_route_button)
-                    TooltipAnchor(tooltipText = cancelDescription) {
-                        IconButton(
-                            onClick = { onAction(SimulationAction.OnCancelRouteClick) },
-                            modifier = Modifier.size(ControlIconButtonSize).tourTarget("sim_cancel_route"),
-                        ) {
-                            Icon(Icons.Filled.Close, contentDescription = cancelDescription)
-                        }
-                    }
-                    PlaybackButton(
-                        state = state,
-                        onAction = onAction,
-                        modifier = Modifier.size(ControlIconButtonSize).tourTarget("sim_playback"),
-                    )
-                    val activeRoute = state.loadedRoute
-                    if (activeRoute?.alternateGeometry != null) {
-                        val switchModeDescription = stringResource(R.string.simulation_switch_route_mode_button)
-                        val switchModeTooltip = stringResource(R.string.simulation_switch_route_mode_tooltip)
-                        TooltipAnchor(tooltipText = switchModeTooltip) {
-                            IconButton(
-                                onClick = { onAction(SimulationAction.OnSwitchRouteModeClick) },
-                                modifier = Modifier.size(ControlIconButtonSize).tourTarget("sim_switch_mode"),
-                            ) {
-                                Icon(
-                                    imageVector =
-                                        if (activeRoute.mode == RoutePlaybackMode.GUIDED) {
-                                            Icons.Filled.Signpost
-                                        } else {
-                                            Icons.Filled.Straighten
-                                        },
-                                    contentDescription = switchModeDescription,
-                                )
-                            }
-                        }
-                    }
-                    WaypointEditTriggerButton(
-                        loadedRoute = state.loadedRoute,
-                        distanceTraveledMeters = sessionDistanceTraveledMeters,
-                        editState = editState,
-                        onEditAction = onEditAction,
-                        modifier = Modifier.size(ControlIconButtonSize).tourTarget("sim_edit_route"),
-                    )
-                    val speedDescription = stringResource(R.string.simulation_playback_speed_button)
-                    TooltipAnchor(tooltipText = speedDescription) {
-                        IconButton(
-                            onClick = { isPlaybackSpeedDialogOpen = true },
-                            modifier = Modifier.size(ControlIconButtonSize).tourTarget("sim_playback_speed_selector"),
-                        ) {
-                            Icon(Icons.Filled.Speed, contentDescription = speedDescription)
-                        }
-                    }
-                }
-            }
+            RouteProgressCardExpanded(
+                progress = progress,
+                remainingMeters = remainingMeters,
+                etaLabel = etaLabel,
+                state = state,
+                sessionDistanceTraveledMeters = sessionDistanceTraveledMeters,
+                editState = editState,
+                onEditAction = onEditAction,
+                onAction = onAction,
+                onCollapse = { isExpanded = false },
+                onOpenPlaybackSpeedDialog = { isPlaybackSpeedDialogOpen = true },
+            )
         } else {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.ControlsRow),
-                modifier =
-                    Modifier.padding(
-                        start = ProgressCardCollapsedHorizontalPadding,
-                        end = Spacing.ControlsRow,
-                        top = ProgressCardCollapsedVerticalPadding,
-                        bottom = ProgressCardCollapsedVerticalPadding,
-                    ),
-            ) {
-                Text(
-                    text = stringResource(R.string.simulation_route_progress_collapsed_label, percent, etaLabel),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                PlaybackButton(
-                    state = state,
-                    onAction = onAction,
-                    modifier = Modifier.size(ControlIconButtonSize).tourTarget("sim_playback"),
-                )
-                val expandDescription = stringResource(R.string.simulation_route_progress_expand)
-                TooltipAnchor(tooltipText = expandDescription) {
-                    IconButton(
-                        onClick = { isExpanded = true },
-                        modifier = Modifier.size(ToggleIconButtonSize).tourTarget("sim_expand_toggle"),
-                    ) {
-                        Icon(Icons.Filled.ExpandMore, contentDescription = expandDescription)
-                    }
-                }
-            }
+            RouteProgressCardCollapsed(
+                state = state,
+                onAction = onAction,
+                percent = percent,
+                etaLabel = etaLabel,
+                onExpand = { isExpanded = true },
+            )
         }
     }
 
     if (isPlaybackSpeedDialogOpen) {
-        SpeedSelectorDialog(
-            title = stringResource(R.string.simulation_playback_speed_dialog_title),
-            speedLabel = stringResource(R.string.simulation_speed_value_label, state.playbackSpeedKmh.roundToInt()),
-            confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
-            speedKmh = state.playbackSpeedKmh,
-            onSpeedChange = { kmh -> onAction(SimulationAction.OnPlaybackSpeedChange(kmh)) },
-            onDismiss = { isPlaybackSpeedDialogOpen = false },
-        )
+        PlaybackSpeedDialog(state = state, onAction = onAction, onDismiss = { isPlaybackSpeedDialogOpen = false })
     }
 }
 
-private fun Double.toKilometersLabel(): String = "%.1f km".format(Locale.US, this / METERS_PER_KILOMETER)
+@Composable
+private fun PlaybackSpeedDialog(
+    state: SimulationState,
+    onAction: (SimulationAction) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    SpeedSelectorDialog(
+        title = stringResource(R.string.simulation_playback_speed_dialog_title),
+        speedLabel = stringResource(R.string.simulation_speed_value_label, state.playbackSpeedKmh.roundToInt()),
+        confirmButtonLabel = stringResource(R.string.simulation_speed_dialog_close),
+        speedKmh = state.playbackSpeedKmh,
+        onSpeedChange = { kmh -> onAction(SimulationAction.OnPlaybackSpeedChange(kmh)) },
+        onDismiss = onDismiss,
+    )
+}
 
 private fun Double.toEtaLabel(): String {
     val totalMinutes = (this / 60.0).roundToInt().coerceAtLeast(0)
