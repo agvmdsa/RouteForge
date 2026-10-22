@@ -15,9 +15,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.MapStyle
@@ -139,19 +141,55 @@ fun RouteForgeMap(
             )
         }
 
+    MapTileStyleEffect(components = components, mapStyle = mapStyle)
+
+    MapRouteColorEffect(components = components, routeColorArgb = routeColorArgb)
+
+    AnimateRoutePulse(overlay = components.routeOverlay, onPulse = { components.mapView.invalidate() })
+
+    MapLifecycleEffect(components = components, lifecycleOwner = lifecycleOwner)
+
+    MapMarkersEffect(components = components, markers = markers, context = context, density = density)
+
+    MapRegionOverlaysEffect(components = components, regions = regions, regionFillColorArgb = regionFillColorArgb)
+
+    MapRoutePolylineEffect(components = components, polylinePoints = polylinePoints)
+
+    MapTraveledPolylineEffect(components = components, traveledPolylinePoints = traveledPolylinePoints)
+
+    MapCameraEffect(components = components, cameraTarget = cameraTarget)
+
+    AndroidView(factory = { components.mapView }, modifier = modifier.fillMaxSize())
+}
+
+@Composable
+private fun MapTileStyleEffect(
+    components: RouteForgeMapComponents,
+    mapStyle: MapStyle,
+) {
     LaunchedEffect(mapStyle) {
         components.mapView.setTileSource(mapStyle.toTileSource())
         components.mapView.invalidate()
     }
+}
 
+@Composable
+private fun MapRouteColorEffect(
+    components: RouteForgeMapComponents,
+    routeColorArgb: Int,
+) {
     LaunchedEffect(routeColorArgb) {
         components.routeOverlay.setColor(routeColorArgb, ROUTE_LINE_WIDTH_PX)
         components.traveledOverlay.outlinePaint.color = (TRAVELED_LINE_ALPHA shl 24) or (routeColorArgb and 0x00FFFFFF)
         components.mapView.invalidate()
     }
+}
 
-    AnimateRoutePulse(overlay = components.routeOverlay, onPulse = { components.mapView.invalidate() })
-
+@Composable
+private fun MapLifecycleEffect(
+    components: RouteForgeMapComponents,
+    lifecycleOwner: LifecycleOwner,
+) {
     DisposableEffect(lifecycleOwner) {
         val observer =
             LifecycleEventObserver { _, event ->
@@ -175,7 +213,15 @@ fun RouteForgeMap(
             components.mapView.onPause()
         }
     }
+}
 
+@Composable
+private fun MapMarkersEffect(
+    components: RouteForgeMapComponents,
+    markers: List<RouteForgeMapMarker>,
+    context: Context,
+    density: Density,
+) {
     // Keyed on a representation that excludes onClick/onDrag/onDragEnd (closures that get a new
     // identity on every recomposition, e.g. from a caller-side `onAction` reference changing) —
     // otherwise every recomposition during an active drag (onDrag fires continuously) would tear
@@ -242,7 +288,14 @@ fun RouteForgeMap(
         }
         mapView.invalidate()
     }
+}
 
+@Composable
+private fun MapRegionOverlaysEffect(
+    components: RouteForgeMapComponents,
+    regions: List<RouteForgeMapRegionOverlay>,
+    regionFillColorArgb: Int,
+) {
     LaunchedEffect(regions, regionFillColorArgb) {
         val mapView = components.mapView
         mapView.overlays.removeAll { it is Polygon }
@@ -269,17 +322,35 @@ fun RouteForgeMap(
         }
         mapView.invalidate()
     }
+}
 
+@Composable
+private fun MapRoutePolylineEffect(
+    components: RouteForgeMapComponents,
+    polylinePoints: List<LatLng>,
+) {
     LaunchedEffect(polylinePoints) {
         components.routeOverlay.setPoints(polylinePoints)
         components.mapView.invalidate()
     }
+}
 
+@Composable
+private fun MapTraveledPolylineEffect(
+    components: RouteForgeMapComponents,
+    traveledPolylinePoints: List<LatLng>,
+) {
     LaunchedEffect(traveledPolylinePoints) {
         components.traveledOverlay.setPoints(traveledPolylinePoints.map { (latitude, longitude) -> GeoPoint(latitude, longitude) })
         components.mapView.invalidate()
     }
+}
 
+@Composable
+private fun MapCameraEffect(
+    components: RouteForgeMapComponents,
+    cameraTarget: LatLng?,
+) {
     val hasSetInitialZoom = remember { mutableStateOf(false) }
     LaunchedEffect(cameraTarget) {
         val target = cameraTarget ?: return@LaunchedEffect
@@ -289,6 +360,4 @@ fun RouteForgeMap(
         }
         components.mapView.controller.setCenter(GeoPoint(target.latitude, target.longitude))
     }
-
-    AndroidView(factory = { components.mapView }, modifier = modifier.fillMaxSize())
 }
