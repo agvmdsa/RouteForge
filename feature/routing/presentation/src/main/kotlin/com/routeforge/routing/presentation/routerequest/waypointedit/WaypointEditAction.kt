@@ -3,7 +3,7 @@ package com.routeforge.routing.presentation.routerequest.waypointedit
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 
-sealed interface WaypointEditAction {
+internal sealed interface WaypointEditAction {
     data class OnOpen(
         val points: List<RoutePoint>,
         val activeMode: RoutePlaybackMode,

@@ -45,7 +45,7 @@ import kotlinx.coroutines.launch
 private const val KMH_TO_MPS_DIVISOR = 3.6f
 private const val REAL_LOCATION_TIMEOUT_MILLIS = 30_000L
 
-class SimulationViewModel(
+internal class SimulationViewModel(
     private val teleportUseCase: TeleportUseCase,
     private val startRouteSimulationUseCase: StartRouteSimulationUseCase,
     private val pauseSimulationUseCase: PauseSimulationUseCase,

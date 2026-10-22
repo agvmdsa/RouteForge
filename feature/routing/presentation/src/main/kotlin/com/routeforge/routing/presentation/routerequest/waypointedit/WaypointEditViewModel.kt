@@ -23,7 +23,7 @@ private const val MIN_WAYPOINTS = 2
  *  (`/speckit-analyze` finding C3), [WaypointEditAction.OnOpen.activeMode] is Free-roam whenever
  *  no mode has been chosen yet on Plan Route — it always succeeds, so a pre-choice edit here can
  *  never trigger FR-010's revert path, matching Plan Route's existing never-reverts behavior. */
-class WaypointEditViewModel(
+internal class WaypointEditViewModel(
     private val recomputeRouteForBothModes: RecomputeRouteForBothModesUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(WaypointEditState())

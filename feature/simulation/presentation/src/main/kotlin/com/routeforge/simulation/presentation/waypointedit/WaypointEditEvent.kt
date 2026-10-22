@@ -3,7 +3,7 @@ package com.routeforge.simulation.presentation.waypointedit
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
 
-sealed interface WaypointEditEvent {
+internal sealed interface WaypointEditEvent {
     data class Committed(
         val points: List<RoutePoint>,
         val activeRoute: Route,

@@ -27,7 +27,7 @@ private val WaypointEditTriggerButtonSize = 48.dp
  *  lives inside [com.routeforge.simulation.presentation.components.RouteProgressCard] now; only
  *  this button relocated there, not the sheet it opens (see [WaypointEditOverlays]). */
 @Composable
-fun WaypointEditTriggerButton(
+internal fun WaypointEditTriggerButton(
     loadedRoute: Route?,
     distanceTraveledMeters: Double?,
     editState: WaypointEditState,
@@ -53,7 +53,7 @@ fun WaypointEditTriggerButton(
  *  position so z-order over the map is unchanged. Map-tap/marker-drag gating and rendering stay in
  *  [SimulationScreen] itself, since this composable doesn't own the map. */
 @Composable
-fun WaypointEditOverlays(
+internal fun WaypointEditOverlays(
     loadedRoute: Route?,
     editState: WaypointEditState,
     onEditAction: (WaypointEditAction) -> Unit,

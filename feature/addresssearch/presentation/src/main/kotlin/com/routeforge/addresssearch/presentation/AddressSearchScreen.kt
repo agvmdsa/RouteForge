@@ -75,7 +75,7 @@ fun AddressSearchRoot(
  *  `BoxWithConstraints`-based fixed-fraction pattern for the same reason: a reactively-measured
  *  height would deadlock here just as it did there. */
 @Composable
-fun AddressSearchScreen(
+internal fun AddressSearchScreen(
     state: AddressSearchState,
     onAction: (AddressSearchAction) -> Unit,
     onNavigateBack: () -> Unit,

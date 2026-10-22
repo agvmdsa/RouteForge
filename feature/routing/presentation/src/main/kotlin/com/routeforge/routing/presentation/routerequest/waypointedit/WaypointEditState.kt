@@ -9,7 +9,7 @@ import com.routeforge.coredomain.model.RoutePoint
  *  Decision 9. Plan Route's own existing map-tap-add/marker-drag-move paths are left unchanged
  *  (they predate this feature and already work); this state only covers the new reorder-list's
  *  own reorder/delete actions. */
-data class WaypointEditState(
+internal data class WaypointEditState(
     val isOpen: Boolean = false,
     val points: List<RoutePoint> = emptyList(),
     /** True once the list has been reordered locally but not yet committed/recomputed — reordering
