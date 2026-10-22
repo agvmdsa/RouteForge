@@ -93,6 +93,13 @@ data class TourStep(
     }
 }
 
+/** A step that explains the control tagged with `tourTarget(id)`; [isApplicable] skips it when the screen state makes it moot. */
+fun explanatoryTourStep(
+    id: String,
+    text: String,
+    isApplicable: Boolean = true,
+) = TourStep(id = id, text = text, targetId = id, isApplicable = isApplicable)
+
 data class TourStepResult(
     val text: String,
     val outcome: TourResultOutcome,
