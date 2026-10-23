@@ -6,10 +6,10 @@ import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
+import com.routeforge.coredomain.testing.FakeRegionCatalog
+import com.routeforge.coredomain.testing.FakeRegionUsageTracker
 import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
-import com.routeforge.routing.domain.FakeRegionCatalog
 import com.routeforge.routing.domain.FakeRegionDownloader
-import com.routeforge.routing.domain.FakeRegionUsageTracker
 import com.routeforge.routing.domain.FakeStorageQuotaStore
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals

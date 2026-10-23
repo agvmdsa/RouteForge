@@ -6,9 +6,9 @@ import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.testing.FakeRegionCatalog
+import com.routeforge.coredomain.testing.FakeRoutingEngine
 import com.routeforge.routing.domain.model.RouteDraft
-import com.routeforge.routing.presentation.FakeRegionCatalog
-import com.routeforge.routing.presentation.FakeRoutingEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test
 class RouteDraftEditorTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val scope = CoroutineScope(dispatcher)
-    private val routingEngine = FakeRoutingEngine()
+    private val routingEngine = FakeRoutingEngine(snappableLatitudes = emptySet())
     private val draftWaypointsHolder = DraftWaypointsHolder()
     private val selectedFavoriteWaypointHolder = SelectedFavoriteWaypointHolder()
     private val editor =

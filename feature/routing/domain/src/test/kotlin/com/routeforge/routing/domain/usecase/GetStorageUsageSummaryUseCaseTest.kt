@@ -2,7 +2,7 @@ package com.routeforge.routing.domain.usecase
 
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
-import com.routeforge.routing.domain.FakeRegionCatalog
+import com.routeforge.coredomain.testing.FakeRegionCatalog
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

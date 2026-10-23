@@ -3,31 +3,21 @@ package com.routeforge.coredomain.link
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.testing.FakeRedirectSource
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class ResolveSharedTextUseCaseTest {
-    private class FakeRedirectSource(
-        private val answers: Map<String, Result<String?, DataError.Network>> = emptyMap(),
-    ) : RedirectSource {
-        val requested = mutableListOf<String>()
-        var lookingUpCalledBeforeFirstRequest: Boolean? = null
-        var onFirstRequest: () -> Boolean = { true }
-
-        override suspend fun locationOf(url: String): Result<String?, DataError.Network> {
-            if (requested.isEmpty()) lookingUpCalledBeforeFirstRequest = onFirstRequest()
-            requested += url
-            return answers[url] ?: Result.Error(DataError.Network.NO_INTERNET)
-        }
-    }
+    private fun redirectSource(answers: Map<String, Result<String?, DataError.Network>> = emptyMap()) =
+        FakeRedirectSource(answers, answerForUnknownUrl = Result.Error(DataError.Network.NO_INTERNET))
 
     private val shortLink = "https://maps.app.goo.gl/AbCdEf123"
     private val resolved = "https://www.google.com/maps/place/Brandenburg+Gate/@52.5163,13.3777,17z/data=!3d52.5162746!4d13.3777041"
 
     private fun resolve(
         text: String,
-        source: FakeRedirectSource = FakeRedirectSource(),
+        source: FakeRedirectSource = redirectSource(),
         onLookingUp: () -> Unit = {},
     ): SharedTextOutcome = runBlocking { ResolveSharedTextUseCase(RedirectFollower(source))(text, onLookingUp) }
 
@@ -39,7 +29,7 @@ class ResolveSharedTextUseCaseTest {
 
     @Test
     fun `an address with a position is read offline`() {
-        val source = FakeRedirectSource()
+        val source = redirectSource()
         var lookedUp = 0
 
         val outcome = resolve("Meet me at geo:52.52,13.405 ok?", source) { lookedUp++ }
@@ -51,7 +41,7 @@ class ResolveSharedTextUseCaseTest {
 
     @Test
     fun `the first address that can be read wins, even after a short link`() {
-        val source = FakeRedirectSource()
+        val source = redirectSource()
 
         val outcome = resolve("$shortLink\ngeo:1,2\ngeo:3,4", source)
 
@@ -70,7 +60,7 @@ class ResolveSharedTextUseCaseTest {
 
     @Test
     fun `a short link is followed once, after saying so, and its place is returned`() {
-        val source = FakeRedirectSource(mapOf(shortLink to Result.Success(resolved)))
+        val source = redirectSource(mapOf(shortLink to Result.Success(resolved)))
         var lookedUp = 0
         source.onFirstRequest = { lookedUp == 1 }
 
@@ -85,14 +75,14 @@ class ResolveSharedTextUseCaseTest {
     @Test
     fun `a short link that leads to a nameless place takes the name from the text`() {
         val nameless = "https://www.google.com/maps/@52.52,13.405,15z"
-        val source = FakeRedirectSource(mapOf(shortLink to Result.Success(nameless)))
+        val source = redirectSource(mapOf(shortLink to Result.Success(nameless)))
 
         assertEquals(place(52.52, 13.405, "Cafe Central"), resolve("Cafe Central\n$shortLink", source))
     }
 
     @Test
     fun `a short link that cannot be followed falls back to a search for the text around it`() {
-        val source = FakeRedirectSource()
+        val source = redirectSource()
 
         val outcome = resolve("Brandenburg Gate\nPariser Platz, 10117 Berlin\n$shortLink", source)
 
@@ -102,7 +92,7 @@ class ResolveSharedTextUseCaseTest {
 
     @Test
     fun `a text with no link at all is searched for as it is`() {
-        val source = FakeRedirectSource()
+        val source = redirectSource()
 
         assertEquals(SharedTextOutcome.Search("Cafe Central, Vienna"), resolve("Cafe Central, Vienna", source))
         assertEquals(emptyList<String>(), source.requested)
@@ -115,7 +105,7 @@ class ResolveSharedTextUseCaseTest {
 
     @Test
     fun `a link with no position and no other text is not found`() {
-        val source = FakeRedirectSource()
+        val source = redirectSource()
 
         assertEquals(SharedTextOutcome.NotFound, resolve("https://www.openstreetmap.org/node/123456", source))
         assertEquals(SharedTextOutcome.NotFound, resolve("   ", source))
@@ -132,7 +122,7 @@ class ResolveSharedTextUseCaseTest {
 
     @Test
     fun `a directions link is read offline into a route`() {
-        val source = FakeRedirectSource()
+        val source = redirectSource()
 
         val outcome = resolve("Route\nhttps://www.google.com/maps/dir/52.51,13.37/52.52,13.41/", source)
 
@@ -143,7 +133,7 @@ class ResolveSharedTextUseCaseTest {
     @Test
     fun `a short link that leads to a directions link is a route`() {
         val directions = "https://www.google.com/maps/dir/52.51,13.37/52.52,13.41/"
-        val source = FakeRedirectSource(mapOf(shortLink to Result.Success(directions)))
+        val source = redirectSource(mapOf(shortLink to Result.Success(directions)))
 
         val outcome = resolve(shortLink, source)
 

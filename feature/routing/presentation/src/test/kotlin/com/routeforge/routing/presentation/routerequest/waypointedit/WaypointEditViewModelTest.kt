@@ -6,15 +6,15 @@ import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.testing.FakeRegionCatalog
+import com.routeforge.coredomain.testing.FakeRegionUsageTracker
+import com.routeforge.coredomain.testing.FakeRoutingEngine
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.coredomain.usecase.ComputeRouteUseCase
 import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
 import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
 import com.routeforge.coredomain.usecase.RecomputeRouteForBothModesUseCase
 import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
-import com.routeforge.routing.presentation.FakeRegionCatalog
-import com.routeforge.routing.presentation.FakeRegionUsageTracker
-import com.routeforge.routing.presentation.FakeRoutingEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -31,7 +31,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class WaypointEditViewModelTest {
-    private val routingEngine = FakeRoutingEngine()
+    private val routingEngine = FakeRoutingEngine(snappableLatitudes = emptySet())
     private val regionCatalog = FakeRegionCatalog()
     private val computeRoute = ComputeRouteUseCase(routingEngine, regionCatalog, RecordRegionUsageUseCase(FakeRegionUsageTracker()))
     private val recomputeRouteForBothModes =

@@ -1,4 +1,4 @@
-package com.routeforge.routing.domain
+package com.routeforge.coredomain.testing
 
 import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.coredomain.RegionDeletionResult

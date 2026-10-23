@@ -1,11 +1,17 @@
-package com.routeforge.coredomain
+package com.routeforge.coredomain.testing
 
 import com.routeforge.coredomain.RoutingEngine
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
 
-class FakeRoutingEngine : RoutingEngine {
+class FakeRoutingEngine(
+    snappableLatitudes: Set<Double>? = null,
+) : RoutingEngine {
+    /** When non-null, only points at one of these latitudes are snapped (onto themselves) and every other point comes
+     *  back unsnapped; when null, [snapResult] decides and by default snaps every point. */
+    var snappableLatitudes: Set<Double>? = snappableLatitudes
+
     var snapResult: (RoutePoint) -> RoutePoint = {
         it.copy(snappedLatitude = it.latitude, snappedLongitude = it.longitude)
     }
@@ -20,7 +26,14 @@ class FakeRoutingEngine : RoutingEngine {
     override fun snap(
         point: RoutePoint,
         availableRegions: List<Region>,
-    ): RoutePoint = snapResult(point)
+    ): RoutePoint {
+        val snappable = snappableLatitudes ?: return snapResult(point)
+        return if (point.latitude in snappable) {
+            point.copy(snappedLatitude = point.latitude, snappedLongitude = point.longitude)
+        } else {
+            point
+        }
+    }
 
     override fun computePath(points: List<RoutePoint>): Route? {
         val sequence = computePathResults ?: return computePathResult
