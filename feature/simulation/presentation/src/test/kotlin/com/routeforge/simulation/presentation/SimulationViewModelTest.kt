@@ -140,10 +140,13 @@ class SimulationViewModelTest {
                     setSpeedUseCase = SetSpeedUseCase(controller),
                     lastComputedRouteHolder = lastComputedRouteHolder,
                 ),
+            realLocationTracker =
+                RealLocationTracker(
+                    observeRealLocationUseCase = ObserveRealLocationUseCase(realLocationDataSource),
+                    lastKnownRealLocationHolder = lastKnownRealLocationHolder,
+                ),
             observeMockedSessionUseCase = ObserveMockedSessionUseCase(controller),
-            observeRealLocationUseCase = ObserveRealLocationUseCase(realLocationDataSource),
             lastComputedRouteHolder = lastComputedRouteHolder,
-            lastKnownRealLocationHolder = lastKnownRealLocationHolder,
             observeMapStyle = ObserveMapStyleUseCase(FakeMapStyleStore()),
         )
     }

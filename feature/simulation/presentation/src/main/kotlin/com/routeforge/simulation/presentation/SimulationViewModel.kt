@@ -3,16 +3,10 @@ package com.routeforge.simulation.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
-import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
-import com.routeforge.simulation.domain.RealLocationFailure
-import com.routeforge.simulation.domain.RealLocationUpdate
 import com.routeforge.simulation.domain.usecase.ObserveMockedSessionUseCase
-import com.routeforge.simulation.domain.usecase.ObserveRealLocationUseCase
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -21,8 +15,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-private const val REAL_LOCATION_TIMEOUT_MILLIS = 30_000L
-
 internal class SimulationViewModel(
     private val pendingTeleportConfirmer: PendingTeleportConfirmer,
     private val mockLocationAuthorizationGuard: MockLocationAuthorizationGuard,
@@ -30,10 +22,9 @@ internal class SimulationViewModel(
     private val joystickSessionController: JoystickSessionController,
     private val routeModeSwitcher: RouteModeSwitcher,
     private val playbackControls: PlaybackControls,
+    private val realLocationTracker: RealLocationTracker,
     observeMockedSessionUseCase: ObserveMockedSessionUseCase,
-    private val observeRealLocationUseCase: ObserveRealLocationUseCase,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
-    private val lastKnownRealLocationHolder: LastKnownRealLocationHolder,
     observeMapStyle: ObserveMapStyleUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SimulationState())
@@ -42,18 +33,15 @@ internal class SimulationViewModel(
     private val _events = Channel<SimulationEvent>()
     val events = _events.receiveAsFlow()
 
-    private var realLocationObservationJob: Job? = null
-    private var realLocationTimeoutJob: Job? = null
-
     init {
         observeMockedSessionUseCase()
             .onEach { mockedSession ->
                 _state.update { it.copy(mockedSession = mockedSession) }
                 joystickSessionController.onMockedSessionChanged(mockedSession)
                 if (mockedSession == null) {
-                    startObservingRealLocation()
+                    realLocationTracker.startObservingRealLocation(_state, viewModelScope)
                 } else {
-                    stopObservingRealLocation()
+                    realLocationTracker.stopObservingRealLocation()
                 }
             }.launchIn(viewModelScope)
 
@@ -70,9 +58,7 @@ internal class SimulationViewModel(
             .onEach { route -> _state.update { it.copy(loadedRoute = route) } }
             .launchIn(viewModelScope)
 
-        lastKnownRealLocationHolder.location
-            .onEach { location -> _state.update { it.copy(realLocation = location) } }
-            .launchIn(viewModelScope)
+        realLocationTracker.startObservingLastKnownLocation(_state, viewModelScope)
 
         pendingTeleportConfirmer.startObservingPendingTeleportTarget(_state, viewModelScope)
     }
@@ -105,8 +91,7 @@ internal class SimulationViewModel(
             SimulationAction.OnDismissCancelMock -> _state.update { it.copy(isPendingCancelMock = false) }
             SimulationAction.OnOpenSetupClick ->
                 viewModelScope.launch { _events.send(SimulationEvent.NavigateToSetup) }
-            SimulationAction.OnLocationPermissionGranted ->
-                if (_state.value.mockedSession == null) startObservingRealLocation()
+            SimulationAction.OnLocationPermissionGranted -> realLocationTracker.onLocationPermissionGranted(_state, viewModelScope)
             SimulationAction.OnScreenResumed -> checkAuthorizationStillGranted()
             SimulationAction.OnConfirmFavoriteTeleportCancelRoute -> pendingTeleportConfirmer.confirmFavoriteTeleportCancelRoute(_state)
             SimulationAction.OnDismissFavoriteTeleportCancelRoute ->
@@ -127,60 +112,4 @@ internal class SimulationViewModel(
             viewModelScope.launch { _events.send(SimulationEvent.NavigateToSetup) }
         }
     }
-
-    private fun startObservingRealLocation() {
-        if (realLocationObservationJob?.isActive == true) return
-        _state.update { it.copy(isSearchingRealLocation = true, errorType = it.errorType.clearIfRealLocationRelated()) }
-        realLocationTimeoutJob =
-            viewModelScope.launch {
-                delay(REAL_LOCATION_TIMEOUT_MILLIS)
-                if (_state.value.isSearchingRealLocation) {
-                    _state.update {
-                        it.copy(isSearchingRealLocation = false, errorType = SimulationErrorType.REAL_LOCATION_TIMED_OUT)
-                    }
-                }
-            }
-        realLocationObservationJob =
-            observeRealLocationUseCase()
-                .onEach { update ->
-                    realLocationTimeoutJob?.cancel()
-                    when (update) {
-                        is RealLocationUpdate.Fix -> {
-                            lastKnownRealLocationHolder.set(update.location)
-                            _state.update {
-                                it.copy(isSearchingRealLocation = false, errorType = it.errorType.clearIfRealLocationRelated())
-                            }
-                        }
-                        is RealLocationUpdate.Unavailable -> {
-                            _state.update {
-                                it.copy(isSearchingRealLocation = false, errorType = update.reason.toSimulationErrorType())
-                            }
-                        }
-                    }
-                }.launchIn(viewModelScope)
-    }
-
-    private fun stopObservingRealLocation() {
-        realLocationObservationJob?.cancel()
-        realLocationObservationJob = null
-        realLocationTimeoutJob?.cancel()
-        realLocationTimeoutJob = null
-    }
-
-    private fun RealLocationFailure.toSimulationErrorType(): SimulationErrorType =
-        when (this) {
-            RealLocationFailure.ProviderDisabled -> SimulationErrorType.REAL_LOCATION_PROVIDER_DISABLED
-            RealLocationFailure.PermissionDenied -> SimulationErrorType.REAL_LOCATION_PERMISSION_DENIED
-        }
-
-    /** Clears a real-location-related error once a search (re)starts or resolves — leaves any
-     *  unrelated error (e.g. NOT_AUTHORIZED) untouched. */
-    private fun SimulationErrorType?.clearIfRealLocationRelated(): SimulationErrorType? =
-        when (this) {
-            SimulationErrorType.REAL_LOCATION_PROVIDER_DISABLED,
-            SimulationErrorType.REAL_LOCATION_PERMISSION_DENIED,
-            SimulationErrorType.REAL_LOCATION_TIMED_OUT,
-            -> null
-            else -> this
-        }
 }
