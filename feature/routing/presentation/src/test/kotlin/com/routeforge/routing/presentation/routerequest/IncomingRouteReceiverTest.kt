@@ -7,13 +7,13 @@ import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.testing.FakeRegionCatalog
+import com.routeforge.coredomain.testing.FakeRoutingEngine
 import com.routeforge.routing.domain.RouteFileCodec
 import com.routeforge.routing.domain.model.RouteDraft
 import com.routeforge.routing.domain.model.RouteFileFailure
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
-import com.routeforge.routing.presentation.FakeRegionCatalog
-import com.routeforge.routing.presentation.FakeRoutingEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -43,7 +43,12 @@ class IncomingRouteReceiverTest {
                 RouteDraftEditor(
                     draftWaypointsHolder = draftWaypointsHolder,
                     selectedFavoriteWaypointHolder = SelectedFavoriteWaypointHolder(),
-                    routeModePreviewer = newRouteModePreviewer(FakeRoutingEngine(), FakeRegionCatalog(), dispatcher),
+                    routeModePreviewer =
+                        newRouteModePreviewer(
+                            FakeRoutingEngine(snappableLatitudes = emptySet()),
+                            FakeRegionCatalog(),
+                            dispatcher,
+                        ),
                 ),
         )
 

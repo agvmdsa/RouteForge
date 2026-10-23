@@ -16,7 +16,11 @@ import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.testing.FakeFavoriteRoutesRepository
+import com.routeforge.coredomain.testing.FakeFavoriteWaypointsRepository
 import com.routeforge.coredomain.testing.FakeMapStyleStore
+import com.routeforge.coredomain.testing.FakeRegionCatalog
+import com.routeforge.coredomain.testing.FakeRegionUsageTracker
+import com.routeforge.coredomain.testing.FakeRoutingEngine
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.coredomain.usecase.ComputeRouteUseCase
 import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
@@ -29,10 +33,6 @@ import com.routeforge.routing.domain.model.RouteFileFailure
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
-import com.routeforge.routing.presentation.FakeFavoriteWaypointsRepository
-import com.routeforge.routing.presentation.FakeRegionCatalog
-import com.routeforge.routing.presentation.FakeRegionUsageTracker
-import com.routeforge.routing.presentation.FakeRoutingEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
@@ -63,7 +63,7 @@ private class FakeRouteFileCodec(
 
 class RouteRequestViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
-    private val routingEngine = FakeRoutingEngine()
+    private val routingEngine = FakeRoutingEngine(snappableLatitudes = emptySet())
     private val regionCatalog = FakeRegionCatalog()
     private val lastComputedRouteHolder = LastComputedRouteHolder()
     private val jsonCodec = FakeRouteFileCodec()

@@ -1,12 +1,14 @@
-package com.routeforge.simulation.presentation.waypointedit
+package com.routeforge.coredomain.testing
 
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.model.FavoriteWaypoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class FakeFavoriteWaypointsRepository : FavoriteWaypointsRepository {
-    private val favoritesState = MutableStateFlow<List<FavoriteWaypoint>>(emptyList())
+class FakeFavoriteWaypointsRepository(
+    initialFavorites: List<FavoriteWaypoint> = emptyList(),
+) : FavoriteWaypointsRepository {
+    private val favoritesState = MutableStateFlow(initialFavorites)
     private var nextId = 0
 
     override fun observeFavorites(): StateFlow<List<FavoriteWaypoint>> = favoritesState

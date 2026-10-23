@@ -6,6 +6,10 @@ import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.testing.FakeFavoriteWaypointsRepository
+import com.routeforge.coredomain.testing.FakeRegionCatalog
+import com.routeforge.coredomain.testing.FakeRegionUsageTracker
+import com.routeforge.coredomain.testing.FakeRoutingEngine
 import com.routeforge.coredomain.usecase.ComputeEditableWaypointRangeUseCase
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.coredomain.usecase.ComputeRouteUseCase

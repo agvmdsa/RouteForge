@@ -2,6 +2,7 @@ package com.routeforge.coredomain.link
 
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.testing.FakeRedirectSource
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -9,17 +10,6 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 class RedirectFollowerTest {
-    private class FakeRedirectSource(
-        private val answers: Map<String, Result<String?, DataError.Network>>,
-    ) : RedirectSource {
-        val requested = mutableListOf<String>()
-
-        override suspend fun locationOf(url: String): Result<String?, DataError.Network> {
-            requested += url
-            return answers[url] ?: Result.Success(null)
-        }
-    }
-
     private class NeverAnswers : RedirectSource {
         override suspend fun locationOf(url: String): Result<String?, DataError.Network> = awaitCancellation()
     }

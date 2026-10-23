@@ -9,15 +9,15 @@ import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.testing.FakeFavoriteRoutesRepository
+import com.routeforge.coredomain.testing.FakeRegionCatalog
+import com.routeforge.coredomain.testing.FakeRegionUsageTracker
+import com.routeforge.coredomain.testing.FakeRoutingEngine
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.coredomain.usecase.ComputeRouteUseCase
 import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
 import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
 import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
-import com.routeforge.routing.presentation.FakeRegionCatalog
-import com.routeforge.routing.presentation.FakeRegionUsageTracker
-import com.routeforge.routing.presentation.FakeRoutingEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -37,7 +37,7 @@ private fun sampleFavoriteRoute(id: String = "route-1") = FavoriteRoute(id = id,
 
 class SavedRoutesViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
-    private val routingEngine = FakeRoutingEngine()
+    private val routingEngine = FakeRoutingEngine(snappableLatitudes = emptySet())
     private val regionCatalog = FakeRegionCatalog()
     private val favoriteRoutesRepository = FakeFavoriteRoutesRepository(listOf(sampleFavoriteRoute()))
     private val lastComputedRouteHolder = LastComputedRouteHolder()

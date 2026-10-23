@@ -1,9 +1,11 @@
-package com.routeforge.simulation.presentation.waypointedit
+package com.routeforge.coredomain.testing
 
 import com.routeforge.coredomain.RegionUsageTracker
 
-class FakeRegionUsageTracker : RegionUsageTracker {
-    private val usage = mutableMapOf<String, Long>()
+class FakeRegionUsageTracker(
+    initialUsage: Map<String, Long> = emptyMap(),
+) : RegionUsageTracker {
+    private val usage = initialUsage.toMutableMap()
 
     override fun recordUsed(
         regionIds: Set<String>,

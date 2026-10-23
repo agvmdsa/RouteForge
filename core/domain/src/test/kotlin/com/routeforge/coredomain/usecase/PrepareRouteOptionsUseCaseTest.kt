@@ -1,10 +1,10 @@
 package com.routeforge.coredomain.usecase
 
-import com.routeforge.coredomain.FakeRegionCatalog
-import com.routeforge.coredomain.FakeRegionUsageTracker
-import com.routeforge.coredomain.FakeRoutingEngine
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.testing.FakeRegionCatalog
+import com.routeforge.coredomain.testing.FakeRegionUsageTracker
+import com.routeforge.coredomain.testing.FakeRoutingEngine
 import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull

@@ -3,9 +3,9 @@ package com.routeforge.routing.presentation.regioncoveragemap
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.testing.FakeMapStyleStore
+import com.routeforge.coredomain.testing.FakeRegionCatalog
 import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.routing.domain.usecase.ObserveRegionCatalogUseCase
-import com.routeforge.routing.presentation.FakeRegionCatalog
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
