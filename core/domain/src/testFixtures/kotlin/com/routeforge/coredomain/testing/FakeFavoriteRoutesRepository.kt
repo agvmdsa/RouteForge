@@ -1,4 +1,4 @@
-package com.routeforge.routing.presentation
+package com.routeforge.coredomain.testing
 
 import com.routeforge.coredomain.FavoriteRoutesRepository
 import com.routeforge.coredomain.model.FavoriteRoute

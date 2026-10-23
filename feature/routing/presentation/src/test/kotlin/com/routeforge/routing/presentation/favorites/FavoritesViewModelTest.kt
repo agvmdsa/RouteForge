@@ -3,8 +3,8 @@ package com.routeforge.routing.presentation.favorites
 import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.FavoriteWaypoint
+import com.routeforge.coredomain.testing.FakeNetworkConnectivityChecker
 import com.routeforge.routing.presentation.FakeFavoriteWaypointsRepository
-import com.routeforge.routing.presentation.FakeNetworkConnectivityChecker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first

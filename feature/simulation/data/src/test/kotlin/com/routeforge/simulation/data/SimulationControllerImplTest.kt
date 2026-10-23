@@ -5,6 +5,7 @@ import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
+import com.routeforge.coredomain.testing.FakeMockLocationAuthorizationChecker
 import com.routeforge.simulation.domain.ExecutionModeFailure
 import com.routeforge.simulation.domain.JoystickStartFailure
 import com.routeforge.simulation.domain.model.ExecutionMode

@@ -9,6 +9,9 @@ import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.testing.FakeMapStyleStore
+import com.routeforge.coredomain.testing.FakeMockLocationAuthorizationChecker
+import com.routeforge.coredomain.testing.FakeNetworkConnectivityChecker
 import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.simulation.domain.JoystickStartFailure
 import com.routeforge.simulation.domain.model.ExecutionMode

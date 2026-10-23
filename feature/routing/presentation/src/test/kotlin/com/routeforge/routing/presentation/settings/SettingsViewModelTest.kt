@@ -6,6 +6,7 @@ import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.MapStyle
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
+import com.routeforge.coredomain.testing.FakeMapStyleStore
 import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.coredomain.usecase.SetMapStyleUseCase
 import com.routeforge.routing.domain.DEFAULT_STORAGE_QUOTA_BYTES
@@ -13,7 +14,6 @@ import com.routeforge.routing.domain.usecase.EnforceStorageQuotaUseCase
 import com.routeforge.routing.domain.usecase.GetStorageUsageSummaryUseCase
 import com.routeforge.routing.domain.usecase.ObserveStorageQuotaUseCase
 import com.routeforge.routing.domain.usecase.SetStorageQuotaUseCase
-import com.routeforge.routing.presentation.FakeMapStyleStore
 import com.routeforge.routing.presentation.FakeRegionCatalog
 import com.routeforge.routing.presentation.FakeRegionUsageTracker
 import com.routeforge.routing.presentation.FakeStorageQuotaStore
