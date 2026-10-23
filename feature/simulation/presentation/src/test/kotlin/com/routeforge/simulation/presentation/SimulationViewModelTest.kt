@@ -95,28 +95,42 @@ class SimulationViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel(): SimulationViewModel =
-        SimulationViewModel(
-            teleportUseCase = TeleportUseCase(controller),
-            startRouteSimulationUseCase = StartRouteSimulationUseCase(controller),
+    private fun createViewModel(): SimulationViewModel {
+        val mockLocationAuthorizationGuard =
+            MockLocationAuthorizationGuard(
+                mockLocationAuthorizationChecker = authorizationChecker,
+                observeAuthorizationLostUseCase = ObserveAuthorizationLostUseCase(controller),
+            )
+        return SimulationViewModel(
+            pendingTeleportConfirmer =
+                PendingTeleportConfirmer(
+                    teleportUseCase = TeleportUseCase(controller),
+                    isNetworkConnectedUseCase = IsNetworkConnectedUseCase(networkConnectivityChecker),
+                    pendingTeleportTargetHolder = pendingTeleportTargetHolder,
+                    lastComputedRouteHolder = lastComputedRouteHolder,
+                    mockLocationAuthorizationGuard = mockLocationAuthorizationGuard,
+                ),
+            mockLocationAuthorizationGuard = mockLocationAuthorizationGuard,
+            routeStarter =
+                RouteStarter(
+                    startRouteSimulationUseCase = StartRouteSimulationUseCase(controller),
+                    mockLocationAuthorizationGuard = mockLocationAuthorizationGuard,
+                ),
             pauseSimulationUseCase = PauseSimulationUseCase(controller),
             resumeSimulationUseCase = ResumeSimulationUseCase(controller),
             stopSimulationUseCase = StopSimulationUseCase(controller),
             observeMockedSessionUseCase = ObserveMockedSessionUseCase(controller),
             observeRealLocationUseCase = ObserveRealLocationUseCase(realLocationDataSource),
-            observeAuthorizationLostUseCase = ObserveAuthorizationLostUseCase(controller),
-            isNetworkConnectedUseCase = IsNetworkConnectedUseCase(networkConnectivityChecker),
             setSpeedUseCase = SetSpeedUseCase(controller),
             requestJoystickInterruptUseCase = RequestJoystickInterruptUseCase(controller),
             confirmJoystickInterruptUseCase = ConfirmJoystickInterruptUseCase(controller),
             updateJoystickDirectionUseCase = UpdateJoystickDirectionUseCase(controller),
             updateActiveRouteUseCase = UpdateActiveRouteUseCase(controller),
-            mockLocationAuthorizationChecker = authorizationChecker,
             lastComputedRouteHolder = lastComputedRouteHolder,
             lastKnownRealLocationHolder = lastKnownRealLocationHolder,
-            pendingTeleportTargetHolder = pendingTeleportTargetHolder,
             observeMapStyle = ObserveMapStyleUseCase(FakeMapStyleStore()),
         )
+    }
 
     @Test
     fun `tapping the map sets a pending teleport point without calling the controller`() {

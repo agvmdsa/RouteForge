@@ -15,6 +15,9 @@ import com.routeforge.simulation.domain.usecase.StopSimulationUseCase
 import com.routeforge.simulation.domain.usecase.TeleportUseCase
 import com.routeforge.simulation.domain.usecase.UpdateActiveRouteUseCase
 import com.routeforge.simulation.domain.usecase.UpdateJoystickDirectionUseCase
+import com.routeforge.simulation.presentation.MockLocationAuthorizationGuard
+import com.routeforge.simulation.presentation.PendingTeleportConfirmer
+import com.routeforge.simulation.presentation.RouteStarter
 import com.routeforge.simulation.presentation.SimulationViewModel
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditViewModel
 import org.koin.core.module.dsl.factoryOf
@@ -38,6 +41,9 @@ val simulationPresentationModule =
         factoryOf(::ConfirmJoystickInterruptUseCase)
         factoryOf(::UpdateJoystickDirectionUseCase)
         factoryOf(::UpdateActiveRouteUseCase)
+        factoryOf(::MockLocationAuthorizationGuard)
+        factoryOf(::PendingTeleportConfirmer)
+        factoryOf(::RouteStarter)
         viewModelOf(::SimulationViewModel)
         viewModelOf(::WaypointEditViewModel)
     }
