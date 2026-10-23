@@ -20,7 +20,10 @@ import com.routeforge.routing.domain.usecase.SetStorageQuotaUseCase
 import com.routeforge.routing.presentation.favorites.FavoritesViewModel
 import com.routeforge.routing.presentation.regioncatalog.RegionCatalogViewModel
 import com.routeforge.routing.presentation.regioncoveragemap.RegionCoverageMapViewModel
+import com.routeforge.routing.presentation.routerequest.IncomingRouteReceiver
+import com.routeforge.routing.presentation.routerequest.PendingWaypointConfirmer
 import com.routeforge.routing.presentation.routerequest.RouteComputer
+import com.routeforge.routing.presentation.routerequest.RouteDraftEditor
 import com.routeforge.routing.presentation.routerequest.RouteModePreviewer
 import com.routeforge.routing.presentation.routerequest.RouteRequestViewModel
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditViewModel
@@ -64,19 +67,39 @@ val routingPresentationModule =
                 lastComputedRouteHolder = get(),
             )
         }
+        factory {
+            RouteDraftEditor(
+                draftWaypointsHolder = get(),
+                selectedFavoriteWaypointHolder = get(),
+                routeModePreviewer = get(),
+            )
+        }
+        factory {
+            PendingWaypointConfirmer(
+                favoriteWaypointsRepository = get(),
+                pendingSearchWaypointHolder = get(),
+                routeDraftEditor = get(),
+            )
+        }
+        factory {
+            IncomingRouteReceiver(
+                importRouteFile = get(),
+                pendingIncomingRouteHolder = get(),
+                routeDraftEditor = get(),
+            )
+        }
         viewModel {
             RouteRequestViewModel(
                 routeModePreviewer = get(),
                 routeComputer = get(),
+                routeDraftEditor = get(),
+                pendingWaypointConfirmer = get(),
+                incomingRouteReceiver = get(),
                 importRouteFile = get(),
                 exportRouteFile = get(),
                 lastKnownRealLocationHolder = get(),
                 draftWaypointsHolder = get(),
-                favoriteWaypointsRepository = get(),
                 favoriteRoutesRepository = get(),
-                selectedFavoriteWaypointHolder = get(),
-                pendingSearchWaypointHolder = get(),
-                pendingIncomingRouteHolder = get(),
                 observeMapStyle = get(),
             )
         }
