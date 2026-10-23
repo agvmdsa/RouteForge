@@ -2,33 +2,26 @@ package com.routeforge.simulation.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.routeforge.coredomain.MockLocationAuthorizationChecker
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
-import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.simulation.domain.RealLocationFailure
 import com.routeforge.simulation.domain.RealLocationUpdate
-import com.routeforge.simulation.domain.model.ExecutionMode
 import com.routeforge.simulation.domain.model.JoystickInterruptDecision
 import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.domain.model.SimulationStatus
 import com.routeforge.simulation.domain.model.SpeedSetting
 import com.routeforge.simulation.domain.usecase.ConfirmJoystickInterruptUseCase
-import com.routeforge.simulation.domain.usecase.IsNetworkConnectedUseCase
-import com.routeforge.simulation.domain.usecase.ObserveAuthorizationLostUseCase
 import com.routeforge.simulation.domain.usecase.ObserveMockedSessionUseCase
 import com.routeforge.simulation.domain.usecase.ObserveRealLocationUseCase
 import com.routeforge.simulation.domain.usecase.PauseSimulationUseCase
 import com.routeforge.simulation.domain.usecase.RequestJoystickInterruptUseCase
 import com.routeforge.simulation.domain.usecase.ResumeSimulationUseCase
 import com.routeforge.simulation.domain.usecase.SetSpeedUseCase
-import com.routeforge.simulation.domain.usecase.StartRouteSimulationUseCase
 import com.routeforge.simulation.domain.usecase.StopSimulationUseCase
-import com.routeforge.simulation.domain.usecase.TeleportUseCase
 import com.routeforge.simulation.domain.usecase.UpdateActiveRouteUseCase
 import com.routeforge.simulation.domain.usecase.UpdateJoystickDirectionUseCase
 import kotlinx.coroutines.Job
@@ -42,28 +35,24 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-private const val KMH_TO_MPS_DIVISOR = 3.6f
 private const val REAL_LOCATION_TIMEOUT_MILLIS = 30_000L
 
 internal class SimulationViewModel(
-    private val teleportUseCase: TeleportUseCase,
-    private val startRouteSimulationUseCase: StartRouteSimulationUseCase,
+    private val pendingTeleportConfirmer: PendingTeleportConfirmer,
+    private val mockLocationAuthorizationGuard: MockLocationAuthorizationGuard,
+    private val routeStarter: RouteStarter,
     private val pauseSimulationUseCase: PauseSimulationUseCase,
     private val resumeSimulationUseCase: ResumeSimulationUseCase,
     private val stopSimulationUseCase: StopSimulationUseCase,
     observeMockedSessionUseCase: ObserveMockedSessionUseCase,
     private val observeRealLocationUseCase: ObserveRealLocationUseCase,
-    observeAuthorizationLostUseCase: ObserveAuthorizationLostUseCase,
-    private val isNetworkConnectedUseCase: IsNetworkConnectedUseCase,
     private val setSpeedUseCase: SetSpeedUseCase,
     private val requestJoystickInterruptUseCase: RequestJoystickInterruptUseCase,
     private val confirmJoystickInterruptUseCase: ConfirmJoystickInterruptUseCase,
     private val updateJoystickDirectionUseCase: UpdateJoystickDirectionUseCase,
     private val updateActiveRouteUseCase: UpdateActiveRouteUseCase,
-    private val mockLocationAuthorizationChecker: MockLocationAuthorizationChecker,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
     private val lastKnownRealLocationHolder: LastKnownRealLocationHolder,
-    private val pendingTeleportTargetHolder: PendingTeleportTargetHolder,
     observeMapStyle: ObserveMapStyleUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SimulationState())
@@ -100,7 +89,8 @@ internal class SimulationViewModel(
                 }
             }.launchIn(viewModelScope)
 
-        observeAuthorizationLostUseCase()
+        mockLocationAuthorizationGuard
+            .authorizationLost()
             .onEach { _events.send(SimulationEvent.NavigateToSetup) }
             .launchIn(viewModelScope)
 
@@ -116,43 +106,19 @@ internal class SimulationViewModel(
             .onEach { location -> _state.update { it.copy(realLocation = location) } }
             .launchIn(viewModelScope)
 
-        pendingTeleportTargetHolder.target
-            .onEach { point ->
-                if (point != null) {
-                    if (_state.value.loadedRoute != null) {
-                        _state.update { it.copy(pendingFavoriteTeleportTarget = point) }
-                    } else {
-                        teleportTo(point.latitude, point.longitude)
-                    }
-                    pendingTeleportTargetHolder.clear()
-                }
-            }.launchIn(viewModelScope)
+        pendingTeleportConfirmer.startObservingPendingTeleportTarget(_state, viewModelScope)
     }
 
     fun onAction(action: SimulationAction) {
         when (action) {
-            is SimulationAction.OnMapTap ->
-                _state.update {
-                    it.copy(
-                        pendingTeleportLatitude = action.latitude,
-                        pendingTeleportLongitude = action.longitude,
-                        isPendingTeleportBlockedOffline = !isNetworkConnectedUseCase(),
-                    )
-                }
-            SimulationAction.OnConfirmTeleport -> confirmTeleport()
-            SimulationAction.OnCancelTeleport ->
-                _state.update {
-                    it.copy(
-                        pendingTeleportLatitude = null,
-                        pendingTeleportLongitude = null,
-                        isPendingTeleportBlockedOffline = false,
-                    )
-                }
+            is SimulationAction.OnMapTap -> pendingTeleportConfirmer.registerMapTap(action.latitude, action.longitude, _state)
+            SimulationAction.OnConfirmTeleport -> pendingTeleportConfirmer.confirmTeleport(_state)
+            SimulationAction.OnCancelTeleport -> pendingTeleportConfirmer.cancelTeleport(_state)
             is SimulationAction.OnPlaybackSpeedChange -> onPlaybackSpeedChange(action.kmh)
             is SimulationAction.OnExecutionModeSelected -> _state.update { it.copy(executionModeSelection = action.selection) }
             is SimulationAction.OnExecutionTimesInputChange -> _state.update { it.copy(executionTimesInput = action.value) }
             SimulationAction.OnStartRouteSimulation -> _state.update { it.copy(isStartRouteDialogOpen = true) }
-            SimulationAction.OnConfirmStartRoute -> confirmStartRoute()
+            SimulationAction.OnConfirmStartRoute -> routeStarter.confirmStartRoute(_state)
             SimulationAction.OnDismissStartRouteDialog ->
                 _state.update { it.copy(isStartRouteDialogOpen = false, errorType = null) }
             SimulationAction.OnPauseSimulation -> pauseSimulationUseCase()
@@ -181,7 +147,7 @@ internal class SimulationViewModel(
             SimulationAction.OnLocationPermissionGranted ->
                 if (_state.value.mockedSession == null) startObservingRealLocation()
             SimulationAction.OnScreenResumed -> checkAuthorizationStillGranted()
-            SimulationAction.OnConfirmFavoriteTeleportCancelRoute -> confirmFavoriteTeleportCancelRoute()
+            SimulationAction.OnConfirmFavoriteTeleportCancelRoute -> pendingTeleportConfirmer.confirmFavoriteTeleportCancelRoute(_state)
             SimulationAction.OnDismissFavoriteTeleportCancelRoute ->
                 _state.update { it.copy(pendingFavoriteTeleportTarget = null) }
             SimulationAction.OnSwitchRouteModeClick -> onSwitchRouteModeClick()
@@ -203,34 +169,9 @@ internal class SimulationViewModel(
      *  Options, an MDM policy, the user picking a different mock-location app) — catch that here
      *  instead of only at the next explicit action, and send the user back to setup to fix it. */
     private fun checkAuthorizationStillGranted() {
-        if (!mockLocationAuthorizationChecker.isAuthorized()) {
+        if (!mockLocationAuthorizationGuard.isAuthorized()) {
             viewModelScope.launch { _events.send(SimulationEvent.NavigateToSetup) }
         }
-    }
-
-    private fun confirmTeleport() {
-        val latitude = _state.value.pendingTeleportLatitude
-        val longitude = _state.value.pendingTeleportLongitude
-        val isBlockedOffline = _state.value.isPendingTeleportBlockedOffline
-        _state.update {
-            it.copy(
-                pendingTeleportLatitude = null,
-                pendingTeleportLongitude = null,
-                isPendingTeleportBlockedOffline = false,
-            )
-        }
-        if (latitude == null || longitude == null || isBlockedOffline) return
-        teleportTo(latitude, longitude)
-    }
-
-    /** The favorite-teleport path defers to this confirmation only when a route is loaded or
-     *  running — teleporting replaces the mocked session, so proceeding here cancels it. With no
-     *  route loaded, [teleportTo] already runs directly from the holder observer in [init]. */
-    private fun confirmFavoriteTeleportCancelRoute() {
-        val target = _state.value.pendingFavoriteTeleportTarget ?: return
-        _state.update { it.copy(pendingFavoriteTeleportTarget = null) }
-        lastComputedRouteHolder.clear()
-        teleportTo(target.latitude, target.longitude)
     }
 
     /** Only proposes switching to whichever mode isn't currently active — there are just the two,
@@ -262,23 +203,6 @@ internal class SimulationViewModel(
         updateActiveRouteUseCase(swapped)
     }
 
-    /** Shared by [confirmTeleport] (map-tap path, already confirmed via TeleportConfirmationSheet),
-     *  the [PendingTeleportTargetHolder] observer (favorite path with no route loaded — already
-     *  confirmed on the Favorites screen, no second ask here), and
-     *  [confirmFavoriteTeleportCancelRoute] (favorite path with a route loaded — that extra
-     *  confirmation is specifically about cancelling the route, not a repeat of Favorites' own). */
-    private fun teleportTo(
-        latitude: Double,
-        longitude: Double,
-    ) {
-        if (!mockLocationAuthorizationChecker.isAuthorized()) {
-            reportUnauthorized()
-            return
-        }
-        _state.update { it.copy(errorType = null, isBlockedByAuthorization = false) }
-        teleportUseCase(latitude, longitude)
-    }
-
     private fun onPlaybackSpeedChange(kmh: Float) {
         _state.update { it.copy(playbackSpeedKmh = kmh) }
         applyLiveSpeed(SpeedSetting.Manual(kmh / KMH_TO_MPS_DIVISOR))
@@ -288,43 +212,6 @@ internal class SimulationViewModel(
     private fun applyLiveSpeed(speed: SpeedSetting) {
         if (_state.value.mockedSession != null) setSpeedUseCase(speed)
     }
-
-    /** Called from the "how many times" dialog's confirm button — validates and, if everything
-     *  checks out, actually starts playback and closes the dialog. An invalid times count keeps
-     *  the dialog open (the fix belongs right there); an authorization failure closes it, since
-     *  that's resolved elsewhere (the setup screen). */
-    private fun confirmStartRoute() {
-        val route = _state.value.loadedRoute ?: return
-        val speedKmh = _state.value.playbackSpeedKmh
-        if (speedKmh <= 0f) {
-            _state.update { it.copy(isStartRouteDialogOpen = false, errorType = SimulationErrorType.INVALID_SPEED) }
-            return
-        }
-        val executionMode = resolveExecutionMode()
-        if (executionMode == null) {
-            _state.update { it.copy(errorType = SimulationErrorType.INVALID_EXECUTION_TIMES) }
-            return
-        }
-
-        if (!mockLocationAuthorizationChecker.isAuthorized()) {
-            _state.update { it.copy(isStartRouteDialogOpen = false) }
-            reportUnauthorized()
-            return
-        }
-        _state.update { it.copy(isStartRouteDialogOpen = false, errorType = null, isBlockedByAuthorization = false) }
-        startRouteSimulationUseCase(route, SpeedSetting.Manual(speedKmh / KMH_TO_MPS_DIVISOR), executionMode)
-    }
-
-    private fun resolveExecutionMode(): ExecutionMode? =
-        when (_state.value.executionModeSelection) {
-            ExecutionModeSelection.ONCE -> ExecutionMode.Once
-            ExecutionModeSelection.LOOP -> ExecutionMode.Loop
-            ExecutionModeSelection.PING_PONG -> ExecutionMode.PingPong
-            ExecutionModeSelection.TIMES -> {
-                val count = _state.value.executionTimesInput.toIntOrNull()
-                if (count == null || count <= 0) null else ExecutionMode.Times(count)
-            }
-        }
 
     /**
      * FR-022/FR-024–FR-026 (revised): the joystick's visibility is an explicit toggle, separate
@@ -387,15 +274,6 @@ internal class SimulationViewModel(
         stopSimulationUseCase()
         joystickSessionStarted = false
         _state.update { it.copy(isJoystickInterruptPending = false, isJoystickVisible = true) }
-    }
-
-    private fun reportUnauthorized() {
-        _state.update {
-            it.copy(
-                errorType = SimulationErrorType.NOT_AUTHORIZED,
-                isBlockedByAuthorization = true,
-            )
-        }
     }
 
     private fun startObservingRealLocation() {
