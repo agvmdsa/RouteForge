@@ -1,4 +1,4 @@
-package com.routeforge.simulation.data
+package com.routeforge.simulation.domain.testing
 
 import com.routeforge.simulation.domain.MockLocationPublisher
 

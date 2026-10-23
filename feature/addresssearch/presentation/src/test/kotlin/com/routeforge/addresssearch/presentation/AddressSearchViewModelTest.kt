@@ -1,6 +1,6 @@
 package com.routeforge.addresssearch.presentation
 
-import com.routeforge.addresssearch.domain.GeocodeClient
+import com.routeforge.addresssearch.domain.testing.FakeGeocodeClient
 import com.routeforge.addresssearch.domain.usecase.RankSearchResultsUseCase
 import com.routeforge.addresssearch.domain.usecase.SearchPlacesUseCase
 import com.routeforge.coredomain.DataError
@@ -39,23 +39,6 @@ private fun place(
     longitude: Double = 2.0,
 ) = PlaceSearchResult(name = name, formattedAddress = name, latitude = latitude, longitude = longitude, importance = 0.5)
 
-private class FakeGeocodeClient(
-    var result: Result<List<PlaceSearchResult>, DataError.Network> = Result.Success(listOf(place())),
-) : GeocodeClient {
-    /** Queued responses that only resolve when the test completes them — lets a test hold a
-     *  search suspended mid-flight instead of [search] returning [result] immediately. Falls back
-     *  to [result] once empty, so every other test (which never touches this) is unaffected. */
-    val queuedResponses = mutableListOf<CompletableDeferred<Result<List<PlaceSearchResult>, DataError.Network>>>()
-
-    /** Every query that was asked for, in order. */
-    val queries = mutableListOf<String>()
-
-    override suspend fun search(query: String): Result<List<PlaceSearchResult>, DataError.Network> {
-        queries += query
-        return if (queuedResponses.isNotEmpty()) queuedResponses.removeAt(0).await() else result
-    }
-}
-
 private class FakeFavoriteWaypointsRepository : FavoriteWaypointsRepository {
     val added = mutableListOf<Triple<String, Double, Double>>()
     private val favoritesState = MutableStateFlow(emptyList<FavoriteWaypoint>())
@@ -83,7 +66,7 @@ private class FakeFavoriteWaypointsRepository : FavoriteWaypointsRepository {
 
 class AddressSearchViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
-    private val geocodeClient = FakeGeocodeClient()
+    private val geocodeClient = FakeGeocodeClient(Result.Success(listOf(place())))
     private val pendingSearchWaypointHolder = PendingSearchWaypointHolder()
     private val pendingTeleportTargetHolder = PendingTeleportTargetHolder()
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()

@@ -1,8 +1,8 @@
 package com.routeforge.simulation.domain.usecase
 
 import com.routeforge.coredomain.Result
-import com.routeforge.simulation.domain.FakeSimulationController
 import com.routeforge.simulation.domain.JoystickStartFailure
+import com.routeforge.simulation.domain.testing.FakeSimulationController
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
