@@ -92,15 +92,23 @@ class RouteRequestViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun createViewModel(): RouteRequestViewModel =
-        RouteRequestViewModel(
-            routeModePreviewer =
-                RouteModePreviewer(
-                    prepareRouteOptions = prepareRouteOptions,
-                    computeRequiredRegions = computeRequiredRegions,
-                    lastComputedRouteHolder = lastComputedRouteHolder,
-                    backgroundDispatcher = dispatcher,
-                ),
+    private fun createViewModel(): RouteRequestViewModel {
+        val routeModePreviewer =
+            RouteModePreviewer(
+                prepareRouteOptions = prepareRouteOptions,
+                computeRequiredRegions = computeRequiredRegions,
+                lastComputedRouteHolder = lastComputedRouteHolder,
+                backgroundDispatcher = dispatcher,
+            )
+        val routeDraftEditor =
+            RouteDraftEditor(
+                draftWaypointsHolder = draftWaypointsHolder,
+                selectedFavoriteWaypointHolder = selectedFavoriteWaypointHolder,
+                routeModePreviewer = routeModePreviewer,
+            )
+        val importRouteFile = ImportRouteFileUseCase(codecs)
+        return RouteRequestViewModel(
+            routeModePreviewer = routeModePreviewer,
             routeComputer =
                 RouteComputer(
                     prepareRouteOptions = prepareRouteOptions,
@@ -108,17 +116,27 @@ class RouteRequestViewModelTest {
                     lastComputedRouteHolder = lastComputedRouteHolder,
                     backgroundDispatcher = dispatcher,
                 ),
-            importRouteFile = ImportRouteFileUseCase(codecs),
+            routeDraftEditor = routeDraftEditor,
+            pendingWaypointConfirmer =
+                PendingWaypointConfirmer(
+                    favoriteWaypointsRepository = favoriteWaypointsRepository,
+                    pendingSearchWaypointHolder = pendingSearchWaypointHolder,
+                    routeDraftEditor = routeDraftEditor,
+                ),
+            incomingRouteReceiver =
+                IncomingRouteReceiver(
+                    importRouteFile = importRouteFile,
+                    pendingIncomingRouteHolder = pendingIncomingRouteHolder,
+                    routeDraftEditor = routeDraftEditor,
+                ),
+            importRouteFile = importRouteFile,
             exportRouteFile = ExportRouteFileUseCase(codecs),
             lastKnownRealLocationHolder = LastKnownRealLocationHolder(),
             draftWaypointsHolder = draftWaypointsHolder,
-            favoriteWaypointsRepository = favoriteWaypointsRepository,
             favoriteRoutesRepository = favoriteRoutesRepository,
-            selectedFavoriteWaypointHolder = selectedFavoriteWaypointHolder,
-            pendingSearchWaypointHolder = pendingSearchWaypointHolder,
-            pendingIncomingRouteHolder = pendingIncomingRouteHolder,
             observeMapStyle = ObserveMapStyleUseCase(FakeMapStyleStore()),
         )
+    }
 
     private fun RouteRequestViewModel.tapAndConfirm(
         latitude: Double,

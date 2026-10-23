@@ -3,19 +3,12 @@ package com.routeforge.routing.presentation.routerequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeforge.coredomain.FavoriteRoutesRepository
-import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
-import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
-import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
-import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
-import com.routeforge.coredomain.model.IncomingRoute
-import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.routing.domain.model.RouteDraft
-import com.routeforge.routing.domain.model.RouteFileFailure
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
@@ -33,15 +26,14 @@ internal const val MIN_WAYPOINTS_TO_PLAY = 2
 internal class RouteRequestViewModel(
     private val routeModePreviewer: RouteModePreviewer,
     private val routeComputer: RouteComputer,
+    private val routeDraftEditor: RouteDraftEditor,
+    private val pendingWaypointConfirmer: PendingWaypointConfirmer,
+    private val incomingRouteReceiver: IncomingRouteReceiver,
     private val importRouteFile: ImportRouteFileUseCase,
     private val exportRouteFile: ExportRouteFileUseCase,
     lastKnownRealLocationHolder: LastKnownRealLocationHolder,
     private val draftWaypointsHolder: DraftWaypointsHolder,
-    private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
     private val favoriteRoutesRepository: FavoriteRoutesRepository,
-    private val selectedFavoriteWaypointHolder: SelectedFavoriteWaypointHolder,
-    private val pendingSearchWaypointHolder: PendingSearchWaypointHolder,
-    private val pendingIncomingRouteHolder: PendingIncomingRouteHolder,
     observeMapStyle: ObserveMapStyleUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(RouteRequestState(lastKnownLocation = lastKnownRealLocationHolder.location.value))
@@ -55,35 +47,11 @@ internal class RouteRequestViewModel(
             .onEach { mapStyle -> _state.update { it.copy(mapStyle = mapStyle) } }
             .launchIn(viewModelScope)
 
-        selectedFavoriteWaypointHolder.selected
-            .onEach { point ->
-                if (point != null) {
-                    mutateDraft { it.add(point) }
-                    selectedFavoriteWaypointHolder.clear()
-                }
-            }.launchIn(viewModelScope)
+        routeDraftEditor.startObservingSelectedFavoriteWaypoint(_state, viewModelScope)
 
-        pendingSearchWaypointHolder.selected
-            .onEach { result ->
-                if (result != null) {
-                    _state.update {
-                        it.copy(
-                            pendingAddLatitude = result.latitude,
-                            pendingAddLongitude = result.longitude,
-                            pendingAddPlaceName = result.name.takeIf { it.isNotBlank() },
-                        )
-                    }
-                    pendingSearchWaypointHolder.clear()
-                }
-            }.launchIn(viewModelScope)
+        pendingWaypointConfirmer.startObservingPendingSearchWaypoint(_state, viewModelScope)
 
-        pendingIncomingRouteHolder.route
-            .onEach { route ->
-                if (route != null) {
-                    receiveIncomingRoute(route)
-                    pendingIncomingRouteHolder.clear()
-                }
-            }.launchIn(viewModelScope)
+        incomingRouteReceiver.startObservingIncomingRoute(_state, viewModelScope)
     }
 
     fun onAction(action: RouteRequestAction) {
@@ -91,23 +59,23 @@ internal class RouteRequestViewModel(
             is RouteRequestAction.OnMapTap ->
                 _state.update { it.copy(pendingAddLatitude = action.latitude, pendingAddLongitude = action.longitude) }
             is RouteRequestAction.OnMarkerDragged ->
-                mutateDraft {
+                routeDraftEditor.mutateDraft(_state, viewModelScope) {
                     it.update(action.index, RoutePoint(latitude = action.latitude, longitude = action.longitude))
                 }
-            is RouteRequestAction.OnMarkerClick -> openEditDialog(action.index)
+            is RouteRequestAction.OnMarkerClick -> routeDraftEditor.openEditDialog(action.index, _state)
             is RouteRequestAction.OnEditLatitudeChange -> _state.update { it.copy(editLatitudeInput = action.value) }
             is RouteRequestAction.OnEditLongitudeChange -> _state.update { it.copy(editLongitudeInput = action.value) }
-            RouteRequestAction.OnConfirmEdit -> confirmEdit()
-            RouteRequestAction.OnDeleteEditingWaypoint -> deleteEditingWaypoint()
+            RouteRequestAction.OnConfirmEdit -> routeDraftEditor.confirmEdit(_state, viewModelScope)
+            RouteRequestAction.OnDeleteEditingWaypoint -> routeDraftEditor.deleteEditingWaypoint(_state, viewModelScope)
             RouteRequestAction.OnDismissEdit -> _state.update { it.copy(editingIndex = null) }
-            RouteRequestAction.OnUndo -> mutateDraft { it.undo() }
-            RouteRequestAction.OnConfirmAddWaypoint -> confirmAddWaypoint()
-            RouteRequestAction.OnDismissAddWaypoint -> dismissAddWaypoint()
+            RouteRequestAction.OnUndo -> routeDraftEditor.mutateDraft(_state, viewModelScope) { it.undo() }
+            RouteRequestAction.OnConfirmAddWaypoint -> pendingWaypointConfirmer.confirmAddWaypoint(_state, viewModelScope)
+            RouteRequestAction.OnDismissAddWaypoint -> pendingWaypointConfirmer.dismissAddWaypoint(_state)
             RouteRequestAction.OnToggleSaveAsFavorite ->
                 _state.update { it.copy(isSaveAsFavoriteChecked = !it.isSaveAsFavoriteChecked) }
             is RouteRequestAction.OnFavoriteNameInputChange -> _state.update { it.copy(favoriteNameInput = action.value) }
             is RouteRequestAction.OnRouteFileImported -> importRoute(action.bytes, action.format)
-            RouteRequestAction.OnConfirmReplaceDraft -> confirmReplaceDraft()
+            RouteRequestAction.OnConfirmReplaceDraft -> incomingRouteReceiver.confirmReplaceDraft(_state, viewModelScope)
             RouteRequestAction.OnKeepDraft -> _state.update { it.copy(pendingReplaceDraft = null) }
             is RouteRequestAction.OnExportRoute -> exportRoute(action.format)
             RouteRequestAction.OnRequestRoute -> routeComputer.requestRoute(_state, viewModelScope)
@@ -151,92 +119,12 @@ internal class RouteRequestViewModel(
         _state.update { it.copy(isSaveRouteSheetOpen = false, routeNameInput = "") }
     }
 
-    private fun confirmAddWaypoint() {
-        val latitude = _state.value.pendingAddLatitude
-        val longitude = _state.value.pendingAddLongitude
-        if (latitude == null || longitude == null) return
-        if (_state.value.isSaveAsFavoriteChecked && _state.value.favoriteNameInput.isBlank()) return
-        mutateDraft { it.add(RoutePoint(latitude = latitude, longitude = longitude)) }
-        if (_state.value.isSaveAsFavoriteChecked) {
-            favoriteWaypointsRepository.add(_state.value.favoriteNameInput, latitude, longitude)
-        }
-        dismissAddWaypoint()
-    }
-
-    private fun dismissAddWaypoint() {
-        _state.update {
-            it.copy(
-                pendingAddLatitude = null,
-                pendingAddLongitude = null,
-                pendingAddPlaceName = null,
-                isSaveAsFavoriteChecked = false,
-                favoriteNameInput = "",
-            )
-        }
-    }
-
-    /** Any draft mutation invalidates a previously computed/chosen route (FR-004's spirit). */
-    private fun mutateDraft(transform: (RouteDraft) -> RouteDraft) {
-        val wasPreviewingGuided = _state.value.previewMode == RoutePlaybackMode.GUIDED
-        _state.update {
-            it.copy(
-                draft = transform(it.draft),
-                chosenMode = null,
-                route = null,
-                errorType = null,
-                previewMode = if (wasPreviewingGuided) RoutePlaybackMode.GUIDED else null,
-                // previewRoute is deliberately left as-is here (stale, but still the right mode's
-                // shape) rather than cleared to null — clearing it would flash the map to the plain
-                // straight-line view for the brief recompute window below, which read as "switched
-                // to Free-roam and back." refreshGuidedPreview() below replaces it with the fresh
-                // result; a non-Guided preview still gets cleared since there's nothing to carry over.
-                previewRoute = if (wasPreviewingGuided) it.previewRoute else null,
-            )
-        }
-        draftWaypointsHolder.set(_state.value.draft.points)
-        // A Guided preview that was already on screen should carry over and recompute with the
-        // new point list, rather than silently dropping back to the default free-roam view —
-        // the user has to explicitly turn it off (OnSwitchRouteModeClick) to lose it.
-        if (wasPreviewingGuided) routeModePreviewer.refreshGuidedPreview(_state, viewModelScope)
-    }
-
     /** Applies a committed edit from the shared reorder-list sheet (spec 008) via the same
      *  invalidation rule as every other draft mutation (FR-018) — the recompute that already ran
      *  to validate the edit is not reused here; "Finish Route" always recomputes fresh, same as
      *  after any other draft mutation today. */
     fun applyEditedWaypoints(points: List<RoutePoint>) {
-        mutateDraft { RouteDraft(points = points) }
-    }
-
-    private fun openEditDialog(index: Int) {
-        val point =
-            _state.value.draft.points
-                .getOrNull(index) ?: return
-        _state.update {
-            it.copy(
-                editingIndex = index,
-                editLatitudeInput = point.latitude.toString(),
-                editLongitudeInput = point.longitude.toString(),
-            )
-        }
-    }
-
-    private fun confirmEdit() {
-        val index = _state.value.editingIndex ?: return
-        val latitude = _state.value.editLatitudeInput.toDoubleOrNull()
-        val longitude = _state.value.editLongitudeInput.toDoubleOrNull()
-        if (latitude == null || longitude == null) {
-            _state.update { it.copy(errorType = RouteRequestError.INVALID_EDIT_COORDINATES) }
-            return
-        }
-        mutateDraft { it.update(index, RoutePoint(latitude = latitude, longitude = longitude)) }
-        _state.update { it.copy(editingIndex = null) }
-    }
-
-    private fun deleteEditingWaypoint() {
-        val index = _state.value.editingIndex ?: return
-        mutateDraft { it.delete(index) }
-        _state.update { it.copy(editingIndex = null) }
+        routeDraftEditor.mutateDraft(_state, viewModelScope) { RouteDraft(points = points) }
     }
 
     private fun importRoute(
@@ -259,42 +147,6 @@ internal class RouteRequestViewModel(
         }
     }
 
-    /** A route another app handed over: it becomes the draft at once when nothing is placed yet, otherwise the user is asked
-     *  first, so that opening a file never silently throws their waypoints away. A route that cannot be used shows the same
-     *  error as the Import button and changes nothing. */
-    private fun receiveIncomingRoute(route: IncomingRoute) {
-        val points =
-            when (route) {
-                is IncomingRoute.Stops -> route.points
-                is IncomingRoute.GpxFile ->
-                    when (val result = importRouteFile(route.bytes, RouteFileFormat.GPX)) {
-                        is Result.Success -> result.data.points
-                        is Result.Error -> {
-                            _state.update { it.copy(errorType = result.error.toRouteRequestError()) }
-                            return
-                        }
-                    }
-            }
-        if (points.size < MIN_WAYPOINTS_TO_PLAY) {
-            _state.update { it.copy(errorType = RouteRequestError.IMPORT_TOO_FEW_WAYPOINTS) }
-            return
-        }
-        val arrived = RouteDraft(points = points)
-        if (_state.value.draft.points
-                .isEmpty()
-        ) {
-            mutateDraft { arrived }
-        } else {
-            _state.update { it.copy(pendingReplaceDraft = arrived) }
-        }
-    }
-
-    private fun confirmReplaceDraft() {
-        val arrived = _state.value.pendingReplaceDraft ?: return
-        _state.update { it.copy(pendingReplaceDraft = null) }
-        mutateDraft { arrived }
-    }
-
     private fun exportRoute(format: RouteFileFormat) {
         val route = _state.value.route ?: return
         val bytes = exportRouteFile(route, format)
@@ -310,10 +162,3 @@ internal class RouteRequestViewModel(
         viewModelScope.launch { _events.send(RouteRequestEvent.GoToSimulate) }
     }
 }
-
-private fun RouteFileFailure.toRouteRequestError(): RouteRequestError =
-    when (this) {
-        RouteFileFailure.TooFewWaypoints -> RouteRequestError.IMPORT_TOO_FEW_WAYPOINTS
-        is RouteFileFailure.CoordinateOutOfRange -> RouteRequestError.IMPORT_COORDINATE_OUT_OF_RANGE
-        RouteFileFailure.Malformed -> RouteRequestError.IMPORT_MALFORMED
-    }
