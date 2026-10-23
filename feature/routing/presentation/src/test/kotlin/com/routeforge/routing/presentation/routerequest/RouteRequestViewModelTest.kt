@@ -129,10 +129,13 @@ class RouteRequestViewModelTest {
                     pendingIncomingRouteHolder = pendingIncomingRouteHolder,
                     routeDraftEditor = routeDraftEditor,
                 ),
-            importRouteFile = importRouteFile,
-            exportRouteFile = ExportRouteFileUseCase(codecs),
+            routeFileTransfer =
+                RouteFileTransfer(
+                    importRouteFile = importRouteFile,
+                    exportRouteFile = ExportRouteFileUseCase(codecs),
+                    draftWaypointsHolder = draftWaypointsHolder,
+                ),
             lastKnownRealLocationHolder = LastKnownRealLocationHolder(),
-            draftWaypointsHolder = draftWaypointsHolder,
             favoriteRoutesRepository = favoriteRoutesRepository,
             observeMapStyle = ObserveMapStyleUseCase(FakeMapStyleStore()),
         )

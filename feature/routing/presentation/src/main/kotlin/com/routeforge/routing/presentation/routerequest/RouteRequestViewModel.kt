@@ -3,15 +3,11 @@ package com.routeforge.routing.presentation.routerequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeforge.coredomain.FavoriteRoutesRepository
-import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.routing.domain.model.RouteDraft
 import com.routeforge.routing.domain.model.RouteFileFormat
-import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
-import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,10 +25,8 @@ internal class RouteRequestViewModel(
     private val routeDraftEditor: RouteDraftEditor,
     private val pendingWaypointConfirmer: PendingWaypointConfirmer,
     private val incomingRouteReceiver: IncomingRouteReceiver,
-    private val importRouteFile: ImportRouteFileUseCase,
-    private val exportRouteFile: ExportRouteFileUseCase,
+    private val routeFileTransfer: RouteFileTransfer,
     lastKnownRealLocationHolder: LastKnownRealLocationHolder,
-    private val draftWaypointsHolder: DraftWaypointsHolder,
     private val favoriteRoutesRepository: FavoriteRoutesRepository,
     observeMapStyle: ObserveMapStyleUseCase,
 ) : ViewModel() {
@@ -74,7 +68,7 @@ internal class RouteRequestViewModel(
             RouteRequestAction.OnToggleSaveAsFavorite ->
                 _state.update { it.copy(isSaveAsFavoriteChecked = !it.isSaveAsFavoriteChecked) }
             is RouteRequestAction.OnFavoriteNameInputChange -> _state.update { it.copy(favoriteNameInput = action.value) }
-            is RouteRequestAction.OnRouteFileImported -> importRoute(action.bytes, action.format)
+            is RouteRequestAction.OnRouteFileImported -> routeFileTransfer.importRoute(action.bytes, action.format, _state)
             RouteRequestAction.OnConfirmReplaceDraft -> incomingRouteReceiver.confirmReplaceDraft(_state, viewModelScope)
             RouteRequestAction.OnKeepDraft -> _state.update { it.copy(pendingReplaceDraft = null) }
             is RouteRequestAction.OnExportRoute -> exportRoute(action.format)
@@ -127,29 +121,8 @@ internal class RouteRequestViewModel(
         routeDraftEditor.mutateDraft(_state, viewModelScope) { RouteDraft(points = points) }
     }
 
-    private fun importRoute(
-        bytes: ByteArray,
-        format: RouteFileFormat,
-    ) {
-        when (val result = importRouteFile(bytes, format)) {
-            is Result.Success -> {
-                _state.update {
-                    it.copy(
-                        draft = result.data,
-                        chosenMode = null,
-                        route = null,
-                        errorType = null,
-                    )
-                }
-                draftWaypointsHolder.set(result.data.points)
-            }
-            is Result.Error -> _state.update { it.copy(errorType = result.error.toRouteRequestError()) }
-        }
-    }
-
     private fun exportRoute(format: RouteFileFormat) {
-        val route = _state.value.route ?: return
-        val bytes = exportRouteFile(route, format)
+        val bytes = routeFileTransfer.exportRoute(format, _state) ?: return
         viewModelScope.launch { _events.send(RouteRequestEvent.ExportReady(bytes, format)) }
     }
 

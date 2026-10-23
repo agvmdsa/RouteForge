@@ -24,6 +24,7 @@ import com.routeforge.routing.presentation.routerequest.IncomingRouteReceiver
 import com.routeforge.routing.presentation.routerequest.PendingWaypointConfirmer
 import com.routeforge.routing.presentation.routerequest.RouteComputer
 import com.routeforge.routing.presentation.routerequest.RouteDraftEditor
+import com.routeforge.routing.presentation.routerequest.RouteFileTransfer
 import com.routeforge.routing.presentation.routerequest.RouteModePreviewer
 import com.routeforge.routing.presentation.routerequest.RouteRequestViewModel
 import com.routeforge.routing.presentation.routerequest.waypointedit.WaypointEditViewModel
@@ -88,6 +89,13 @@ val routingPresentationModule =
                 routeDraftEditor = get(),
             )
         }
+        factory {
+            RouteFileTransfer(
+                importRouteFile = get(),
+                exportRouteFile = get(),
+                draftWaypointsHolder = get(),
+            )
+        }
         viewModel {
             RouteRequestViewModel(
                 routeModePreviewer = get(),
@@ -95,10 +103,8 @@ val routingPresentationModule =
                 routeDraftEditor = get(),
                 pendingWaypointConfirmer = get(),
                 incomingRouteReceiver = get(),
-                importRouteFile = get(),
-                exportRouteFile = get(),
+                routeFileTransfer = get(),
                 lastKnownRealLocationHolder = get(),
-                draftWaypointsHolder = get(),
                 favoriteRoutesRepository = get(),
                 observeMapStyle = get(),
             )
