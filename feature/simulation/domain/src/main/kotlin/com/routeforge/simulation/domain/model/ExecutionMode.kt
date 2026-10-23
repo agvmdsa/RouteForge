@@ -15,6 +15,8 @@ sealed class ExecutionMode {
     data object PingPong : ExecutionMode()
 
     companion object {
-        val DEFAULT: ExecutionMode = Once
+        // A getter, not a stored value: a stored one read Once while the JVM was still initializing it (when Once was the first
+        // class of the hierarchy to load) and stayed null.
+        val DEFAULT: ExecutionMode get() = Once
     }
 }
