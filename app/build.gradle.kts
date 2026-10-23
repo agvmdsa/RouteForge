@@ -30,4 +30,6 @@ dependencies {
     implementation(project(":feature:routing:presentation"))
     implementation(project(":feature:simulation:data"))
     implementation(project(":feature:simulation:presentation"))
+
+    testImplementation(libs.koin.test)
 }
