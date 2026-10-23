@@ -16,4 +16,5 @@ dependencies {
     implementation(libs.androidx.core.ktx)
 
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(testFixtures(project(":core:domain")))
 }

@@ -15,6 +15,8 @@ import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.testing.FakeFavoriteRoutesRepository
+import com.routeforge.coredomain.testing.FakeMapStyleStore
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.coredomain.usecase.ComputeRouteUseCase
 import com.routeforge.coredomain.usecase.FreeRoamRouteBuilder
@@ -27,9 +29,7 @@ import com.routeforge.routing.domain.model.RouteFileFailure
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
-import com.routeforge.routing.presentation.FakeFavoriteRoutesRepository
 import com.routeforge.routing.presentation.FakeFavoriteWaypointsRepository
-import com.routeforge.routing.presentation.FakeMapStyleStore
 import com.routeforge.routing.presentation.FakeRegionCatalog
 import com.routeforge.routing.presentation.FakeRegionUsageTracker
 import com.routeforge.routing.presentation.FakeRoutingEngine

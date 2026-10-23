@@ -1,4 +1,4 @@
-package com.routeforge.simulation.data
+package com.routeforge.coredomain.testing
 
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
 
