@@ -15,8 +15,11 @@ import com.routeforge.simulation.domain.usecase.StopSimulationUseCase
 import com.routeforge.simulation.domain.usecase.TeleportUseCase
 import com.routeforge.simulation.domain.usecase.UpdateActiveRouteUseCase
 import com.routeforge.simulation.domain.usecase.UpdateJoystickDirectionUseCase
+import com.routeforge.simulation.presentation.JoystickSessionController
 import com.routeforge.simulation.presentation.MockLocationAuthorizationGuard
 import com.routeforge.simulation.presentation.PendingTeleportConfirmer
+import com.routeforge.simulation.presentation.PlaybackControls
+import com.routeforge.simulation.presentation.RouteModeSwitcher
 import com.routeforge.simulation.presentation.RouteStarter
 import com.routeforge.simulation.presentation.SimulationViewModel
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditViewModel
@@ -44,6 +47,9 @@ val simulationPresentationModule =
         factoryOf(::MockLocationAuthorizationGuard)
         factoryOf(::PendingTeleportConfirmer)
         factoryOf(::RouteStarter)
+        factoryOf(::JoystickSessionController)
+        factoryOf(::RouteModeSwitcher)
+        factoryOf(::PlaybackControls)
         viewModelOf(::SimulationViewModel)
         viewModelOf(::WaypointEditViewModel)
     }
