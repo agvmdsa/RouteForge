@@ -47,7 +47,6 @@ val simulationPresentationModule =
         factoryOf(::UpdateActiveRouteUseCase)
         factoryOf(::MockLocationAuthorizationGuard)
         factoryOf(::PendingTeleportConfirmer)
-        factoryOf(::RouteStarter)
         factoryOf(::JoystickSessionController)
         factoryOf(::RouteModeSwitcher)
         factoryOf(::PlaybackControls)
