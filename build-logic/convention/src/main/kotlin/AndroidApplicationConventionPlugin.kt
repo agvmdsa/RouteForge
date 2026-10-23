@@ -4,7 +4,9 @@ import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.withType
 
 private const val DEFAULT_VERSION_NAME = "1.0"
 private const val DEFAULT_VERSION_CODE = 1
@@ -66,6 +68,17 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
                     sourceCompatibility = jdkVersion
                     targetCompatibility = jdkVersion
                 }
+
+                testOptions {
+                    unitTests.isReturnDefaultValues = true
+                }
+            }
+
+            dependencies.add("testImplementation", libs.findLibrary("junit-jupiter").get())
+            dependencies.add("testRuntimeOnly", libs.findLibrary("junit-platform-launcher").get())
+
+            tasks.withType<Test>().configureEach {
+                useJUnitPlatform()
             }
         }
     }
