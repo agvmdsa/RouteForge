@@ -1,12 +1,12 @@
 package com.routeforge.simulation.domain.usecase
 
-import com.routeforge.simulation.domain.FakeSimulationController
 import com.routeforge.simulation.domain.model.ExecutionMode
 import com.routeforge.simulation.domain.model.JoystickInterruptDecision
 import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.domain.model.SimulationSession
 import com.routeforge.simulation.domain.model.SimulationStatus
 import com.routeforge.simulation.domain.model.SpeedSetting
+import com.routeforge.simulation.domain.testing.FakeSimulationController
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

@@ -1,6 +1,7 @@
 package com.routeforge.simulation.presentation
 
 import com.routeforge.coredomain.testing.FakeMockLocationAuthorizationChecker
+import com.routeforge.simulation.domain.testing.FakeSimulationController
 import com.routeforge.simulation.domain.usecase.ObserveAuthorizationLostUseCase
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow

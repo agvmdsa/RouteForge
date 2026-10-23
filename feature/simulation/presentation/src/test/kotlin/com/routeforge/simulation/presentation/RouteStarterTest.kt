@@ -5,6 +5,7 @@ import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.testing.FakeMockLocationAuthorizationChecker
 import com.routeforge.simulation.domain.model.ExecutionMode
 import com.routeforge.simulation.domain.model.SpeedSetting
+import com.routeforge.simulation.domain.testing.FakeSimulationController
 import com.routeforge.simulation.domain.usecase.ObserveAuthorizationLostUseCase
 import com.routeforge.simulation.domain.usecase.StartRouteSimulationUseCase
 import kotlinx.coroutines.flow.MutableStateFlow

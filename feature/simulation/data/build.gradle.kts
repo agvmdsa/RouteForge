@@ -17,4 +17,5 @@ dependencies {
 
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(testFixtures(project(":core:domain")))
+    testImplementation(testFixtures(project(":feature:simulation:domain")))
 }

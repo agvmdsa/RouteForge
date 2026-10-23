@@ -1,4 +1,4 @@
-package com.routeforge.simulation.presentation
+package com.routeforge.simulation.domain.testing
 
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.model.Route

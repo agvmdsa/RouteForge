@@ -2,7 +2,7 @@ package com.routeforge.simulation.domain.model
 
 import com.routeforge.coredomain.Result
 import com.routeforge.simulation.domain.ExecutionModeFailure
-import com.routeforge.simulation.domain.FakeSimulationController
+import com.routeforge.simulation.domain.testing.FakeSimulationController
 import com.routeforge.simulation.domain.usecase.SetExecutionModeUseCase
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

@@ -1,25 +1,13 @@
 package com.routeforge.addresssearch.domain.usecase
 
-import com.routeforge.addresssearch.domain.GeocodeClient
+import com.routeforge.addresssearch.domain.testing.FakeGeocodeClient
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
-import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.RealLocation
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-
-private class FakeGeocodeClient(
-    var result: Result<List<PlaceSearchResult>, DataError.Network> = Result.Success(emptyList()),
-) : GeocodeClient {
-    var lastQuery: String? = null
-
-    override suspend fun search(query: String): Result<List<PlaceSearchResult>, DataError.Network> {
-        lastQuery = query
-        return result
-    }
-}
 
 class SearchPlacesUseCaseTest {
     private val geocodeClient = FakeGeocodeClient()
