@@ -87,7 +87,7 @@ class RouteModePreviewerTest {
         val route = routeOf(RoutePlaybackMode.GUIDED, alternateGeometry = alternate, alternateDistanceMeters = 50.0)
         val state = MutableStateFlow(RouteRequestState(draft = twoPoints, route = route, chosenMode = RoutePlaybackMode.GUIDED))
 
-        previewer.onSwitchRouteModeClick(state, scope)
+        previewer.switchRouteMode(state, scope)
 
         assertEquals(RoutePlaybackMode.FREE_ROAM, state.value.route?.mode)
         assertEquals(RoutePlaybackMode.FREE_ROAM, state.value.chosenMode)
@@ -101,7 +101,7 @@ class RouteModePreviewerTest {
         addUndownloadedRegionCoveringTheDraft()
         val state = MutableStateFlow(RouteRequestState(draft = twoPoints, route = routeOf(RoutePlaybackMode.FREE_ROAM)))
 
-        previewer.onSwitchRouteModeClick(state, scope)
+        previewer.switchRouteMode(state, scope)
 
         assertNotNull(state.value.missingRegionsWarning)
         assertEquals(RoutePlaybackMode.GUIDED, state.value.pendingModePreviewTarget)
@@ -113,7 +113,7 @@ class RouteModePreviewerTest {
         makeGuidedViable()
         val state = MutableStateFlow(RouteRequestState(draft = twoPoints, route = routeOf(RoutePlaybackMode.FREE_ROAM)))
 
-        previewer.onSwitchRouteModeClick(state, scope)
+        previewer.switchRouteMode(state, scope)
 
         assertEquals(RoutePlaybackMode.GUIDED, state.value.route?.mode)
         assertEquals(RoutePlaybackMode.GUIDED, state.value.chosenMode)
@@ -195,7 +195,7 @@ class RouteModePreviewerTest {
                 ),
             )
 
-        previewer.onSwitchRouteModeClick(state, scope)
+        previewer.switchRouteMode(state, scope)
 
         assertNull(state.value.previewMode)
         assertNull(state.value.previewRoute)
@@ -206,7 +206,7 @@ class RouteModePreviewerTest {
         makeGuidedViable()
         val state = MutableStateFlow(RouteRequestState(draft = twoPoints))
 
-        previewer.onSwitchRouteModeClick(state, scope)
+        previewer.switchRouteMode(state, scope)
 
         assertEquals(RoutePlaybackMode.GUIDED, state.value.previewMode)
         assertNotNull(state.value.previewRoute)

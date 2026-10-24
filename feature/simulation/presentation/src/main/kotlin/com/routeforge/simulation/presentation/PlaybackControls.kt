@@ -31,7 +31,7 @@ internal class PlaybackControls(
         stopSimulation()
     }
 
-    internal fun onPlaybackSpeedChange(
+    internal fun changePlaybackSpeed(
         kmh: Float,
         state: MutableStateFlow<SimulationState>,
     ) {
