@@ -236,7 +236,7 @@ class RealLocationTrackerTest {
     @Test
     fun `the last known location is mirrored into the state`() {
         val state = MutableStateFlow(SimulationState())
-        tracker.startObservingLastKnownLocation(state, scope)
+        tracker.mirrorLastKnownLocation(state, scope)
 
         lastKnownRealLocationHolder.set(fix)
         assertEquals(fix, state.value.realLocation)

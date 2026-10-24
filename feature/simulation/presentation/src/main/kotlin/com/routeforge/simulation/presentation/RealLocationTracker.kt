@@ -22,7 +22,7 @@ internal class RealLocationTracker(
     private var realLocationObservationJob: Job? = null
     private var realLocationTimeoutJob: Job? = null
 
-    internal fun startObservingLastKnownLocation(
+    internal fun mirrorLastKnownLocation(
         state: MutableStateFlow<SimulationState>,
         scope: CoroutineScope,
     ) {
