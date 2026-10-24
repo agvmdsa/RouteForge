@@ -100,7 +100,7 @@ class PlaybackControlsTest {
     fun `a speed change with no session only stages the speed`() {
         val state = MutableStateFlow(SimulationState())
 
-        playbackControls.onPlaybackSpeedChange(36f, state)
+        playbackControls.changePlaybackSpeed(36f, state)
 
         assertEquals(36f, state.value.playbackSpeedKmh)
         assertTrue(controller.setSpeedCalls.isEmpty())
@@ -110,7 +110,7 @@ class PlaybackControlsTest {
     fun `a speed change while a session is active reaches the controller in meters per second`() {
         val state = MutableStateFlow(SimulationState(mockedSession = activeSession))
 
-        playbackControls.onPlaybackSpeedChange(36f, state)
+        playbackControls.changePlaybackSpeed(36f, state)
 
         assertEquals(36f, state.value.playbackSpeedKmh)
         assertEquals(listOf(SpeedSetting.Manual(10f)), controller.setSpeedCalls)

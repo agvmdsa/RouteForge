@@ -31,7 +31,7 @@ internal class RealLocationTracker(
             .launchIn(scope)
     }
 
-    internal fun onLocationPermissionGranted(
+    internal fun startObservingRealLocationIfNotMocking(
         state: MutableStateFlow<SimulationState>,
         scope: CoroutineScope,
     ) {

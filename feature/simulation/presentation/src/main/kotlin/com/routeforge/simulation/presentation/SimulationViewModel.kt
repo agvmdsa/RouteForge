@@ -68,7 +68,7 @@ internal class SimulationViewModel(
             is SimulationAction.OnMapTap -> pendingTeleportConfirmer.registerMapTap(action.latitude, action.longitude, _state)
             SimulationAction.OnConfirmTeleport -> pendingTeleportConfirmer.confirmTeleport(_state)
             SimulationAction.OnCancelTeleport -> pendingTeleportConfirmer.cancelTeleport(_state)
-            is SimulationAction.OnPlaybackSpeedChange -> playbackControls.onPlaybackSpeedChange(action.kmh, _state)
+            is SimulationAction.OnPlaybackSpeedChange -> playbackControls.changePlaybackSpeed(action.kmh, _state)
             is SimulationAction.OnExecutionModeSelected -> _state.update { it.copy(executionModeSelection = action.selection) }
             is SimulationAction.OnExecutionTimesInputChange -> _state.update { it.copy(executionTimesInput = action.value) }
             SimulationAction.OnStartRouteSimulation -> _state.update { it.copy(isStartRouteDialogOpen = true) }
@@ -80,10 +80,10 @@ internal class SimulationViewModel(
             SimulationAction.OnStopSimulation -> playbackControls.stop(_state)
             SimulationAction.OnCancelRouteClick -> _state.update { it.copy(isPendingCancelRoute = true) }
             SimulationAction.OnDismissCancelRoute -> _state.update { it.copy(isPendingCancelRoute = false) }
-            is SimulationAction.OnJoystickDrag -> joystickSessionController.onJoystickDrag(action.bearingDegrees, _state)
-            SimulationAction.OnJoystickReleased -> joystickSessionController.onJoystickReleased()
-            SimulationAction.OnToggleJoystick -> joystickSessionController.onToggleJoystick(_state)
-            is SimulationAction.OnJoystickSpeedChange -> joystickSessionController.onJoystickSpeedChange(action.kmh, _state)
+            is SimulationAction.OnJoystickDrag -> joystickSessionController.steerJoystick(action.bearingDegrees, _state)
+            SimulationAction.OnJoystickReleased -> joystickSessionController.pauseJoystickSession()
+            SimulationAction.OnToggleJoystick -> joystickSessionController.toggleJoystick(_state)
+            is SimulationAction.OnJoystickSpeedChange -> joystickSessionController.changeJoystickSpeed(action.kmh, _state)
             SimulationAction.OnConfirmJoystickInterrupt -> joystickSessionController.confirmJoystickInterrupt(_state)
             SimulationAction.OnDismissJoystickInterrupt -> _state.update { it.copy(isJoystickInterruptPending = false) }
             SimulationAction.OnCancelMockClick -> _state.update { it.copy(isPendingCancelMock = true) }
@@ -91,12 +91,13 @@ internal class SimulationViewModel(
             SimulationAction.OnDismissCancelMock -> _state.update { it.copy(isPendingCancelMock = false) }
             SimulationAction.OnOpenSetupClick ->
                 viewModelScope.launch { _events.send(SimulationEvent.NavigateToSetup) }
-            SimulationAction.OnLocationPermissionGranted -> realLocationTracker.onLocationPermissionGranted(_state, viewModelScope)
+            SimulationAction.OnLocationPermissionGranted ->
+                realLocationTracker.startObservingRealLocationIfNotMocking(_state, viewModelScope)
             SimulationAction.OnScreenResumed -> checkAuthorizationStillGranted()
             SimulationAction.OnConfirmFavoriteTeleportCancelRoute -> pendingTeleportConfirmer.confirmFavoriteTeleportCancelRoute(_state)
             SimulationAction.OnDismissFavoriteTeleportCancelRoute ->
                 _state.update { it.copy(pendingFavoriteTeleportTarget = null) }
-            SimulationAction.OnSwitchRouteModeClick -> routeModeSwitcher.onSwitchRouteModeClick(_state)
+            SimulationAction.OnSwitchRouteModeClick -> routeModeSwitcher.proposeRouteModeSwitch(_state)
             SimulationAction.OnConfirmSwitchRouteMode -> routeModeSwitcher.confirmSwitchRouteMode(_state)
             SimulationAction.OnDismissSwitchRouteMode -> _state.update { it.copy(pendingRouteModeSwitch = null) }
         }

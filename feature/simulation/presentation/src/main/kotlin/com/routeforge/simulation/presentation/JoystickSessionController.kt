@@ -47,11 +47,11 @@ internal class JoystickSessionController(
     /**
      * FR-022/FR-024–FR-026 (revised): the joystick's visibility is an explicit toggle, separate
      * from whether it is actually mocking a position yet (that only starts once the user drags —
-     * see [onJoystickDrag]). Turning it on while a route is loaded or actively playing requires
+     * see [steerJoystick]). Turning it on while a route is loaded or actively playing requires
      * confirmation, because confirming clears the loaded route entirely. Turning it off while it
      * was actively mocking fully stops the session, returning to the real location.
      */
-    internal fun onJoystickDrag(
+    internal fun steerJoystick(
         bearingDegrees: Float,
         state: MutableStateFlow<SimulationState>,
     ) {
@@ -77,9 +77,9 @@ internal class JoystickSessionController(
         updateJoystickDirection(bearingDegrees)
     }
 
-    internal fun onJoystickReleased() = pauseSimulation()
+    internal fun pauseJoystickSession() = pauseSimulation()
 
-    internal fun onToggleJoystick(state: MutableStateFlow<SimulationState>) {
+    internal fun toggleJoystick(state: MutableStateFlow<SimulationState>) {
         if (state.value.isJoystickVisible) {
             if (state.value.mockedSession?.mode == SimulationMode.JOYSTICK) {
                 stopSimulation()
@@ -100,7 +100,7 @@ internal class JoystickSessionController(
     }
 
     /** The joystick's own speed control, always available while it's visible — no need to load a route. */
-    internal fun onJoystickSpeedChange(
+    internal fun changeJoystickSpeed(
         kmh: Float,
         state: MutableStateFlow<SimulationState>,
     ) {

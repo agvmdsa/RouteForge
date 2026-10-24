@@ -218,7 +218,7 @@ class RealLocationTrackerTest {
     fun `granting the location permission with no mocked session starts the observation`() {
         val state = MutableStateFlow(SimulationState())
 
-        tracker.onLocationPermissionGranted(state, scope)
+        tracker.startObservingRealLocationIfNotMocking(state, scope)
 
         assertEquals(1, dataSource.updates.subscriptionCount.value)
     }
@@ -227,7 +227,7 @@ class RealLocationTrackerTest {
     fun `granting the location permission while a mock is active does not search`() {
         val state = MutableStateFlow(SimulationState(mockedSession = activeSession))
 
-        tracker.onLocationPermissionGranted(state, scope)
+        tracker.startObservingRealLocationIfNotMocking(state, scope)
 
         assertEquals(0, dataSource.updates.subscriptionCount.value)
         assertFalse(state.value.isSearchingRealLocation)

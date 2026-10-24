@@ -44,7 +44,7 @@ internal class RouteModePreviewer(
      *  computed). Neither case needs confirmation — switching modes while planning has no real
      *  consequence (nothing is being played). Only Simulate's execution-time switch asks to
      *  confirm, since that one affects a live session. */
-    internal fun onSwitchRouteModeClick(
+    internal fun switchRouteMode(
         state: MutableStateFlow<RouteRequestState>,
         scope: CoroutineScope,
     ) {
@@ -74,7 +74,7 @@ internal class RouteModePreviewer(
     }
 
     /** Computes a live Guided preview for the current draft (no official route exists yet) — the
-     *  missing-regions check, if needed, already ran in [onSwitchRouteModeClick] or was just
+     *  missing-regions check, if needed, already ran in [switchRouteMode] or was just
      *  dismissed via "continue anyway". On failure (genuinely no viable path), surfaces
      *  [RouteRequestError.MODE_PREVIEW_NO_PATH]. */
     internal fun computeDraftPreview(
@@ -95,9 +95,9 @@ internal class RouteModePreviewer(
     }
 
     /** Computes [targetMode]'s geometry on demand (the missing-regions check, if needed, already ran
-     *  in [onSwitchRouteModeClick] or was just dismissed via "continue anyway"). On success, applies
+     *  in [switchRouteMode] or was just dismissed via "continue anyway"). On success, applies
      *  it immediately via [applyModeSwitch] — no confirmation while planning, see
-     *  [onSwitchRouteModeClick]. On failure (genuinely no viable path, not a download problem),
+     *  [switchRouteMode]. On failure (genuinely no viable path, not a download problem),
      *  surfaces [RouteRequestError.MODE_PREVIEW_NO_PATH] instead. */
     internal fun attemptModePreview(
         targetMode: RoutePlaybackMode,

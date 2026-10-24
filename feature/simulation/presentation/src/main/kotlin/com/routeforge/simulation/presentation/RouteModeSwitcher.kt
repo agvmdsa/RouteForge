@@ -14,7 +14,7 @@ internal class RouteModeSwitcher(
     /** Only proposes switching to whichever mode isn't currently active — there are just the two,
      *  so this is a toggle, not a picker. No-op if the loaded route never had both modes
      *  computed (nothing to switch to). */
-    internal fun onSwitchRouteModeClick(state: MutableStateFlow<SimulationState>) {
+    internal fun proposeRouteModeSwitch(state: MutableStateFlow<SimulationState>) {
         val route = state.value.loadedRoute ?: return
         if (route.alternateGeometry == null || route.alternateDistanceMeters == null) return
         val targetMode = if (route.mode == RoutePlaybackMode.GUIDED) RoutePlaybackMode.FREE_ROAM else RoutePlaybackMode.GUIDED

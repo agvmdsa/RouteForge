@@ -97,7 +97,7 @@ internal class RouteRequestViewModel(
             is RouteRequestAction.OnRouteNameInputChange -> _state.update { it.copy(routeNameInput = action.value) }
             RouteRequestAction.OnConfirmSaveRoute -> confirmSaveRoute()
             RouteRequestAction.OnDismissSaveRoute -> dismissSaveRoute()
-            RouteRequestAction.OnSwitchRouteModeClick -> routeModePreviewer.onSwitchRouteModeClick(_state, viewModelScope)
+            RouteRequestAction.OnSwitchRouteModeClick -> routeModePreviewer.switchRouteMode(_state, viewModelScope)
         }
     }
 

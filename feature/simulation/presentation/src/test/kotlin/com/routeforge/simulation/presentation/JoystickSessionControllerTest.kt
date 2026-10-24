@@ -65,7 +65,7 @@ class JoystickSessionControllerTest {
         controller.startJoystickResult = Result.Error(JoystickStartFailure.NoRealLocationFixYet)
         val state = MutableStateFlow(SimulationState(isJoystickVisible = true))
 
-        joystickSessionController.onJoystickDrag(0f, state)
+        joystickSessionController.steerJoystick(0f, state)
 
         assertEquals(SimulationErrorType.JOYSTICK_NO_REAL_FIX, state.value.errorType)
         assertTrue(controller.updateJoystickDirectionCalls.isEmpty())
@@ -75,10 +75,10 @@ class JoystickSessionControllerTest {
     fun `a drag after a failed start tries to start the session again`() {
         controller.startJoystickResult = Result.Error(JoystickStartFailure.NoRealLocationFixYet)
         val state = MutableStateFlow(SimulationState(isJoystickVisible = true))
-        joystickSessionController.onJoystickDrag(0f, state)
+        joystickSessionController.steerJoystick(0f, state)
         controller.startJoystickResult = Result.Success(Unit)
 
-        joystickSessionController.onJoystickDrag(10f, state)
+        joystickSessionController.steerJoystick(10f, state)
 
         assertEquals(2, controller.startJoystickCallCount)
         assertNull(state.value.errorType)
@@ -89,9 +89,9 @@ class JoystickSessionControllerTest {
     fun `the first drag starts the session once and later frames only update the direction`() {
         val state = MutableStateFlow(SimulationState(isJoystickVisible = true))
 
-        joystickSessionController.onJoystickDrag(10f, state)
-        joystickSessionController.onJoystickDrag(15f, state)
-        joystickSessionController.onJoystickDrag(20f, state)
+        joystickSessionController.steerJoystick(10f, state)
+        joystickSessionController.steerJoystick(15f, state)
+        joystickSessionController.steerJoystick(20f, state)
 
         assertEquals(1, controller.startJoystickCallCount)
         assertEquals(listOf(10f, 15f, 20f), controller.updateJoystickDirectionCalls)
@@ -104,7 +104,7 @@ class JoystickSessionControllerTest {
                 SimulationState(isJoystickVisible = true, joystickSpeedKmh = 18f, errorType = SimulationErrorType.JOYSTICK_NO_REAL_FIX),
             )
 
-        joystickSessionController.onJoystickDrag(0f, state)
+        joystickSessionController.steerJoystick(0f, state)
 
         assertNull(state.value.errorType)
         assertEquals(listOf(SpeedSetting.Manual(5f)), controller.setSpeedCalls)
@@ -113,10 +113,10 @@ class JoystickSessionControllerTest {
     @Test
     fun `a drag after a release resumes the paused session instead of leaving it stuck`() {
         val state = MutableStateFlow(SimulationState(isJoystickVisible = true))
-        joystickSessionController.onJoystickDrag(45f, state)
+        joystickSessionController.steerJoystick(45f, state)
         state.value = state.value.copy(mockedSession = session(SimulationMode.JOYSTICK, SimulationStatus.PAUSED))
 
-        joystickSessionController.onJoystickDrag(90f, state)
+        joystickSessionController.steerJoystick(90f, state)
 
         assertEquals(1, controller.resumeCallCount)
         assertEquals(1, controller.startJoystickCallCount)
@@ -126,17 +126,17 @@ class JoystickSessionControllerTest {
     @Test
     fun `a drag on a running session does not resume it`() {
         val state = MutableStateFlow(SimulationState(isJoystickVisible = true))
-        joystickSessionController.onJoystickDrag(45f, state)
+        joystickSessionController.steerJoystick(45f, state)
         state.value = state.value.copy(mockedSession = session(SimulationMode.JOYSTICK))
 
-        joystickSessionController.onJoystickDrag(90f, state)
+        joystickSessionController.steerJoystick(90f, state)
 
         assertEquals(0, controller.resumeCallCount)
     }
 
     @Test
     fun `releasing the joystick pauses the session in place`() {
-        joystickSessionController.onJoystickReleased()
+        joystickSessionController.pauseJoystickSession()
 
         assertEquals(1, controller.pauseCallCount)
     }
@@ -144,10 +144,10 @@ class JoystickSessionControllerTest {
     @Test
     fun `the session is started again after the mocked session stops being a joystick one`() {
         val state = MutableStateFlow(SimulationState(isJoystickVisible = true))
-        joystickSessionController.onJoystickDrag(10f, state)
+        joystickSessionController.steerJoystick(10f, state)
 
         joystickSessionController.onMockedSessionChanged(null)
-        joystickSessionController.onJoystickDrag(20f, state)
+        joystickSessionController.steerJoystick(20f, state)
 
         assertEquals(2, controller.startJoystickCallCount)
     }
@@ -155,10 +155,10 @@ class JoystickSessionControllerTest {
     @Test
     fun `the session is started again after a route session replaces the joystick one`() {
         val state = MutableStateFlow(SimulationState(isJoystickVisible = true))
-        joystickSessionController.onJoystickDrag(10f, state)
+        joystickSessionController.steerJoystick(10f, state)
 
         joystickSessionController.onMockedSessionChanged(session(SimulationMode.ROUTE))
-        joystickSessionController.onJoystickDrag(20f, state)
+        joystickSessionController.steerJoystick(20f, state)
 
         assertEquals(2, controller.startJoystickCallCount)
     }
@@ -166,10 +166,10 @@ class JoystickSessionControllerTest {
     @Test
     fun `the session is not started again while the mocked session is still a joystick one`() {
         val state = MutableStateFlow(SimulationState(isJoystickVisible = true))
-        joystickSessionController.onJoystickDrag(10f, state)
+        joystickSessionController.steerJoystick(10f, state)
 
         joystickSessionController.onMockedSessionChanged(session(SimulationMode.JOYSTICK))
-        joystickSessionController.onJoystickDrag(20f, state)
+        joystickSessionController.steerJoystick(20f, state)
 
         assertEquals(1, controller.startJoystickCallCount)
     }
@@ -178,7 +178,7 @@ class JoystickSessionControllerTest {
     fun `toggling the joystick on with nothing loaded or running reveals it at once`() {
         val state = MutableStateFlow(SimulationState())
 
-        joystickSessionController.onToggleJoystick(state)
+        joystickSessionController.toggleJoystick(state)
 
         assertTrue(state.value.isJoystickVisible)
         assertFalse(state.value.isJoystickInterruptPending)
@@ -188,7 +188,7 @@ class JoystickSessionControllerTest {
     fun `toggling the joystick on while a route is loaded asks first`() {
         val state = MutableStateFlow(SimulationState(loadedRoute = sampleRoute))
 
-        joystickSessionController.onToggleJoystick(state)
+        joystickSessionController.toggleJoystick(state)
 
         assertTrue(state.value.isJoystickInterruptPending)
         assertFalse(state.value.isJoystickVisible)
@@ -199,7 +199,7 @@ class JoystickSessionControllerTest {
         val state = MutableStateFlow(SimulationState())
         controller.emit(session(SimulationMode.ROUTE))
 
-        joystickSessionController.onToggleJoystick(state)
+        joystickSessionController.toggleJoystick(state)
 
         assertTrue(state.value.isJoystickInterruptPending)
         assertFalse(state.value.isJoystickVisible)
@@ -210,7 +210,7 @@ class JoystickSessionControllerTest {
         val state =
             MutableStateFlow(SimulationState(isJoystickVisible = true, mockedSession = session(SimulationMode.JOYSTICK)))
 
-        joystickSessionController.onToggleJoystick(state)
+        joystickSessionController.toggleJoystick(state)
 
         assertEquals(1, controller.stopCallCount)
         assertFalse(state.value.isJoystickVisible)
@@ -220,7 +220,7 @@ class JoystickSessionControllerTest {
     fun `toggling the joystick off before it was ever dragged stops nothing`() {
         val state = MutableStateFlow(SimulationState(isJoystickVisible = true))
 
-        joystickSessionController.onToggleJoystick(state)
+        joystickSessionController.toggleJoystick(state)
 
         assertEquals(0, controller.stopCallCount)
         assertFalse(state.value.isJoystickVisible)
@@ -229,11 +229,11 @@ class JoystickSessionControllerTest {
     @Test
     fun `toggling the joystick off lets the next drag start a new session`() {
         val state = MutableStateFlow(SimulationState(isJoystickVisible = true))
-        joystickSessionController.onJoystickDrag(10f, state)
-        joystickSessionController.onToggleJoystick(state)
-        joystickSessionController.onToggleJoystick(state)
+        joystickSessionController.steerJoystick(10f, state)
+        joystickSessionController.toggleJoystick(state)
+        joystickSessionController.toggleJoystick(state)
 
-        joystickSessionController.onJoystickDrag(20f, state)
+        joystickSessionController.steerJoystick(20f, state)
 
         assertEquals(2, controller.startJoystickCallCount)
     }
@@ -243,11 +243,11 @@ class JoystickSessionControllerTest {
         val idle = MutableStateFlow(SimulationState())
         val active = MutableStateFlow(SimulationState(mockedSession = session(SimulationMode.JOYSTICK)))
 
-        joystickSessionController.onJoystickSpeedChange(18f, idle)
+        joystickSessionController.changeJoystickSpeed(18f, idle)
         assertEquals(18f, idle.value.joystickSpeedKmh)
         assertTrue(controller.setSpeedCalls.isEmpty())
 
-        joystickSessionController.onJoystickSpeedChange(36f, active)
+        joystickSessionController.changeJoystickSpeed(36f, active)
         assertEquals(36f, active.value.joystickSpeedKmh)
         assertEquals(listOf(SpeedSetting.Manual(10f)), controller.setSpeedCalls)
     }
@@ -268,10 +268,10 @@ class JoystickSessionControllerTest {
     @Test
     fun `confirming the interrupt lets the next drag start a new session`() {
         val state = MutableStateFlow(SimulationState(isJoystickVisible = true))
-        joystickSessionController.onJoystickDrag(10f, state)
+        joystickSessionController.steerJoystick(10f, state)
 
         joystickSessionController.confirmJoystickInterrupt(state)
-        joystickSessionController.onJoystickDrag(20f, state)
+        joystickSessionController.steerJoystick(20f, state)
 
         assertEquals(2, controller.startJoystickCallCount)
     }

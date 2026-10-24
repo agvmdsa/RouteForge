@@ -41,7 +41,7 @@ class RouteModeSwitcherTest {
     fun `clicking switch on a guided route proposes free roam`() {
         val state = MutableStateFlow(SimulationState(loadedRoute = routeWithAlternate))
 
-        switcher.onSwitchRouteModeClick(state)
+        switcher.proposeRouteModeSwitch(state)
 
         assertEquals(RoutePlaybackMode.FREE_ROAM, state.value.pendingRouteModeSwitch)
     }
@@ -51,7 +51,7 @@ class RouteModeSwitcherTest {
         val freeRoam = routeWithAlternate.copy(mode = RoutePlaybackMode.FREE_ROAM)
         val state = MutableStateFlow(SimulationState(loadedRoute = freeRoam))
 
-        switcher.onSwitchRouteModeClick(state)
+        switcher.proposeRouteModeSwitch(state)
 
         assertEquals(RoutePlaybackMode.GUIDED, state.value.pendingRouteModeSwitch)
     }
@@ -60,7 +60,7 @@ class RouteModeSwitcherTest {
     fun `clicking switch on a route with no alternate changes nothing`() {
         val state = MutableStateFlow(SimulationState(loadedRoute = routeWithoutAlternate))
 
-        switcher.onSwitchRouteModeClick(state)
+        switcher.proposeRouteModeSwitch(state)
 
         assertNull(state.value.pendingRouteModeSwitch)
     }
@@ -69,7 +69,7 @@ class RouteModeSwitcherTest {
     fun `clicking switch on a route with an alternate geometry but no alternate distance changes nothing`() {
         val state = MutableStateFlow(SimulationState(loadedRoute = routeWithAlternate.copy(alternateDistanceMeters = null)))
 
-        switcher.onSwitchRouteModeClick(state)
+        switcher.proposeRouteModeSwitch(state)
 
         assertNull(state.value.pendingRouteModeSwitch)
     }
@@ -78,7 +78,7 @@ class RouteModeSwitcherTest {
     fun `clicking switch with no route loaded changes nothing`() {
         val state = MutableStateFlow(SimulationState())
 
-        switcher.onSwitchRouteModeClick(state)
+        switcher.proposeRouteModeSwitch(state)
 
         assertNull(state.value.pendingRouteModeSwitch)
     }
