@@ -9,8 +9,8 @@ import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.testing.FakeRegionCatalog
 import com.routeforge.coredomain.testing.FakeRegionUsageTracker
 import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
-import com.routeforge.routing.domain.FakeRegionDownloader
-import com.routeforge.routing.domain.FakeStorageQuotaStore
+import com.routeforge.routing.domain.testing.FakeRegionDownloader
+import com.routeforge.routing.domain.testing.FakeStorageQuotaStore
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull

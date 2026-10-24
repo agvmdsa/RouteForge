@@ -1,7 +1,7 @@
 package com.routeforge.routing.domain.usecase
 
 import com.routeforge.routing.domain.DEFAULT_STORAGE_QUOTA_BYTES
-import com.routeforge.routing.domain.FakeStorageQuotaStore
+import com.routeforge.routing.domain.testing.FakeStorageQuotaStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
