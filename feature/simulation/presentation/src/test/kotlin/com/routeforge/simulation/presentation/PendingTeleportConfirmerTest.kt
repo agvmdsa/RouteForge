@@ -31,8 +31,8 @@ class PendingTeleportConfirmerTest {
     private val pendingTeleportTargetHolder = PendingTeleportTargetHolder()
     private val confirmer =
         PendingTeleportConfirmer(
-            teleportUseCase = TeleportUseCase(controller),
-            isNetworkConnectedUseCase = IsNetworkConnectedUseCase(networkConnectivityChecker),
+            teleport = TeleportUseCase(controller),
+            isNetworkConnected = IsNetworkConnectedUseCase(networkConnectivityChecker),
             pendingTeleportTargetHolder = pendingTeleportTargetHolder,
             lastComputedRouteHolder = lastComputedRouteHolder,
             mockLocationAuthorizationGuard =

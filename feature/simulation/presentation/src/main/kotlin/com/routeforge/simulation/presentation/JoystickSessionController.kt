@@ -18,13 +18,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
 internal class JoystickSessionController(
-    private val requestJoystickInterruptUseCase: RequestJoystickInterruptUseCase,
-    private val confirmJoystickInterruptUseCase: ConfirmJoystickInterruptUseCase,
-    private val updateJoystickDirectionUseCase: UpdateJoystickDirectionUseCase,
-    private val pauseSimulationUseCase: PauseSimulationUseCase,
-    private val resumeSimulationUseCase: ResumeSimulationUseCase,
-    private val stopSimulationUseCase: StopSimulationUseCase,
-    private val setSpeedUseCase: SetSpeedUseCase,
+    private val requestJoystickInterrupt: RequestJoystickInterruptUseCase,
+    private val confirmInterrupt: ConfirmJoystickInterruptUseCase,
+    private val updateJoystickDirection: UpdateJoystickDirectionUseCase,
+    private val pauseSimulation: PauseSimulationUseCase,
+    private val resumeSimulation: ResumeSimulationUseCase,
+    private val stopSimulation: StopSimulationUseCase,
+    private val setSpeed: SetSpeedUseCase,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
 ) {
     /**
@@ -56,11 +56,11 @@ internal class JoystickSessionController(
         state: MutableStateFlow<SimulationState>,
     ) {
         if (!joystickSessionStarted) {
-            when (confirmJoystickInterruptUseCase()) {
+            when (confirmInterrupt()) {
                 is Result.Success -> {
                     joystickSessionStarted = true
                     state.update { it.copy(errorType = null) }
-                    setSpeedUseCase(SpeedSetting.Manual(state.value.joystickSpeedKmh / KMH_TO_MPS_DIVISOR))
+                    setSpeed(SpeedSetting.Manual(state.value.joystickSpeedKmh / KMH_TO_MPS_DIVISOR))
                 }
                 is Result.Error -> {
                     state.update { it.copy(errorType = SimulationErrorType.JOYSTICK_NO_REAL_FIX) }
@@ -72,17 +72,17 @@ internal class JoystickSessionController(
             // place"); a *new* drag gesture on an already-started session must resume it, or
             // every drag after the first release would silently update direction with the
             // session still paused and never actually move.
-            resumeSimulationUseCase()
+            resumeSimulation()
         }
-        updateJoystickDirectionUseCase(bearingDegrees)
+        updateJoystickDirection(bearingDegrees)
     }
 
-    internal fun onJoystickReleased() = pauseSimulationUseCase()
+    internal fun onJoystickReleased() = pauseSimulation()
 
     internal fun onToggleJoystick(state: MutableStateFlow<SimulationState>) {
         if (state.value.isJoystickVisible) {
             if (state.value.mockedSession?.mode == SimulationMode.JOYSTICK) {
-                stopSimulationUseCase()
+                stopSimulation()
             }
             joystickSessionStarted = false
             state.update { it.copy(isJoystickVisible = false) }
@@ -91,7 +91,7 @@ internal class JoystickSessionController(
 
         val routeIsLoadedOrRunning =
             state.value.loadedRoute != null ||
-                requestJoystickInterruptUseCase() == JoystickInterruptDecision.ConfirmationRequired
+                requestJoystickInterrupt() == JoystickInterruptDecision.ConfirmationRequired
         if (routeIsLoadedOrRunning) {
             state.update { it.copy(isJoystickInterruptPending = true) }
         } else {
@@ -105,12 +105,12 @@ internal class JoystickSessionController(
         state: MutableStateFlow<SimulationState>,
     ) {
         state.update { it.copy(joystickSpeedKmh = kmh) }
-        applyLiveSpeed(state, setSpeedUseCase, SpeedSetting.Manual(kmh / KMH_TO_MPS_DIVISOR))
+        applyLiveSpeed(state, setSpeed, SpeedSetting.Manual(kmh / KMH_TO_MPS_DIVISOR))
     }
 
     internal fun confirmJoystickInterrupt(state: MutableStateFlow<SimulationState>) {
         lastComputedRouteHolder.clear()
-        stopSimulationUseCase()
+        stopSimulation()
         joystickSessionStarted = false
         state.update { it.copy(isJoystickInterruptPending = false, isJoystickVisible = true) }
     }

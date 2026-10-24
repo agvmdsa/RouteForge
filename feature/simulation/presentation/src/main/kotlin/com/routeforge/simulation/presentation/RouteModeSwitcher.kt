@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
 internal class RouteModeSwitcher(
-    private val updateActiveRouteUseCase: UpdateActiveRouteUseCase,
+    private val updateActiveRoute: UpdateActiveRouteUseCase,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
 ) {
     /** Only proposes switching to whichever mode isn't currently active — there are just the two,
@@ -24,7 +24,7 @@ internal class RouteModeSwitcher(
     /** Swaps geometry/mode with their "alternate" counterparts (so switching back and forth keeps
      *  working) and pushes the result both to [lastComputedRouteHolder] (so the loaded-route UI
      *  updates whether or not playback has started yet) and, if a route is actively playing, to
-     *  the controller's live session via [updateActiveRouteUseCase] — a no-op there otherwise.
+     *  the controller's live session via [updateActiveRoute] — a no-op there otherwise.
      *  [Route.waypointCumulativeDistances] belongs to whichever geometry was active when it was
      *  computed, so it's cleared on swap (spec 008) — the editable-range check safely treats an
      *  empty list as "unknown, treat everything as editable" until the next edit recomputes it for
@@ -37,15 +37,15 @@ internal class RouteModeSwitcher(
         val alternateDistance = route.alternateDistanceMeters ?: return
         val swapped = route.swapToMode(targetMode, alternateGeometry, alternateDistance)
         lastComputedRouteHolder.set(swapped)
-        updateActiveRouteUseCase(swapped)
+        updateActiveRoute(swapped)
     }
 
     /** Applies a committed waypoint edit (spec 008) exactly like [confirmSwitchRouteMode] applies
      *  a mode swap: pushes the recomputed [route] to [lastComputedRouteHolder] (so the loaded-route
      *  UI updates whether or not playback has started) and, if a session is actively playing, to
-     *  the controller's live session via [updateActiveRouteUseCase] — a no-op there otherwise. */
+     *  the controller's live session via [updateActiveRoute] — a no-op there otherwise. */
     internal fun applyEditedRoute(route: Route) {
         lastComputedRouteHolder.set(route)
-        updateActiveRouteUseCase(route)
+        updateActiveRoute(route)
     }
 }

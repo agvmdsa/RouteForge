@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 
 internal class PendingTeleportConfirmer(
-    private val teleportUseCase: TeleportUseCase,
-    private val isNetworkConnectedUseCase: IsNetworkConnectedUseCase,
+    private val teleport: TeleportUseCase,
+    private val isNetworkConnected: IsNetworkConnectedUseCase,
     private val pendingTeleportTargetHolder: PendingTeleportTargetHolder,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
     private val mockLocationAuthorizationGuard: MockLocationAuthorizationGuard,
@@ -26,7 +26,7 @@ internal class PendingTeleportConfirmer(
             it.copy(
                 pendingTeleportLatitude = latitude,
                 pendingTeleportLongitude = longitude,
-                isPendingTeleportBlockedOffline = !isNetworkConnectedUseCase(),
+                isPendingTeleportBlockedOffline = !isNetworkConnected(),
             )
         }
     }
@@ -81,7 +81,7 @@ internal class PendingTeleportConfirmer(
             return
         }
         state.update { it.copy(errorType = null, isBlockedByAuthorization = false) }
-        teleportUseCase(latitude, longitude)
+        teleport(latitude, longitude)
     }
 
     internal fun startObservingPendingTeleportTarget(

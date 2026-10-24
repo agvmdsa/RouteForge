@@ -29,13 +29,13 @@ class JoystickSessionControllerTest {
     private val lastComputedRouteHolder = LastComputedRouteHolder()
     private val joystickSessionController =
         JoystickSessionController(
-            requestJoystickInterruptUseCase = RequestJoystickInterruptUseCase(controller),
-            confirmJoystickInterruptUseCase = ConfirmJoystickInterruptUseCase(controller),
-            updateJoystickDirectionUseCase = UpdateJoystickDirectionUseCase(controller),
-            pauseSimulationUseCase = PauseSimulationUseCase(controller),
-            resumeSimulationUseCase = ResumeSimulationUseCase(controller),
-            stopSimulationUseCase = StopSimulationUseCase(controller),
-            setSpeedUseCase = SetSpeedUseCase(controller),
+            requestJoystickInterrupt = RequestJoystickInterruptUseCase(controller),
+            confirmInterrupt = ConfirmJoystickInterruptUseCase(controller),
+            updateJoystickDirection = UpdateJoystickDirectionUseCase(controller),
+            pauseSimulation = PauseSimulationUseCase(controller),
+            resumeSimulation = ResumeSimulationUseCase(controller),
+            stopSimulation = StopSimulationUseCase(controller),
+            setSpeed = SetSpeedUseCase(controller),
             lastComputedRouteHolder = lastComputedRouteHolder,
         )
 

@@ -103,13 +103,13 @@ class SimulationViewModelTest {
         val mockLocationAuthorizationGuard =
             MockLocationAuthorizationGuard(
                 mockLocationAuthorizationChecker = authorizationChecker,
-                observeAuthorizationLostUseCase = ObserveAuthorizationLostUseCase(controller),
+                observeAuthorizationLost = ObserveAuthorizationLostUseCase(controller),
             )
         return SimulationViewModel(
             pendingTeleportConfirmer =
                 PendingTeleportConfirmer(
-                    teleportUseCase = TeleportUseCase(controller),
-                    isNetworkConnectedUseCase = IsNetworkConnectedUseCase(networkConnectivityChecker),
+                    teleport = TeleportUseCase(controller),
+                    isNetworkConnected = IsNetworkConnectedUseCase(networkConnectivityChecker),
                     pendingTeleportTargetHolder = pendingTeleportTargetHolder,
                     lastComputedRouteHolder = lastComputedRouteHolder,
                     mockLocationAuthorizationGuard = mockLocationAuthorizationGuard,
@@ -117,39 +117,39 @@ class SimulationViewModelTest {
             mockLocationAuthorizationGuard = mockLocationAuthorizationGuard,
             routeStarter =
                 RouteStarter(
-                    startRouteSimulationUseCase = StartRouteSimulationUseCase(controller),
+                    startRouteSimulation = StartRouteSimulationUseCase(controller),
                     mockLocationAuthorizationGuard = mockLocationAuthorizationGuard,
                 ),
             joystickSessionController =
                 JoystickSessionController(
-                    requestJoystickInterruptUseCase = RequestJoystickInterruptUseCase(controller),
-                    confirmJoystickInterruptUseCase = ConfirmJoystickInterruptUseCase(controller),
-                    updateJoystickDirectionUseCase = UpdateJoystickDirectionUseCase(controller),
-                    pauseSimulationUseCase = PauseSimulationUseCase(controller),
-                    resumeSimulationUseCase = ResumeSimulationUseCase(controller),
-                    stopSimulationUseCase = StopSimulationUseCase(controller),
-                    setSpeedUseCase = SetSpeedUseCase(controller),
+                    requestJoystickInterrupt = RequestJoystickInterruptUseCase(controller),
+                    confirmInterrupt = ConfirmJoystickInterruptUseCase(controller),
+                    updateJoystickDirection = UpdateJoystickDirectionUseCase(controller),
+                    pauseSimulation = PauseSimulationUseCase(controller),
+                    resumeSimulation = ResumeSimulationUseCase(controller),
+                    stopSimulation = StopSimulationUseCase(controller),
+                    setSpeed = SetSpeedUseCase(controller),
                     lastComputedRouteHolder = lastComputedRouteHolder,
                 ),
             routeModeSwitcher =
                 RouteModeSwitcher(
-                    updateActiveRouteUseCase = UpdateActiveRouteUseCase(controller),
+                    updateActiveRoute = UpdateActiveRouteUseCase(controller),
                     lastComputedRouteHolder = lastComputedRouteHolder,
                 ),
             playbackControls =
                 PlaybackControls(
-                    pauseSimulationUseCase = PauseSimulationUseCase(controller),
-                    resumeSimulationUseCase = ResumeSimulationUseCase(controller),
-                    stopSimulationUseCase = StopSimulationUseCase(controller),
-                    setSpeedUseCase = SetSpeedUseCase(controller),
+                    pauseSimulation = PauseSimulationUseCase(controller),
+                    resumeSimulation = ResumeSimulationUseCase(controller),
+                    stopSimulation = StopSimulationUseCase(controller),
+                    setSpeed = SetSpeedUseCase(controller),
                     lastComputedRouteHolder = lastComputedRouteHolder,
                 ),
             realLocationTracker =
                 RealLocationTracker(
-                    observeRealLocationUseCase = ObserveRealLocationUseCase(realLocationDataSource),
+                    observeRealLocation = ObserveRealLocationUseCase(realLocationDataSource),
                     lastKnownRealLocationHolder = lastKnownRealLocationHolder,
                 ),
-            observeMockedSessionUseCase = ObserveMockedSessionUseCase(controller),
+            observeMockedSession = ObserveMockedSessionUseCase(controller),
             lastComputedRouteHolder = lastComputedRouteHolder,
             observeMapStyle = ObserveMapStyleUseCase(FakeMapStyleStore()),
         )

@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 private const val REAL_LOCATION_TIMEOUT_MILLIS = 30_000L
 
 internal class RealLocationTracker(
-    private val observeRealLocationUseCase: ObserveRealLocationUseCase,
+    private val observeRealLocation: ObserveRealLocationUseCase,
     private val lastKnownRealLocationHolder: LastKnownRealLocationHolder,
 ) {
     private var realLocationObservationJob: Job? = null
@@ -54,7 +54,7 @@ internal class RealLocationTracker(
                 }
             }
         realLocationObservationJob =
-            observeRealLocationUseCase()
+            observeRealLocation()
                 .onEach { update ->
                     realLocationTimeoutJob?.cancel()
                     when (update) {

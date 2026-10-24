@@ -10,25 +10,25 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
 internal class PlaybackControls(
-    private val pauseSimulationUseCase: PauseSimulationUseCase,
-    private val resumeSimulationUseCase: ResumeSimulationUseCase,
-    private val stopSimulationUseCase: StopSimulationUseCase,
-    private val setSpeedUseCase: SetSpeedUseCase,
+    private val pauseSimulation: PauseSimulationUseCase,
+    private val resumeSimulation: ResumeSimulationUseCase,
+    private val stopSimulation: StopSimulationUseCase,
+    private val setSpeed: SetSpeedUseCase,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
 ) {
-    internal fun pause() = pauseSimulationUseCase()
+    internal fun pause() = pauseSimulation()
 
-    internal fun resume() = resumeSimulationUseCase()
+    internal fun resume() = resumeSimulation()
 
     internal fun stop(state: MutableStateFlow<SimulationState>) {
         state.update { it.copy(isPendingCancelRoute = false) }
-        stopSimulationUseCase()
+        stopSimulation()
         lastComputedRouteHolder.clear()
     }
 
     internal fun confirmCancelMock(state: MutableStateFlow<SimulationState>) {
         state.update { it.copy(isPendingCancelMock = false) }
-        stopSimulationUseCase()
+        stopSimulation()
     }
 
     internal fun onPlaybackSpeedChange(
@@ -36,6 +36,6 @@ internal class PlaybackControls(
         state: MutableStateFlow<SimulationState>,
     ) {
         state.update { it.copy(playbackSpeedKmh = kmh) }
-        applyLiveSpeed(state, setSpeedUseCase, SpeedSetting.Manual(kmh / KMH_TO_MPS_DIVISOR))
+        applyLiveSpeed(state, setSpeed, SpeedSetting.Manual(kmh / KMH_TO_MPS_DIVISOR))
     }
 }

@@ -17,7 +17,7 @@ class RouteModeSwitcherTest {
     private val lastComputedRouteHolder = LastComputedRouteHolder()
     private val switcher =
         RouteModeSwitcher(
-            updateActiveRouteUseCase = UpdateActiveRouteUseCase(controller),
+            updateActiveRoute = UpdateActiveRouteUseCase(controller),
             lastComputedRouteHolder = lastComputedRouteHolder,
         )
 

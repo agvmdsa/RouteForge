@@ -24,10 +24,10 @@ class PlaybackControlsTest {
     private val lastComputedRouteHolder = LastComputedRouteHolder()
     private val playbackControls =
         PlaybackControls(
-            pauseSimulationUseCase = PauseSimulationUseCase(controller),
-            resumeSimulationUseCase = ResumeSimulationUseCase(controller),
-            stopSimulationUseCase = StopSimulationUseCase(controller),
-            setSpeedUseCase = SetSpeedUseCase(controller),
+            pauseSimulation = PauseSimulationUseCase(controller),
+            resumeSimulation = ResumeSimulationUseCase(controller),
+            stopSimulation = StopSimulationUseCase(controller),
+            setSpeed = SetSpeedUseCase(controller),
             lastComputedRouteHolder = lastComputedRouteHolder,
         )
 

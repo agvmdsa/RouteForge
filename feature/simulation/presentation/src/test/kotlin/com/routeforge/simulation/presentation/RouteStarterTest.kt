@@ -20,7 +20,7 @@ class RouteStarterTest {
     private val authorizationChecker = FakeMockLocationAuthorizationChecker()
     private val starter =
         RouteStarter(
-            startRouteSimulationUseCase = StartRouteSimulationUseCase(controller),
+            startRouteSimulation = StartRouteSimulationUseCase(controller),
             mockLocationAuthorizationGuard =
                 MockLocationAuthorizationGuard(authorizationChecker, ObserveAuthorizationLostUseCase(controller)),
         )
