@@ -26,9 +26,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.coredomain.TourProgressRepository
 import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.model.TourSection
-import com.routeforge.coredomain.tour.TourEngine
 import com.routeforge.coredomain.tour.TourPhase
 import com.routeforge.coredomain.tour.TourPosition
+import com.routeforge.coredomain.tour.TourSession
 import com.routeforge.coredomain.tour.TourStepStatus
 import kotlinx.coroutines.delay
 
@@ -73,42 +73,18 @@ fun TourHost(
     val shellRegistry = LocalTourTargetRegistry.current
     val registry = remember(shellRegistry) { TourTargetRegistry(parent = shellRegistry) }
     var contentOriginOnScreen by remember { mutableStateOf(Offset.Zero) }
-    var position by remember { mutableStateOf<TourPosition?>(null) }
-    var hasPresentedAnything by remember { mutableStateOf(false) }
+    val session = remember(section) { TourSession(section, progressRepository, replayCoordinator) }
+    val position by session.position.collectAsStateWithLifecycle()
     var continueMessage by remember { mutableStateOf<String?>(null) }
 
     val seenSections by progressRepository.observeSeenSections().collectAsStateWithLifecycle()
     val pendingReplay by replayCoordinator.pendingReplay.collectAsStateWithLifecycle()
 
-    fun start() {
-        hasPresentedAnything = false
-        position = TourEngine.Start
-    }
-
-    // [markSeen] is false only when nothing at all applied to show: a section the user never got to
-    // see must stay unseen so its tour still runs once there is something for it to point at.
-    // Settings' "Repeat all" is told either way.
-    fun finish(markSeen: Boolean = true) {
-        if (markSeen) progressRepository.markSeen(section)
-        replayCoordinator.notifyReplayFinished(section)
-        position = null
-    }
-
-    fun skip() = finish(markSeen = true)
-
     LaunchedEffect(seenSections) {
-        if (section !in seenSections && position == null) start()
+        session.startIfFirstVisit(seenSections)
     }
     LaunchedEffect(pendingReplay) {
-        if (pendingReplay == section) {
-            val continuesSequence = replayCoordinator.consumeReplay(section)
-            // Already running (the first-visit start got there first): restarting would only
-            // flash the first step again.
-            if (position == null) {
-                val greeting = labels.continueMessage.takeIf { continuesSequence }
-                if (greeting == null) start() else continueMessage = greeting
-            }
-        }
+        session.handleReplayRequest(pendingReplay, labels.continueMessage)?.let { continueMessage = it }
     }
 
     // Its own effect rather than a delay inside the one above: consuming the request clears
@@ -117,7 +93,7 @@ fun TourHost(
         LaunchedEffect(greeting) {
             delay(CONTINUE_MESSAGE_MILLIS)
             continueMessage = null
-            start()
+            session.startAfterGreeting()
         }
     }
 
@@ -146,18 +122,7 @@ fun TourHost(
 
         LaunchedEffect(statuses, current) {
             repeat(SETTLE_FRAMES) { withFrameNanos { } }
-            val settled = TourEngine.settle(statuses, current)
-            if (settled == null) {
-                finish(markSeen = hasPresentedAnything)
-            } else {
-                hasPresentedAnything = true
-                if (settled != current) position = settled
-            }
-        }
-
-        fun next() {
-            val settled = TourEngine.settle(statuses, TourEngine.onNext(current))
-            if (settled == null) skip() else position = settled
+            session.settle(statuses)
         }
 
         val step = steps.getOrNull(current.index) ?: return@Box
@@ -169,8 +134,8 @@ fun TourHost(
             labels = labels,
             isTopMessageVisible = isTopMessageVisible,
             contentOriginOnScreen = { contentOriginOnScreen },
-            onNext = ::next,
-            onSkip = ::skip,
+            onNext = { session.next(statuses) },
+            onSkip = session::skip,
         )
     }
 }
