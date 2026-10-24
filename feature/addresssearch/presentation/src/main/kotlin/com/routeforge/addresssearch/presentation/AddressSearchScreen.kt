@@ -47,15 +47,13 @@ private const val RESULTS_HEIGHT_FRACTION = 0.75f
 
 @Composable
 fun AddressSearchRoot(
-    sourceContext: SearchSourceContext,
-    referenceLatitude: Double?,
-    referenceLongitude: Double?,
+    route: AddressSearchRoute,
     onNavigateBack: () -> Unit,
-    initialPlace: InitialPlace? = null,
-    initialQuery: String? = null,
-    viewModel: AddressSearchViewModel =
-        koinViewModel { parametersOf(sourceContext, referenceLatitude, referenceLongitude, initialPlace, initialQuery) },
 ) {
+    val viewModel: AddressSearchViewModel =
+        koinViewModel {
+            parametersOf(route.sourceContext, route.referenceLatitude, route.referenceLongitude, route.initialPlace(), route.initialQuery)
+        }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(viewModel) {

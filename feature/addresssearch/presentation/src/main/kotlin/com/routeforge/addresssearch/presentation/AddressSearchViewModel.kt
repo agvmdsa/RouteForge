@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
  *  screen was opened with — passed as plain constructor parameters (via Koin's parameterized
  *  `viewModel { ... }` DSL) rather than a `SavedStateHandle`, since they're immutable for this
  *  screen's whole lifetime. */
-class AddressSearchViewModel(
+internal class AddressSearchViewModel(
     sourceContext: SearchSourceContext,
     private val referenceLatitude: Double?,
     private val referenceLongitude: Double?,
