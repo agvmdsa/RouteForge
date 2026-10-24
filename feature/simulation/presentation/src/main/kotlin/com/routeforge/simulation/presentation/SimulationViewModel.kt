@@ -58,7 +58,7 @@ internal class SimulationViewModel(
             .onEach { route -> _state.update { it.copy(loadedRoute = route) } }
             .launchIn(viewModelScope)
 
-        realLocationTracker.startObservingLastKnownLocation(_state, viewModelScope)
+        realLocationTracker.mirrorLastKnownLocation(_state, viewModelScope)
 
         pendingTeleportConfirmer.startObservingPendingTeleportTarget(_state, viewModelScope)
     }
