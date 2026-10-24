@@ -24,7 +24,7 @@ data class TourPosition(
 
 /** Pure decision logic for the onboarding tour: which step to be on and what happens next. Steps
  *  only ever move forward. */
-object TourEngine {
+internal object TourEngine {
     val Start = TourPosition(index = 0, phase = TourPhase.ARRIVING)
 
     /** Advances [position] through everything that needs no user input and returns the first
