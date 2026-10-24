@@ -8,11 +8,11 @@ import kotlinx.coroutines.flow.update
 
 internal class MockLocationAuthorizationGuard(
     private val mockLocationAuthorizationChecker: MockLocationAuthorizationChecker,
-    private val observeAuthorizationLostUseCase: ObserveAuthorizationLostUseCase,
+    private val observeAuthorizationLost: ObserveAuthorizationLostUseCase,
 ) {
     internal fun isAuthorized(): Boolean = mockLocationAuthorizationChecker.isAuthorized()
 
-    internal fun authorizationLost(): SharedFlow<Unit> = observeAuthorizationLostUseCase()
+    internal fun authorizationLost(): SharedFlow<Unit> = observeAuthorizationLost()
 
     internal fun reportUnauthorized(state: MutableStateFlow<SimulationState>) {
         state.update {

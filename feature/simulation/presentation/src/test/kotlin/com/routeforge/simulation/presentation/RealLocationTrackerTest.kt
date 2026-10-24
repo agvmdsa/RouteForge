@@ -33,7 +33,7 @@ class RealLocationTrackerTest {
     private val lastKnownRealLocationHolder = LastKnownRealLocationHolder()
     private val tracker =
         RealLocationTracker(
-            observeRealLocationUseCase = ObserveRealLocationUseCase(dataSource),
+            observeRealLocation = ObserveRealLocationUseCase(dataSource),
             lastKnownRealLocationHolder = lastKnownRealLocationHolder,
         )
 

@@ -23,7 +23,7 @@ internal class SimulationViewModel(
     private val routeModeSwitcher: RouteModeSwitcher,
     private val playbackControls: PlaybackControls,
     private val realLocationTracker: RealLocationTracker,
-    observeMockedSessionUseCase: ObserveMockedSessionUseCase,
+    observeMockedSession: ObserveMockedSessionUseCase,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
     observeMapStyle: ObserveMapStyleUseCase,
 ) : ViewModel() {
@@ -34,7 +34,7 @@ internal class SimulationViewModel(
     val events = _events.receiveAsFlow()
 
     init {
-        observeMockedSessionUseCase()
+        observeMockedSession()
             .onEach { mockedSession ->
                 _state.update { it.copy(mockedSession = mockedSession) }
                 joystickSessionController.onMockedSessionChanged(mockedSession)

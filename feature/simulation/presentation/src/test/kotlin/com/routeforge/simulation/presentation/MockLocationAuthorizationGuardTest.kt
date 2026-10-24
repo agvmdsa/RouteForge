@@ -21,7 +21,7 @@ class MockLocationAuthorizationGuardTest {
     private val guard =
         MockLocationAuthorizationGuard(
             mockLocationAuthorizationChecker = checker,
-            observeAuthorizationLostUseCase = ObserveAuthorizationLostUseCase(controller),
+            observeAuthorizationLost = ObserveAuthorizationLostUseCase(controller),
         )
 
     @Test

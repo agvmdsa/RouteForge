@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
 internal class RouteStarter(
-    private val startRouteSimulationUseCase: StartRouteSimulationUseCase,
+    private val startRouteSimulation: StartRouteSimulationUseCase,
     private val mockLocationAuthorizationGuard: MockLocationAuthorizationGuard,
 ) {
     /** Called from the "how many times" dialog's confirm button — validates and, if everything
@@ -33,7 +33,7 @@ internal class RouteStarter(
             return
         }
         state.update { it.copy(isStartRouteDialogOpen = false, errorType = null, isBlockedByAuthorization = false) }
-        startRouteSimulationUseCase(route, SpeedSetting.Manual(speedKmh / KMH_TO_MPS_DIVISOR), executionMode)
+        startRouteSimulation(route, SpeedSetting.Manual(speedKmh / KMH_TO_MPS_DIVISOR), executionMode)
     }
 }
 
