@@ -1,7 +1,6 @@
 package com.routeforge.routing.data
 
 import com.routeforge.coredomain.DataError
-import com.routeforge.coredomain.EmptyResult
 import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.coredomain.RegionDeletionResult
 import com.routeforge.coredomain.RegionUsageTracker
@@ -12,15 +11,12 @@ import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
 import com.routeforge.routing.domain.RegionDownloadEvent
-import com.routeforge.routing.domain.RegionDownloader
-import com.routeforge.routing.domain.StorageQuotaStore
+import com.routeforge.routing.domain.testing.FakeRegionDownloader
+import com.routeforge.routing.domain.testing.FakeStorageQuotaStore
 import com.routeforge.routing.domain.usecase.DownloadRegionUseCase
 import com.routeforge.routing.domain.usecase.EnforceStorageQuotaUseCase
-import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -43,29 +39,6 @@ private val region =
     )
 
 private val otherRegion = region.copy(id = "region-2", tileIds = listOf("region-2.rd5"))
-
-private class FakeRegionDownloader : RegionDownloader {
-    var result: EmptyResult<DataError.Network> = Result.Success(Unit)
-    private var gate: CompletableDeferred<Unit>? = null
-
-    fun pauseNextDownload() {
-        gate = CompletableDeferred()
-    }
-
-    fun resume() {
-        gate?.complete(Unit)
-    }
-
-    override suspend fun download(
-        region: Region,
-        onProgress: (fraction: Float?) -> Unit,
-    ): EmptyResult<DataError.Network> {
-        onProgress(0.5f)
-        gate?.await()
-        onProgress(1f)
-        return result
-    }
-}
 
 private class FakeRegionCatalog : RegionCatalog {
     val deleteRegionCalls = mutableListOf<Region>()
@@ -106,19 +79,9 @@ private class FakeRegionUsageTracker : RegionUsageTracker {
     }
 }
 
-private class FakeStorageQuotaStore : StorageQuotaStore {
-    private val maxBytesState = MutableStateFlow<Long?>(null)
-
-    override fun observeMaxBytes(): StateFlow<Long?> = maxBytesState
-
-    override fun setMaxBytes(maxBytes: Long?) {
-        maxBytesState.value = maxBytes
-    }
-}
-
 class RegionDownloadControllerImplTest {
     private val dispatcher = UnconfinedTestDispatcher()
-    private val downloader = FakeRegionDownloader()
+    private val downloader = FakeRegionDownloader().apply { progressSteps = listOf(0.5f, 1f) }
     private val catalog = FakeRegionCatalog()
     private val regionUsageTracker = FakeRegionUsageTracker()
 
@@ -131,7 +94,7 @@ class RegionDownloadControllerImplTest {
                     recordRegionUsage = RecordRegionUsageUseCase(regionUsageTracker),
                     enforceStorageQuota =
                         EnforceStorageQuotaUseCase(
-                            storageQuotaStore = FakeStorageQuotaStore(),
+                            storageQuotaStore = FakeStorageQuotaStore(initialMaxBytes = null),
                             regionCatalog = catalog,
                             regionUsageTracker = regionUsageTracker,
                             draftWaypointsHolder = DraftWaypointsHolder(),

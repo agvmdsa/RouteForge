@@ -1,4 +1,4 @@
-package com.routeforge.routing.presentation
+package com.routeforge.routing.domain.testing
 
 import com.routeforge.coredomain.model.Region
 import com.routeforge.routing.domain.RegionDownloadController

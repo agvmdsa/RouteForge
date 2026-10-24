@@ -1,5 +1,7 @@
-package com.routeforge.routing.domain
+package com.routeforge.routing.domain.testing
 
+import com.routeforge.routing.domain.DEFAULT_STORAGE_QUOTA_BYTES
+import com.routeforge.routing.domain.StorageQuotaStore
 import kotlinx.coroutines.flow.MutableStateFlow
 
 class FakeStorageQuotaStore(

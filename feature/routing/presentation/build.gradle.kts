@@ -13,4 +13,5 @@ dependencies {
     implementation(libs.compose.material.icons.extended)
 
     testImplementation(testFixtures(project(":core:domain")))
+    testImplementation(testFixtures(project(":feature:routing:domain")))
 }

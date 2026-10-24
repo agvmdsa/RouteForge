@@ -4,7 +4,7 @@ import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.testing.FakeRegionCatalog
 import com.routeforge.coredomain.testing.FakeRegionUsageTracker
-import com.routeforge.routing.domain.FakeStorageQuotaStore
+import com.routeforge.routing.domain.testing.FakeStorageQuotaStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals

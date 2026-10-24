@@ -8,7 +8,7 @@ import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.testing.FakeRegionCatalog
 import com.routeforge.coredomain.testing.FakeRegionUsageTracker
-import com.routeforge.routing.domain.FakeStorageQuotaStore
+import com.routeforge.routing.domain.testing.FakeStorageQuotaStore
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
