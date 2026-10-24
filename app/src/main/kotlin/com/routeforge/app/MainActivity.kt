@@ -24,7 +24,6 @@ import androidx.navigation.toRoute
 import com.routeforge.addresssearch.presentation.AddressSearchRoot
 import com.routeforge.addresssearch.presentation.AddressSearchRoute
 import com.routeforge.addresssearch.presentation.SearchSourceContext
-import com.routeforge.addresssearch.presentation.initialPlace
 import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
@@ -121,11 +120,7 @@ internal class MainActivity : ComponentActivity() {
                         composable<AddressSearchRoute> { backStackEntry ->
                             val route = backStackEntry.toRoute<AddressSearchRoute>()
                             AddressSearchRoot(
-                                sourceContext = route.sourceContext,
-                                referenceLatitude = route.referenceLatitude,
-                                referenceLongitude = route.referenceLongitude,
-                                initialPlace = route.initialPlace(),
-                                initialQuery = route.initialQuery,
+                                route = route,
                                 onNavigateBack = { navController.popBackStack() },
                             )
                         }

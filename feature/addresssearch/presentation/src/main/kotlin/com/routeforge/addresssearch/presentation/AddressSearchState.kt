@@ -2,11 +2,11 @@ package com.routeforge.addresssearch.presentation
 
 import com.routeforge.coredomain.model.PlaceSearchResult
 
-enum class AddressSearchError {
+internal enum class AddressSearchError {
     NETWORK_FAILURE,
 }
 
-data class AddressSearchState(
+internal data class AddressSearchState(
     val sourceContext: SearchSourceContext = SearchSourceContext.TELEPORT_OR_FAVORITE,
     val query: String = "",
     val isLoading: Boolean = false,

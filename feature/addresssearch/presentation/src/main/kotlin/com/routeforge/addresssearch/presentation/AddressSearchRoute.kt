@@ -29,11 +29,11 @@ data class AddressSearchRoute(
 )
 
 /** A place that arrived from outside the app, with its name when it has one. */
-data class InitialPlace(
+internal data class InitialPlace(
     val latitude: Double,
     val longitude: Double,
     val name: String?,
 )
 
-fun AddressSearchRoute.initialPlace(): InitialPlace? =
+internal fun AddressSearchRoute.initialPlace(): InitialPlace? =
     if (initialLatitude != null && initialLongitude != null) InitialPlace(initialLatitude, initialLongitude, initialName) else null

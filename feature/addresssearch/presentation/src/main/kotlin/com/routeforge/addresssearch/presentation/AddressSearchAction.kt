@@ -1,6 +1,6 @@
 package com.routeforge.addresssearch.presentation
 
-sealed interface AddressSearchAction {
+internal sealed interface AddressSearchAction {
     data class OnQueryChange(
         val value: String,
     ) : AddressSearchAction
