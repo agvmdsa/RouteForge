@@ -30,11 +30,11 @@ internal class JoystickSessionController(
     /**
      * Tracks locally (synchronously) whether the current joystick drag has already started a
      * session, instead of relying on [SimulationState.mockedSession] — that mirror updates
-     * asynchronously via [observeMockedSessionUseCase], and drag events fire many times per
-     * second. Checking the mirrored state let every frame of a drag think no session existed
-     * yet, so `startJoystick()` (and its `SimulationControllerImpl.startSession()`, which cancels
-     * and relaunches the tick loop) fired on *every* frame — the tick loop's 1-second delay never
-     * got a chance to complete, so the mocked position never actually moved.
+     * asynchronously, from the view model's observer of the mocked session, and drag events fire
+     * many times per second. Checking the mirrored state let every frame of a drag think no
+     * session existed yet, so `startJoystick()` (and its `SimulationControllerImpl.startSession()`,
+     * which cancels and relaunches the tick loop) fired on *every* frame — the tick loop's
+     * 1-second delay never got a chance to complete, so the mocked position never actually moved.
      */
     private var joystickSessionStarted = false
 
@@ -44,13 +44,6 @@ internal class JoystickSessionController(
         }
     }
 
-    /**
-     * FR-022/FR-024–FR-026 (revised): the joystick's visibility is an explicit toggle, separate
-     * from whether it is actually mocking a position yet (that only starts once the user drags —
-     * see [steerJoystick]). Turning it on while a route is loaded or actively playing requires
-     * confirmation, because confirming clears the loaded route entirely. Turning it off while it
-     * was actively mocking fully stops the session, returning to the real location.
-     */
     internal fun steerJoystick(
         bearingDegrees: Float,
         state: MutableStateFlow<SimulationState>,
@@ -79,6 +72,13 @@ internal class JoystickSessionController(
 
     internal fun pauseJoystickSession() = pauseSimulation()
 
+    /**
+     * FR-022/FR-024–FR-026 (revised): the joystick's visibility is an explicit toggle, separate
+     * from whether it is actually mocking a position yet (that only starts once the user drags —
+     * see [steerJoystick]). Turning it on while a route is loaded or actively playing requires
+     * confirmation, because confirming clears the loaded route entirely. Turning it off while it
+     * was actively mocking fully stops the session, returning to the real location.
+     */
     internal fun toggleJoystick(state: MutableStateFlow<SimulationState>) {
         if (state.value.isJoystickVisible) {
             if (state.value.mockedSession?.mode == SimulationMode.JOYSTICK) {
