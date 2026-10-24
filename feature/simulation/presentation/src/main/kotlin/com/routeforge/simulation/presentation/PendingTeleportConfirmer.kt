@@ -58,7 +58,9 @@ internal class PendingTeleportConfirmer(
 
     /** The favorite-teleport path defers to this confirmation only when a route is loaded or
      *  running — teleporting replaces the mocked session, so proceeding here cancels it. With no
-     *  route loaded, [teleportTo] already runs directly from the holder observer in [init]. */
+     *  route loaded, [teleportTo] already runs directly from the observer of the pending teleport
+     *  target ([startObservingPendingTeleportTarget], which the view model starts when it is
+     *  created). */
     internal fun confirmFavoriteTeleportCancelRoute(state: MutableStateFlow<SimulationState>) {
         val target = state.value.pendingFavoriteTeleportTarget ?: return
         state.update { it.copy(pendingFavoriteTeleportTarget = null) }
