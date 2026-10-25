@@ -1,6 +1,5 @@
 package com.routeforge.mocklocationsetup.presentation
 
-import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,6 +31,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routeforge.designsystem.components.IconBadge
 import com.routeforge.designsystem.theme.RouteForgeTheme
+import com.routeforge.mocklocationsetup.domain.model.SetupShortcut
 import com.routeforge.mocklocationsetup.domain.model.SetupStepId
 import org.koin.androidx.compose.koinViewModel
 
@@ -54,7 +54,7 @@ internal fun MockLocationSetupRoot(
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
-                is MockLocationSetupEvent.LaunchDeepLink -> context.startActivity(event.intent)
+                is MockLocationSetupEvent.LaunchDeepLink -> context.startActivity(event.shortcut.toIntent(context.packageManager))
             }
         }
     }
@@ -175,7 +175,7 @@ private fun MockLocationSetupScreenPendingPreview() {
                                 title = "Enable Developer Options",
                                 explanation = "Explanation",
                                 instructions = "Instructions",
-                                deepLinkIntent = Intent(Intent.ACTION_MAIN),
+                                shortcut = SetupShortcut.DEVELOPER_OPTIONS,
                             ),
                         ),
                 ),

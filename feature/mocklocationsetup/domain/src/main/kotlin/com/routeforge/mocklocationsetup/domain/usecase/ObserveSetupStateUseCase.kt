@@ -1,13 +1,13 @@
 package com.routeforge.mocklocationsetup.domain.usecase
 
-import android.content.Intent
 import com.routeforge.mocklocationsetup.domain.MockLocationSetupStateSource
+import com.routeforge.mocklocationsetup.domain.model.SetupShortcut
 import com.routeforge.mocklocationsetup.domain.model.SetupState
 import com.routeforge.mocklocationsetup.domain.model.SetupStep
 import com.routeforge.mocklocationsetup.domain.model.SetupStepId
 
 /** One row of the setup checklist: [isPending] decides whether the step still needs to run,
- *  [deepLinkIntent] resolves the direct-to-settings shortcut (if any). Collapsing both of today's
+ *  [shortcut] names the system settings screen the step offers to open (if any). Collapsing both of today's
  *  steps into this shape (rather than one hand-copied if-block per step) means a third step is
  *  one more list entry, not a second copy-pasted block. */
 private data class SetupStepDefinition(
@@ -16,7 +16,7 @@ private data class SetupStepDefinition(
     val explanation: String,
     val instructions: String,
     val isPending: () -> Boolean,
-    val deepLinkIntent: () -> Intent?,
+    val shortcut: SetupShortcut?,
 )
 
 class ObserveSetupStateUseCase(
@@ -40,7 +40,7 @@ class ObserveSetupStateUseCase(
                         "Open About Phone and tap the Build Number entry 7 times " +
                             "until you see \"You are now a developer\".",
                     isPending = { !dataSource.isDeveloperOptionsEnabled() },
-                    deepLinkIntent = { dataSource.developerOptionsDeepLinkIntent() },
+                    shortcut = SetupShortcut.DEVICE_INFO,
                 ),
                 SetupStepDefinition(
                     id = SetupStepId.SELECT_MOCK_LOCATION_APP,
@@ -53,7 +53,7 @@ class ObserveSetupStateUseCase(
                         "Open Developer Options, find \"Select mock location app\", " +
                             "and choose RouteForge.",
                     isPending = { !dataSource.isAppSelectedAsMockLocationProvider() },
-                    deepLinkIntent = { dataSource.mockLocationAppDeepLinkIntent() },
+                    shortcut = SetupShortcut.DEVELOPER_OPTIONS,
                 ),
             )
 
@@ -64,7 +64,7 @@ class ObserveSetupStateUseCase(
                     title = definition.title,
                     explanation = definition.explanation,
                     instructions = definition.instructions,
-                    deepLinkIntent = definition.deepLinkIntent(),
+                    shortcut = definition.shortcut,
                 )
             }
 

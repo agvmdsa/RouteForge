@@ -1,6 +1,7 @@
 package com.routeforge.mocklocationsetup.domain.usecase
 
 import com.routeforge.mocklocationsetup.domain.FakeMockLocationSetupStateSource
+import com.routeforge.mocklocationsetup.domain.model.SetupShortcut
 import com.routeforge.mocklocationsetup.domain.model.SetupStepId
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -23,6 +24,26 @@ class ObserveSetupStateUseCaseTest {
             state.pendingSteps.map { it.id },
         )
         assertTrue(!state.isReady)
+    }
+
+    @Test
+    fun `each pending step carries the shortcut of its screen`() {
+        val dataSource =
+            FakeMockLocationSetupStateSource(
+                developerOptionsEnabled = false,
+                appSelectedAsMockLocationProvider = false,
+            )
+        val useCase = ObserveSetupStateUseCase(dataSource)
+
+        val state = useCase()
+
+        assertEquals(
+            mapOf(
+                SetupStepId.ENABLE_DEVELOPER_OPTIONS to SetupShortcut.DEVICE_INFO,
+                SetupStepId.SELECT_MOCK_LOCATION_APP to SetupShortcut.DEVELOPER_OPTIONS,
+            ),
+            state.pendingSteps.associate { it.id to it.shortcut },
+        )
     }
 
     @Test

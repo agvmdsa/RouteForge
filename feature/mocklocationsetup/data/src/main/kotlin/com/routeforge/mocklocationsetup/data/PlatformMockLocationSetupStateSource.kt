@@ -1,7 +1,6 @@
 package com.routeforge.mocklocationsetup.data
 
 import android.content.Context
-import android.content.Intent
 import android.os.UserManager
 import android.provider.Settings
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
@@ -9,7 +8,6 @@ import com.routeforge.mocklocationsetup.domain.MockLocationSetupStateSource
 
 internal class PlatformMockLocationSetupStateSource(
     private val context: Context,
-    private val deepLinkIntentFactory: SetupDeepLinkIntentFactory,
     private val mockLocationAuthorizationChecker: MockLocationAuthorizationChecker,
 ) : MockLocationSetupStateSource {
     override fun isDeveloperOptionsEnabled(): Boolean =
@@ -28,8 +26,4 @@ internal class PlatformMockLocationSetupStateSource(
         val userManager = context.getSystemService(UserManager::class.java)
         return userManager.hasUserRestriction(UserManager.DISALLOW_DEBUGGING_FEATURES)
     }
-
-    override fun developerOptionsDeepLinkIntent(): Intent = deepLinkIntentFactory.developerOptionsDeepLinkIntent()
-
-    override fun mockLocationAppDeepLinkIntent(): Intent = deepLinkIntentFactory.mockLocationAppDeepLinkIntent()
 }

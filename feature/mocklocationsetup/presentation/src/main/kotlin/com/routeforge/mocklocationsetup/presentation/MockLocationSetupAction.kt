@@ -1,9 +1,9 @@
 package com.routeforge.mocklocationsetup.presentation
 
-import android.content.Intent
+import com.routeforge.mocklocationsetup.domain.model.SetupShortcut
 
 internal sealed interface MockLocationSetupAction {
     data class OnDeepLinkClick(
-        val intent: Intent,
+        val shortcut: SetupShortcut,
     ) : MockLocationSetupAction
 }
