@@ -1,9 +1,9 @@
 package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
-import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
@@ -42,7 +42,7 @@ class IncomingRouteReceiverTest {
             routeDraftEditor =
                 RouteDraftEditor(
                     draftWaypointsHolder = draftWaypointsHolder,
-                    selectedFavoriteWaypointHolder = SelectedFavoriteWaypointHolder(),
+                    selectedFavoriteWaypointReceiver = SelectedFavoriteWaypointHandoffImpl(),
                     routeModePreviewer =
                         newRouteModePreviewer(
                             FakeRoutingEngine(snappableLatitudes = emptySet()),

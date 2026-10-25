@@ -1,12 +1,12 @@
 package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
-import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.PlaceSearchResult
@@ -71,7 +71,7 @@ class RouteRequestViewModelTest {
     private val codecs = mapOf(RouteFileFormat.JSON to jsonCodec, RouteFileFormat.GPX to gpxCodec)
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
     private val favoriteRoutesRepository = FakeFavoriteRoutesRepository()
-    private val selectedFavoriteWaypointHolder = SelectedFavoriteWaypointHolder()
+    private val selectedFavoriteWaypoint = SelectedFavoriteWaypointHandoffImpl()
     private val pendingSearchWaypointHolder = PendingSearchWaypointHolder()
     private val pendingIncomingRouteHolder = PendingIncomingRouteHolder()
     private val draftWaypointsHolder = DraftWaypointsHolder()
@@ -103,7 +103,7 @@ class RouteRequestViewModelTest {
         val routeDraftEditor =
             RouteDraftEditor(
                 draftWaypointsHolder = draftWaypointsHolder,
-                selectedFavoriteWaypointHolder = selectedFavoriteWaypointHolder,
+                selectedFavoriteWaypointReceiver = selectedFavoriteWaypoint,
                 routeModePreviewer = routeModePreviewer,
             )
         val importRouteFile = ImportRouteFileUseCase(codecs)
@@ -232,13 +232,13 @@ class RouteRequestViewModelTest {
         viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
         viewModel.onAction(RouteRequestAction.OnConfirmAddWaypoint)
 
-        selectedFavoriteWaypointHolder.set(RoutePoint(9.0, 9.0))
+        selectedFavoriteWaypoint.send(RoutePoint(9.0, 9.0))
 
         assertEquals(
             listOf(RoutePoint(1.0, 1.0), RoutePoint(9.0, 9.0)),
             viewModel.state.value.draft.points,
         )
-        assertNull(selectedFavoriteWaypointHolder.selected.value)
+        assertNull(selectedFavoriteWaypoint.pending)
     }
 
     @Test

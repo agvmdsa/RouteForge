@@ -1,7 +1,7 @@
 package com.routeforge.routing.presentation.routerequest
 
+import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffReceiver
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
-import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.model.RouteDraft
@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.update
 
 internal class RouteDraftEditor(
     private val draftWaypointsHolder: DraftWaypointsHolder,
-    private val selectedFavoriteWaypointHolder: SelectedFavoriteWaypointHolder,
+    private val selectedFavoriteWaypointReceiver: SelectedFavoriteWaypointHandoffReceiver,
     private val routeModePreviewer: RouteModePreviewer,
 ) {
     /** Any draft mutation invalidates a previously computed/chosen route (FR-004's spirit). */
@@ -89,12 +89,9 @@ internal class RouteDraftEditor(
         state: MutableStateFlow<RouteRequestState>,
         scope: CoroutineScope,
     ) {
-        selectedFavoriteWaypointHolder.selected
+        selectedFavoriteWaypointReceiver.incoming
             .onEach { point ->
-                if (point != null) {
-                    mutateDraft(state, scope) { it.add(point) }
-                    selectedFavoriteWaypointHolder.clear()
-                }
+                mutateDraft(state, scope) { it.add(point) }
             }.launchIn(scope)
     }
 }

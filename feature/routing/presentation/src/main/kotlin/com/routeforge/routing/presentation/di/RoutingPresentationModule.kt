@@ -71,7 +71,7 @@ val routingPresentationModule =
         factory {
             RouteDraftEditor(
                 draftWaypointsHolder = get(),
-                selectedFavoriteWaypointHolder = get(),
+                selectedFavoriteWaypointReceiver = get(),
                 routeModePreviewer = get(),
             )
         }
@@ -127,7 +127,7 @@ val routingPresentationModule =
                 isPickerMode = isPickerMode,
                 favoriteWaypointsRepository = get(),
                 pendingTeleportTargetSender = get(),
-                selectedFavoriteWaypointHolder = get(),
+                selectedFavoriteWaypointSender = get(),
                 networkConnectivityChecker = get(),
             )
         }

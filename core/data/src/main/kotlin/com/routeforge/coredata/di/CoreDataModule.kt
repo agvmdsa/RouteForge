@@ -18,12 +18,14 @@ import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffReceiver
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffSender
+import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
+import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffReceiver
+import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffSender
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
-import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.link.RedirectFollower
 import com.routeforge.coredomain.link.RedirectSource
 import com.routeforge.coredomain.link.ResolveSharedTextUseCase
@@ -46,7 +48,9 @@ val coreDataModule =
         } binds arrayOf(PendingTeleportTargetHandoffReceiver::class)
         single { PendingSearchWaypointHolder() }
         single { PendingIncomingRouteHolder() }
-        single { SelectedFavoriteWaypointHolder() }
+        single<SelectedFavoriteWaypointHandoffSender> {
+            SelectedFavoriteWaypointHandoffImpl()
+        } binds arrayOf(SelectedFavoriteWaypointHandoffReceiver::class)
         single { SharedPreferencesFavoriteWaypointsRepository(androidContext()) }.bind<FavoriteWaypointsRepository>()
         single { SharedPreferencesFavoriteRoutesRepository(androidContext()) }.bind<FavoriteRoutesRepository>()
         single { AndroidNetworkConnectivityChecker(androidContext()) }.bind<NetworkConnectivityChecker>()
