@@ -1,12 +1,12 @@
 package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
-import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.PlaceSearchResult
@@ -72,7 +72,7 @@ class RouteRequestViewModelTest {
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
     private val favoriteRoutesRepository = FakeFavoriteRoutesRepository()
     private val selectedFavoriteWaypoint = SelectedFavoriteWaypointHandoffImpl()
-    private val pendingSearchWaypointHolder = PendingSearchWaypointHolder()
+    private val pendingSearchWaypoint = PendingSearchWaypointHandoffImpl()
     private val pendingIncomingRouteHolder = PendingIncomingRouteHolder()
     private val draftWaypointsHolder = DraftWaypointsHolder()
     private val prepareRouteOptions =
@@ -120,7 +120,7 @@ class RouteRequestViewModelTest {
             pendingWaypointConfirmer =
                 PendingWaypointConfirmer(
                     favoriteWaypointsRepository = favoriteWaypointsRepository,
-                    pendingSearchWaypointHolder = pendingSearchWaypointHolder,
+                    pendingSearchWaypointReceiver = pendingSearchWaypoint,
                     routeDraftEditor = routeDraftEditor,
                 ),
             incomingRouteReceiver =
@@ -245,7 +245,7 @@ class RouteRequestViewModelTest {
     fun `a place picked from address search becomes a pending add, named, not a silent append`() {
         val viewModel = createViewModel()
 
-        pendingSearchWaypointHolder.set(
+        pendingSearchWaypoint.send(
             PlaceSearchResult(
                 name = "Eiffel Tower",
                 formattedAddress = "Paris, France",
@@ -260,14 +260,14 @@ class RouteRequestViewModelTest {
         assertEquals(2.2945, state.pendingAddLongitude)
         assertEquals("Eiffel Tower", state.pendingAddPlaceName)
         assertEquals(emptyList<RoutePoint>(), state.draft.points)
-        assertNull(pendingSearchWaypointHolder.selected.value)
+        assertNull(pendingSearchWaypoint.pending)
     }
 
     @Test
     fun `a place that arrived with no name is a pending add with no place name, so the coordinates are shown`() {
         val viewModel = createViewModel()
 
-        pendingSearchWaypointHolder.set(
+        pendingSearchWaypoint.send(
             PlaceSearchResult(name = "", formattedAddress = "", latitude = 52.52, longitude = 13.405, importance = 0.0),
         )
 
@@ -275,7 +275,7 @@ class RouteRequestViewModelTest {
         assertEquals(52.52, state.pendingAddLatitude)
         assertEquals(13.405, state.pendingAddLongitude)
         assertNull(state.pendingAddPlaceName)
-        assertNull(pendingSearchWaypointHolder.selected.value)
+        assertNull(pendingSearchWaypoint.pending)
     }
 
     // --- Favorite Routes: save a planned route (spec 005-favorite-routes, US1) ---

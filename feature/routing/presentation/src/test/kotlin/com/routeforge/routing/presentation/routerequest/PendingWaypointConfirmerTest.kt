@@ -1,8 +1,8 @@
 package com.routeforge.routing.presentation.routerequest
 
+import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
-import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.testing.FakeFavoriteWaypointsRepository
@@ -22,11 +22,11 @@ class PendingWaypointConfirmerTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val scope = CoroutineScope(dispatcher)
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
-    private val pendingSearchWaypointHolder = PendingSearchWaypointHolder()
+    private val pendingSearchWaypoint = PendingSearchWaypointHandoffImpl()
     private val confirmer =
         PendingWaypointConfirmer(
             favoriteWaypointsRepository = favoriteWaypointsRepository,
-            pendingSearchWaypointHolder = pendingSearchWaypointHolder,
+            pendingSearchWaypointReceiver = pendingSearchWaypoint,
             routeDraftEditor =
                 RouteDraftEditor(
                     draftWaypointsHolder = DraftWaypointsHolder(),
@@ -127,7 +127,7 @@ class PendingWaypointConfirmerTest {
         val state = MutableStateFlow(RouteRequestState())
         confirmer.startObservingPendingSearchWaypoint(state, scope)
 
-        pendingSearchWaypointHolder.set(
+        pendingSearchWaypoint.send(
             PlaceSearchResult(
                 name = "Eiffel Tower",
                 formattedAddress = "Paris, France",
@@ -141,7 +141,7 @@ class PendingWaypointConfirmerTest {
         assertEquals(2.2945, state.value.pendingAddLongitude)
         assertEquals("Eiffel Tower", state.value.pendingAddPlaceName)
         assertEquals(emptyList<RoutePoint>(), state.value.draft.points)
-        assertNull(pendingSearchWaypointHolder.selected.value)
+        assertNull(pendingSearchWaypoint.pending)
     }
 
     @Test
@@ -149,7 +149,7 @@ class PendingWaypointConfirmerTest {
         val state = MutableStateFlow(RouteRequestState())
         confirmer.startObservingPendingSearchWaypoint(state, scope)
 
-        pendingSearchWaypointHolder.set(
+        pendingSearchWaypoint.send(
             PlaceSearchResult(name = "", formattedAddress = "", latitude = 52.52, longitude = 13.405, importance = 0.0),
         )
 

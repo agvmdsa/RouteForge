@@ -6,9 +6,9 @@ import com.routeforge.addresssearch.domain.usecase.SearchPlacesUseCase
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
-import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.model.FavoriteWaypoint
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.RoutePoint
@@ -67,7 +67,7 @@ private class FakeFavoriteWaypointsRepository : FavoriteWaypointsRepository {
 class AddressSearchViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val geocodeClient = FakeGeocodeClient(Result.Success(listOf(place())))
-    private val pendingSearchWaypointHolder = PendingSearchWaypointHolder()
+    private val pendingSearchWaypoint = PendingSearchWaypointHandoffImpl()
     private val pendingTeleportTarget = PendingTeleportTargetHandoffImpl()
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
 
@@ -93,7 +93,7 @@ class AddressSearchViewModelTest {
             initialPlace = initialPlace,
             initialQuery = initialQuery,
             searchPlaces = SearchPlacesUseCase(geocodeClient, RankSearchResultsUseCase(), LastKnownRealLocationHolder()),
-            pendingSearchWaypointHolder = pendingSearchWaypointHolder,
+            pendingSearchWaypointSender = pendingSearchWaypoint,
             pendingTeleportTargetSender = pendingTeleportTarget,
             favoriteWaypointsRepository = favoriteWaypointsRepository,
         )
@@ -180,7 +180,7 @@ class AddressSearchViewModelTest {
 
             viewModel.onAction(AddressSearchAction.OnSelectResult(0))
 
-            assertEquals(result, pendingSearchWaypointHolder.selected.value)
+            assertEquals(result, pendingSearchWaypoint.pending)
             assertNull(viewModel.state.value.pendingChoiceResult)
             assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
         }
@@ -197,7 +197,7 @@ class AddressSearchViewModelTest {
             viewModel.onAction(AddressSearchAction.OnSelectResult(0))
 
             assertEquals(result, viewModel.state.value.pendingChoiceResult)
-            assertNull(pendingSearchWaypointHolder.selected.value)
+            assertNull(pendingSearchWaypoint.pending)
         }
 
     @Test
@@ -325,7 +325,7 @@ class AddressSearchViewModelTest {
             val viewModel = createViewModel(SearchSourceContext.PLAN_ROUTE, InitialPlace(52.52, 13.405, "Brandenburg Gate"))
             val eventDeferred = async { viewModel.events.first() }
 
-            assertEquals("Brandenburg Gate", pendingSearchWaypointHolder.selected.value?.name)
+            assertEquals("Brandenburg Gate", pendingSearchWaypoint.pending?.name)
             assertNull(viewModel.state.value.pendingChoiceResult)
             assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
         }

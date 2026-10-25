@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.routeforge.addresssearch.domain.usecase.SearchPlacesUseCase
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffSender
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffSender
-import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.RoutePoint
 import kotlinx.coroutines.Job
@@ -28,7 +28,7 @@ internal class AddressSearchViewModel(
     initialPlace: InitialPlace? = null,
     initialQuery: String? = null,
     private val searchPlaces: SearchPlacesUseCase,
-    private val pendingSearchWaypointHolder: PendingSearchWaypointHolder,
+    private val pendingSearchWaypointSender: PendingSearchWaypointHandoffSender,
     private val pendingTeleportTargetSender: PendingTeleportTargetHandoffSender,
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
 ) : ViewModel() {
@@ -111,7 +111,7 @@ internal class AddressSearchViewModel(
     /** Picking a result, or arriving with a place from another app, leads to the same next step. */
     private fun choose(result: PlaceSearchResult) {
         if (_state.value.sourceContext == SearchSourceContext.PLAN_ROUTE) {
-            pendingSearchWaypointHolder.set(result)
+            pendingSearchWaypointSender.send(result)
             viewModelScope.launch { _events.send(AddressSearchEvent.NavigateBack) }
         } else {
             _state.update { it.copy(pendingChoiceResult = result) }

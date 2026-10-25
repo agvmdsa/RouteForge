@@ -15,6 +15,9 @@ import com.routeforge.coredomain.MockLocationAuthorizationChecker
 import com.routeforge.coredomain.NetworkConnectivityChecker
 import com.routeforge.coredomain.TourProgressRepository
 import com.routeforge.coredomain.TourReplayCoordinator
+import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
+import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffReceiver
+import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffSender
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffReceiver
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffSender
@@ -25,7 +28,6 @@ import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
-import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
 import com.routeforge.coredomain.link.RedirectFollower
 import com.routeforge.coredomain.link.RedirectSource
 import com.routeforge.coredomain.link.ResolveSharedTextUseCase
@@ -46,7 +48,9 @@ val coreDataModule =
         single<PendingTeleportTargetHandoffSender> {
             PendingTeleportTargetHandoffImpl()
         } binds arrayOf(PendingTeleportTargetHandoffReceiver::class)
-        single { PendingSearchWaypointHolder() }
+        single<PendingSearchWaypointHandoffSender> {
+            PendingSearchWaypointHandoffImpl()
+        } binds arrayOf(PendingSearchWaypointHandoffReceiver::class)
         single { PendingIncomingRouteHolder() }
         single<SelectedFavoriteWaypointHandoffSender> {
             SelectedFavoriteWaypointHandoffImpl()

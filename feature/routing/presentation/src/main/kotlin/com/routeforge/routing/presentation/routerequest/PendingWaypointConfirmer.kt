@@ -1,7 +1,7 @@
 package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.coredomain.FavoriteWaypointsRepository
-import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
+import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffReceiver
 import com.routeforge.coredomain.model.RoutePoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.update
 
 internal class PendingWaypointConfirmer(
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
-    private val pendingSearchWaypointHolder: PendingSearchWaypointHolder,
+    private val pendingSearchWaypointReceiver: PendingSearchWaypointHandoffReceiver,
     private val routeDraftEditor: RouteDraftEditor,
 ) {
     internal fun confirmAddWaypoint(
@@ -45,17 +45,14 @@ internal class PendingWaypointConfirmer(
         state: MutableStateFlow<RouteRequestState>,
         scope: CoroutineScope,
     ) {
-        pendingSearchWaypointHolder.selected
+        pendingSearchWaypointReceiver.incoming
             .onEach { result ->
-                if (result != null) {
-                    state.update {
-                        it.copy(
-                            pendingAddLatitude = result.latitude,
-                            pendingAddLongitude = result.longitude,
-                            pendingAddPlaceName = result.name.takeIf { it.isNotBlank() },
-                        )
-                    }
-                    pendingSearchWaypointHolder.clear()
+                state.update {
+                    it.copy(
+                        pendingAddLatitude = result.latitude,
+                        pendingAddLongitude = result.longitude,
+                        pendingAddPlaceName = result.name.takeIf { it.isNotBlank() },
+                    )
                 }
             }.launchIn(scope)
     }
