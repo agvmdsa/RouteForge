@@ -1,6 +1,6 @@
 package com.routeforge.simulation.presentation
 
-import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffReceiver
+import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.simulation.domain.usecase.IsNetworkConnectedUseCase
 import com.routeforge.simulation.domain.usecase.TeleportUseCase
@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.update
 internal class PendingTeleportConfirmer(
     private val teleport: TeleportUseCase,
     private val isNetworkConnected: IsNetworkConnectedUseCase,
-    private val pendingTeleportTargetReceiver: PendingTeleportTargetHandoffReceiver,
+    private val pendingTeleportTargetReceiver: PendingTeleportTargetHandoffImpl,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
     private val mockLocationAuthorizationGuard: MockLocationAuthorizationGuard,
 ) {
