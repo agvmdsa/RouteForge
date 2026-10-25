@@ -126,7 +126,7 @@ val routingPresentationModule =
             FavoritesViewModel(
                 isPickerMode = isPickerMode,
                 favoriteWaypointsRepository = get(),
-                pendingTeleportTargetHolder = get(),
+                pendingTeleportTargetSender = get(),
                 selectedFavoriteWaypointHolder = get(),
                 networkConnectivityChecker = get(),
             )

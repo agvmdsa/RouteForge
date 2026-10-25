@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.NetworkConnectivityChecker
-import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
+import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffSender
 import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.RoutePoint
 import kotlinx.coroutines.channels.Channel
@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 internal class FavoritesViewModel(
     isPickerMode: Boolean,
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
-    private val pendingTeleportTargetHolder: PendingTeleportTargetHolder,
+    private val pendingTeleportTargetSender: PendingTeleportTargetHandoffSender,
     private val selectedFavoriteWaypointHolder: SelectedFavoriteWaypointHolder,
     private val networkConnectivityChecker: NetworkConnectivityChecker,
 ) : ViewModel() {
@@ -120,7 +120,7 @@ internal class FavoritesViewModel(
         val favorite = _state.value.pendingTeleportFavorite ?: return
         if (_state.value.isPendingTeleportBlockedOffline) return
         _state.update { it.copy(pendingTeleportFavorite = null, isPendingTeleportBlockedOffline = false) }
-        pendingTeleportTargetHolder.set(RoutePoint(latitude = favorite.latitude, longitude = favorite.longitude))
+        pendingTeleportTargetSender.send(RoutePoint(latitude = favorite.latitude, longitude = favorite.longitude))
         viewModelScope.launch { _events.send(FavoritesEvent.NavigateBack) }
     }
 }

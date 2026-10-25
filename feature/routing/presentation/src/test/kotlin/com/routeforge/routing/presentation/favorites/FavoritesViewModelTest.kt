@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation.favorites
 
-import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
+import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
 import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.FavoriteWaypoint
 import com.routeforge.coredomain.testing.FakeFavoriteWaypointsRepository
@@ -25,7 +25,7 @@ private val home = FavoriteWaypoint(id = "1", name = "Home", latitude = 1.0, lon
 class FavoritesViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val repository = FakeFavoriteWaypointsRepository(initialFavorites = listOf(home))
-    private val pendingTeleportTargetHolder = PendingTeleportTargetHolder()
+    private val pendingTeleportTarget = PendingTeleportTargetHandoffImpl()
     private val selectedFavoriteWaypointHolder = SelectedFavoriteWaypointHolder()
     private val networkConnectivityChecker = FakeNetworkConnectivityChecker()
 
@@ -43,7 +43,7 @@ class FavoritesViewModelTest {
         FavoritesViewModel(
             isPickerMode = isPickerMode,
             favoriteWaypointsRepository = repository,
-            pendingTeleportTargetHolder = pendingTeleportTargetHolder,
+            pendingTeleportTargetSender = pendingTeleportTarget,
             selectedFavoriteWaypointHolder = selectedFavoriteWaypointHolder,
             networkConnectivityChecker = networkConnectivityChecker,
         )
@@ -62,7 +62,7 @@ class FavoritesViewModelTest {
         viewModel.onAction(FavoritesAction.OnMockHereClick(home.id))
 
         assertEquals(home, viewModel.state.value.pendingTeleportFavorite)
-        assertNull(pendingTeleportTargetHolder.target.value)
+        assertNull(pendingTeleportTarget.pending)
     }
 
     @Test
@@ -74,8 +74,8 @@ class FavoritesViewModelTest {
             val eventDeferred = async { viewModel.events.first() }
             viewModel.onAction(FavoritesAction.OnConfirmMockHere)
 
-            assertEquals(home.latitude, pendingTeleportTargetHolder.target.value?.latitude)
-            assertEquals(home.longitude, pendingTeleportTargetHolder.target.value?.longitude)
+            assertEquals(home.latitude, pendingTeleportTarget.pending?.latitude)
+            assertEquals(home.longitude, pendingTeleportTarget.pending?.longitude)
             assertEquals(FavoritesEvent.NavigateBack, eventDeferred.await())
             assertNull(viewModel.state.value.pendingTeleportFavorite)
         }
@@ -88,7 +88,7 @@ class FavoritesViewModelTest {
         viewModel.onAction(FavoritesAction.OnDismissMockHere)
 
         assertNull(viewModel.state.value.pendingTeleportFavorite)
-        assertNull(pendingTeleportTargetHolder.target.value)
+        assertNull(pendingTeleportTarget.pending)
     }
 
     @Test
@@ -100,7 +100,7 @@ class FavoritesViewModelTest {
 
         viewModel.onAction(FavoritesAction.OnConfirmMockHere)
 
-        assertNull(pendingTeleportTargetHolder.target.value)
+        assertNull(pendingTeleportTarget.pending)
         assertNotNull(viewModel.state.value.pendingTeleportFavorite)
     }
 

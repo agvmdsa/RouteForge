@@ -15,12 +15,14 @@ import com.routeforge.coredomain.MockLocationAuthorizationChecker
 import com.routeforge.coredomain.NetworkConnectivityChecker
 import com.routeforge.coredomain.TourProgressRepository
 import com.routeforge.coredomain.TourReplayCoordinator
+import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
+import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffReceiver
+import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffSender
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
-import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.link.RedirectFollower
 import com.routeforge.coredomain.link.RedirectSource
@@ -29,6 +31,7 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.bind
+import org.koin.dsl.binds
 import org.koin.dsl.module
 
 val coreDataModule =
@@ -38,7 +41,9 @@ val coreDataModule =
         single { LastComputedRouteHolder() }
         single { LastKnownRealLocationHolder() }
         single { DraftWaypointsHolder() }
-        single { PendingTeleportTargetHolder() }
+        single<PendingTeleportTargetHandoffSender> {
+            PendingTeleportTargetHandoffImpl()
+        } binds arrayOf(PendingTeleportTargetHandoffReceiver::class)
         single { PendingSearchWaypointHolder() }
         single { PendingIncomingRouteHolder() }
         single { SelectedFavoriteWaypointHolder() }

@@ -6,9 +6,9 @@ import com.routeforge.addresssearch.domain.usecase.SearchPlacesUseCase
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
-import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.model.FavoriteWaypoint
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.RoutePoint
@@ -68,7 +68,7 @@ class AddressSearchViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val geocodeClient = FakeGeocodeClient(Result.Success(listOf(place())))
     private val pendingSearchWaypointHolder = PendingSearchWaypointHolder()
-    private val pendingTeleportTargetHolder = PendingTeleportTargetHolder()
+    private val pendingTeleportTarget = PendingTeleportTargetHandoffImpl()
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
 
     @BeforeEach
@@ -94,7 +94,7 @@ class AddressSearchViewModelTest {
             initialQuery = initialQuery,
             searchPlaces = SearchPlacesUseCase(geocodeClient, RankSearchResultsUseCase(), LastKnownRealLocationHolder()),
             pendingSearchWaypointHolder = pendingSearchWaypointHolder,
-            pendingTeleportTargetHolder = pendingTeleportTargetHolder,
+            pendingTeleportTargetSender = pendingTeleportTarget,
             favoriteWaypointsRepository = favoriteWaypointsRepository,
         )
 
@@ -223,8 +223,8 @@ class AddressSearchViewModelTest {
 
             viewModel.onAction(AddressSearchAction.OnChooseTeleport)
 
-            assertEquals(10.0, pendingTeleportTargetHolder.target.value?.latitude)
-            assertEquals(20.0, pendingTeleportTargetHolder.target.value?.longitude)
+            assertEquals(10.0, pendingTeleportTarget.pending?.latitude)
+            assertEquals(20.0, pendingTeleportTarget.pending?.longitude)
             assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
         }
 
@@ -305,7 +305,7 @@ class AddressSearchViewModelTest {
 
             viewModel.onAction(AddressSearchAction.OnChooseTeleport)
 
-            assertEquals(RoutePoint(latitude = 52.52, longitude = 13.405), pendingTeleportTargetHolder.target.value)
+            assertEquals(RoutePoint(latitude = 52.52, longitude = 13.405), pendingTeleportTarget.pending)
             assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
         }
 

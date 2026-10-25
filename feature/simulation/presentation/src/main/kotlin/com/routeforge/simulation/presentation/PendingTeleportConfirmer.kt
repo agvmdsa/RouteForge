@@ -1,7 +1,7 @@
 package com.routeforge.simulation.presentation
 
+import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffReceiver
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
-import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.simulation.domain.usecase.IsNetworkConnectedUseCase
 import com.routeforge.simulation.domain.usecase.TeleportUseCase
 import kotlinx.coroutines.CoroutineScope
@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.update
 internal class PendingTeleportConfirmer(
     private val teleport: TeleportUseCase,
     private val isNetworkConnected: IsNetworkConnectedUseCase,
-    private val pendingTeleportTargetHolder: PendingTeleportTargetHolder,
+    private val pendingTeleportTargetReceiver: PendingTeleportTargetHandoffReceiver,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
     private val mockLocationAuthorizationGuard: MockLocationAuthorizationGuard,
 ) {
@@ -69,7 +69,7 @@ internal class PendingTeleportConfirmer(
     }
 
     /** Shared by [confirmTeleport] (map-tap path, already confirmed via TeleportConfirmationSheet),
-     *  the [PendingTeleportTargetHolder] observer (favorite path with no route loaded — already
+     *  the [PendingTeleportTargetHandoffReceiver] observer (favorite path with no route loaded — already
      *  confirmed on the Favorites screen, no second ask here), and
      *  [confirmFavoriteTeleportCancelRoute] (favorite path with a route loaded — that extra
      *  confirmation is specifically about cancelling the route, not a repeat of Favorites' own). */
@@ -90,15 +90,12 @@ internal class PendingTeleportConfirmer(
         state: MutableStateFlow<SimulationState>,
         scope: CoroutineScope,
     ) {
-        pendingTeleportTargetHolder.target
+        pendingTeleportTargetReceiver.incoming
             .onEach { point ->
-                if (point != null) {
-                    if (state.value.loadedRoute != null) {
-                        state.update { it.copy(pendingFavoriteTeleportTarget = point) }
-                    } else {
-                        teleportTo(point.latitude, point.longitude, state)
-                    }
-                    pendingTeleportTargetHolder.clear()
+                if (state.value.loadedRoute != null) {
+                    state.update { it.copy(pendingFavoriteTeleportTarget = point) }
+                } else {
+                    teleportTo(point.latitude, point.longitude, state)
                 }
             }.launchIn(scope)
     }
