@@ -1,7 +1,7 @@
 package com.routeforge.simulation.presentation
 
+import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
-import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
@@ -28,12 +28,12 @@ class PendingTeleportConfirmerTest {
     private val authorizationChecker = FakeMockLocationAuthorizationChecker()
     private val networkConnectivityChecker = FakeNetworkConnectivityChecker()
     private val lastComputedRouteHolder = LastComputedRouteHolder()
-    private val pendingTeleportTargetHolder = PendingTeleportTargetHolder()
+    private val pendingTeleportTarget = PendingTeleportTargetHandoffImpl()
     private val confirmer =
         PendingTeleportConfirmer(
             teleport = TeleportUseCase(controller),
             isNetworkConnected = IsNetworkConnectedUseCase(networkConnectivityChecker),
-            pendingTeleportTargetHolder = pendingTeleportTargetHolder,
+            pendingTeleportTargetReceiver = pendingTeleportTarget,
             lastComputedRouteHolder = lastComputedRouteHolder,
             mockLocationAuthorizationGuard =
                 MockLocationAuthorizationGuard(authorizationChecker, ObserveAuthorizationLostUseCase(controller)),
@@ -125,11 +125,11 @@ class PendingTeleportConfirmerTest {
         val state = MutableStateFlow(SimulationState())
         confirmer.startObservingPendingTeleportTarget(state, scope)
 
-        pendingTeleportTargetHolder.set(RoutePoint(latitude = 5.0, longitude = 6.0))
+        pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
 
         assertEquals(listOf(FakeSimulationController.TeleportCall(5.0, 6.0)), controller.teleportCalls)
         assertNull(state.value.pendingFavoriteTeleportTarget)
-        assertNull(pendingTeleportTargetHolder.target.value)
+        assertNull(pendingTeleportTarget.pending)
     }
 
     @Test
@@ -138,7 +138,7 @@ class PendingTeleportConfirmerTest {
         val state = MutableStateFlow(SimulationState())
         confirmer.startObservingPendingTeleportTarget(state, scope)
 
-        pendingTeleportTargetHolder.set(RoutePoint(latitude = 5.0, longitude = 6.0))
+        pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
 
         assertTrue(controller.teleportCalls.isEmpty())
         assertEquals(SimulationErrorType.NOT_AUTHORIZED, state.value.errorType)
@@ -149,12 +149,12 @@ class PendingTeleportConfirmerTest {
         val state = MutableStateFlow(SimulationState(loadedRoute = sampleRoute))
         confirmer.startObservingPendingTeleportTarget(state, scope)
 
-        pendingTeleportTargetHolder.set(RoutePoint(latitude = 5.0, longitude = 6.0))
+        pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
 
         assertEquals(RoutePoint(latitude = 5.0, longitude = 6.0), state.value.pendingFavoriteTeleportTarget)
         assertTrue(controller.teleportCalls.isEmpty())
         assertNotNull(state.value.loadedRoute)
-        assertNull(pendingTeleportTargetHolder.target.value)
+        assertNull(pendingTeleportTarget.pending)
     }
 
     @Test

@@ -29,7 +29,7 @@ val addressSearchPresentationModule =
                 initialQuery = initialQuery,
                 searchPlaces = get(),
                 pendingSearchWaypointHolder = get(),
-                pendingTeleportTargetHolder = get(),
+                pendingTeleportTargetSender = get(),
                 favoriteWaypointsRepository = get(),
             )
         }

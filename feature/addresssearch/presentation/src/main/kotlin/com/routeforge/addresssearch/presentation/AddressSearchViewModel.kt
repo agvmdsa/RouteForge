@@ -5,8 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.routeforge.addresssearch.domain.usecase.SearchPlacesUseCase
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffSender
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
-import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.RoutePoint
 import kotlinx.coroutines.Job
@@ -29,7 +29,7 @@ internal class AddressSearchViewModel(
     initialQuery: String? = null,
     private val searchPlaces: SearchPlacesUseCase,
     private val pendingSearchWaypointHolder: PendingSearchWaypointHolder,
-    private val pendingTeleportTargetHolder: PendingTeleportTargetHolder,
+    private val pendingTeleportTargetSender: PendingTeleportTargetHandoffSender,
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
 ) : ViewModel() {
     private val _state =
@@ -120,7 +120,7 @@ internal class AddressSearchViewModel(
 
     private fun chooseTeleport() {
         val result = _state.value.pendingChoiceResult ?: return
-        pendingTeleportTargetHolder.set(RoutePoint(latitude = result.latitude, longitude = result.longitude))
+        pendingTeleportTargetSender.send(RoutePoint(latitude = result.latitude, longitude = result.longitude))
         viewModelScope.launch { _events.send(AddressSearchEvent.NavigateBack) }
     }
 

@@ -1,9 +1,9 @@
 package com.routeforge.simulation.presentation
 
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
-import com.routeforge.coredomain.holder.PendingTeleportTargetHolder
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
@@ -87,7 +87,7 @@ class SimulationViewModelTest {
     private val realLocationDataSource = FakeRealLocationDataSource()
     private val networkConnectivityChecker = FakeNetworkConnectivityChecker()
     private val lastKnownRealLocationHolder = LastKnownRealLocationHolder()
-    private val pendingTeleportTargetHolder = PendingTeleportTargetHolder()
+    private val pendingTeleportTarget = PendingTeleportTargetHandoffImpl()
 
     @BeforeEach
     fun setUp() {
@@ -110,7 +110,7 @@ class SimulationViewModelTest {
                 PendingTeleportConfirmer(
                     teleport = TeleportUseCase(controller),
                     isNetworkConnected = IsNetworkConnectedUseCase(networkConnectivityChecker),
-                    pendingTeleportTargetHolder = pendingTeleportTargetHolder,
+                    pendingTeleportTargetReceiver = pendingTeleportTarget,
                     lastComputedRouteHolder = lastComputedRouteHolder,
                     mockLocationAuthorizationGuard = mockLocationAuthorizationGuard,
                 ),
@@ -209,14 +209,14 @@ class SimulationViewModelTest {
     fun `a value appearing in the pending teleport target holder teleports immediately without a confirmation sheet`() {
         val viewModel = createViewModel()
 
-        pendingTeleportTargetHolder.set(RoutePoint(latitude = 5.0, longitude = 6.0))
+        pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
 
         assertEquals(1, controller.teleportCalls.size)
         assertEquals(5.0, controller.teleportCalls.first().latitude)
         assertEquals(6.0, controller.teleportCalls.first().longitude)
         assertNull(viewModel.state.value.pendingTeleportLatitude)
         assertNull(viewModel.state.value.pendingTeleportLongitude)
-        assertNull(pendingTeleportTargetHolder.target.value)
+        assertNull(pendingTeleportTarget.pending)
     }
 
     @Test
@@ -224,7 +224,7 @@ class SimulationViewModelTest {
         authorizationChecker.authorized = false
         val viewModel = createViewModel()
 
-        pendingTeleportTargetHolder.set(RoutePoint(latitude = 5.0, longitude = 6.0))
+        pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
 
         assertTrue(controller.teleportCalls.isEmpty())
         assertTrue(viewModel.state.value.isBlockedByAuthorization)
@@ -236,19 +236,19 @@ class SimulationViewModelTest {
         lastComputedRouteHolder.set(sampleRoute)
         val viewModel = createViewModel()
 
-        pendingTeleportTargetHolder.set(RoutePoint(latitude = 5.0, longitude = 6.0))
+        pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
 
         assertTrue(controller.teleportCalls.isEmpty())
         assertEquals(RoutePoint(latitude = 5.0, longitude = 6.0), viewModel.state.value.pendingFavoriteTeleportTarget)
         assertNotNull(viewModel.state.value.loadedRoute)
-        assertNull(pendingTeleportTargetHolder.target.value)
+        assertNull(pendingTeleportTarget.pending)
     }
 
     @Test
     fun `confirming a favorite teleport cancels the loaded route and teleports`() {
         lastComputedRouteHolder.set(sampleRoute)
         val viewModel = createViewModel()
-        pendingTeleportTargetHolder.set(RoutePoint(latitude = 5.0, longitude = 6.0))
+        pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
 
         viewModel.onAction(SimulationAction.OnConfirmFavoriteTeleportCancelRoute)
 
@@ -263,7 +263,7 @@ class SimulationViewModelTest {
     fun `dismissing a favorite teleport confirmation keeps the route loaded and teleports nowhere`() {
         lastComputedRouteHolder.set(sampleRoute)
         val viewModel = createViewModel()
-        pendingTeleportTargetHolder.set(RoutePoint(latitude = 5.0, longitude = 6.0))
+        pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
 
         viewModel.onAction(SimulationAction.OnDismissFavoriteTeleportCancelRoute)
 
