@@ -1,8 +1,8 @@
 package com.routeforge.routing.presentation.routerequest
 
+import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.PendingSearchWaypointHolder
-import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.testing.FakeFavoriteWaypointsRepository
@@ -30,7 +30,7 @@ class PendingWaypointConfirmerTest {
             routeDraftEditor =
                 RouteDraftEditor(
                     draftWaypointsHolder = DraftWaypointsHolder(),
-                    selectedFavoriteWaypointHolder = SelectedFavoriteWaypointHolder(),
+                    selectedFavoriteWaypointReceiver = SelectedFavoriteWaypointHandoffImpl(),
                     routeModePreviewer =
                         newRouteModePreviewer(
                             FakeRoutingEngine(snappableLatitudes = emptySet()),

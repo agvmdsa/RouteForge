@@ -1,7 +1,7 @@
 package com.routeforge.routing.presentation.favorites
 
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
-import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
+import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.model.FavoriteWaypoint
 import com.routeforge.coredomain.testing.FakeFavoriteWaypointsRepository
 import com.routeforge.coredomain.testing.FakeNetworkConnectivityChecker
@@ -26,7 +26,7 @@ class FavoritesViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val repository = FakeFavoriteWaypointsRepository(initialFavorites = listOf(home))
     private val pendingTeleportTarget = PendingTeleportTargetHandoffImpl()
-    private val selectedFavoriteWaypointHolder = SelectedFavoriteWaypointHolder()
+    private val selectedFavoriteWaypoint = SelectedFavoriteWaypointHandoffImpl()
     private val networkConnectivityChecker = FakeNetworkConnectivityChecker()
 
     @BeforeEach
@@ -44,7 +44,7 @@ class FavoritesViewModelTest {
             isPickerMode = isPickerMode,
             favoriteWaypointsRepository = repository,
             pendingTeleportTargetSender = pendingTeleportTarget,
-            selectedFavoriteWaypointHolder = selectedFavoriteWaypointHolder,
+            selectedFavoriteWaypointSender = selectedFavoriteWaypoint,
             networkConnectivityChecker = networkConnectivityChecker,
         )
 
@@ -112,8 +112,8 @@ class FavoritesViewModelTest {
             val eventDeferred = async { viewModel.events.first() }
             viewModel.onAction(FavoritesAction.OnFavoriteSelected(home.id))
 
-            assertEquals(home.latitude, selectedFavoriteWaypointHolder.selected.value?.latitude)
-            assertEquals(home.longitude, selectedFavoriteWaypointHolder.selected.value?.longitude)
+            assertEquals(home.latitude, selectedFavoriteWaypoint.pending?.latitude)
+            assertEquals(home.longitude, selectedFavoriteWaypoint.pending?.longitude)
             assertEquals(FavoritesEvent.NavigateBack, eventDeferred.await())
         }
 
@@ -123,7 +123,7 @@ class FavoritesViewModelTest {
 
         viewModel.onAction(FavoritesAction.OnFavoriteSelected(home.id))
 
-        assertNull(selectedFavoriteWaypointHolder.selected.value)
+        assertNull(selectedFavoriteWaypoint.pending)
     }
 
     @Test

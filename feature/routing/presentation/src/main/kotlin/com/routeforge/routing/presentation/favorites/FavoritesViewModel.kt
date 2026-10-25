@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.NetworkConnectivityChecker
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffSender
-import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
+import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffSender
 import com.routeforge.coredomain.model.RoutePoint
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +20,7 @@ internal class FavoritesViewModel(
     isPickerMode: Boolean,
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
     private val pendingTeleportTargetSender: PendingTeleportTargetHandoffSender,
-    private val selectedFavoriteWaypointHolder: SelectedFavoriteWaypointHolder,
+    private val selectedFavoriteWaypointSender: SelectedFavoriteWaypointHandoffSender,
     private val networkConnectivityChecker: NetworkConnectivityChecker,
 ) : ViewModel() {
     private val _state = MutableStateFlow(FavoritesState(isPickerMode = isPickerMode))
@@ -105,7 +105,7 @@ internal class FavoritesViewModel(
     private fun onFavoriteSelected(id: String) {
         if (!_state.value.isPickerMode) return
         val favorite = _state.value.favorites.firstOrNull { it.id == id } ?: return
-        selectedFavoriteWaypointHolder.set(RoutePoint(latitude = favorite.latitude, longitude = favorite.longitude))
+        selectedFavoriteWaypointSender.send(RoutePoint(latitude = favorite.latitude, longitude = favorite.longitude))
         viewModelScope.launch { _events.send(FavoritesEvent.NavigateBack) }
     }
 

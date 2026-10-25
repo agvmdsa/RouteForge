@@ -1,7 +1,7 @@
 package com.routeforge.routing.presentation.routerequest
 
+import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
-import com.routeforge.coredomain.holder.SelectedFavoriteWaypointHolder
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
@@ -23,11 +23,11 @@ class RouteDraftEditorTest {
     private val scope = CoroutineScope(dispatcher)
     private val routingEngine = FakeRoutingEngine(snappableLatitudes = emptySet())
     private val draftWaypointsHolder = DraftWaypointsHolder()
-    private val selectedFavoriteWaypointHolder = SelectedFavoriteWaypointHolder()
+    private val selectedFavoriteWaypoint = SelectedFavoriteWaypointHandoffImpl()
     private val editor =
         RouteDraftEditor(
             draftWaypointsHolder = draftWaypointsHolder,
-            selectedFavoriteWaypointHolder = selectedFavoriteWaypointHolder,
+            selectedFavoriteWaypointReceiver = selectedFavoriteWaypoint,
             routeModePreviewer = newRouteModePreviewer(routingEngine, FakeRegionCatalog(), dispatcher),
         )
 
@@ -160,9 +160,9 @@ class RouteDraftEditorTest {
         val state = MutableStateFlow(RouteRequestState(draft = twoPoints))
         editor.startObservingSelectedFavoriteWaypoint(state, scope)
 
-        selectedFavoriteWaypointHolder.set(RoutePoint(9.0, 9.0))
+        selectedFavoriteWaypoint.send(RoutePoint(9.0, 9.0))
 
         assertEquals(twoPoints.points + RoutePoint(9.0, 9.0), state.value.draft.points)
-        assertNull(selectedFavoriteWaypointHolder.selected.value)
+        assertNull(selectedFavoriteWaypoint.pending)
     }
 }
