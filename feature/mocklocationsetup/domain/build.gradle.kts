@@ -1,7 +1,4 @@
 plugins {
-    id("routeforge.android.library")
-}
-
-android {
-    namespace = "com.routeforge.mocklocationsetup.domain"
+    id("routeforge.domain.module")
+    id("java-test-fixtures")
 }

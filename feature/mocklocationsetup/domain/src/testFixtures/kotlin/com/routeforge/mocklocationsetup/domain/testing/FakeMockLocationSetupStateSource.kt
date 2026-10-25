@@ -1,4 +1,6 @@
-package com.routeforge.mocklocationsetup.domain
+package com.routeforge.mocklocationsetup.domain.testing
+
+import com.routeforge.mocklocationsetup.domain.MockLocationSetupStateSource
 
 class FakeMockLocationSetupStateSource(
     var developerOptionsEnabled: Boolean = false,
