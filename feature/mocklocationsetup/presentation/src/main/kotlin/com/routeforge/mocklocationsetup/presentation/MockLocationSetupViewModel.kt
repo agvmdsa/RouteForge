@@ -39,7 +39,7 @@ internal class MockLocationSetupViewModel(
         when (action) {
             is MockLocationSetupAction.OnDeepLinkClick ->
                 viewModelScope.launch {
-                    _events.send(MockLocationSetupEvent.LaunchDeepLink(action.intent))
+                    _events.send(MockLocationSetupEvent.LaunchDeepLink(action.shortcut))
                 }
         }
     }
@@ -51,5 +51,5 @@ private fun SetupStep.toUi(): SetupStepUi =
         title = title,
         explanation = explanation,
         instructions = instructions,
-        deepLinkIntent = deepLinkIntent,
+        shortcut = shortcut,
     )

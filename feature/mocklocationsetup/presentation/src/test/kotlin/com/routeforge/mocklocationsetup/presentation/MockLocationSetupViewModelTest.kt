@@ -1,7 +1,7 @@
 package com.routeforge.mocklocationsetup.presentation
 
-import android.content.Intent
 import com.routeforge.mocklocationsetup.domain.MockLocationSetupStateSource
+import com.routeforge.mocklocationsetup.domain.model.SetupShortcut
 import com.routeforge.mocklocationsetup.domain.usecase.ObserveSetupStateUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -20,18 +20,12 @@ private class FakeMockLocationSetupStateSource(
     var developerOptionsEnabled: Boolean = false,
     var appSelectedAsMockLocationProvider: Boolean = false,
     var restrictedByPolicy: Boolean = false,
-    var developerOptionsDeepLink: Intent? = null,
-    var mockLocationAppDeepLink: Intent? = null,
 ) : MockLocationSetupStateSource {
     override fun isDeveloperOptionsEnabled(): Boolean = developerOptionsEnabled
 
     override fun isAppSelectedAsMockLocationProvider(): Boolean = appSelectedAsMockLocationProvider
 
     override fun isDeveloperOptionsRestrictedByPolicy(): Boolean = restrictedByPolicy
-
-    override fun developerOptionsDeepLinkIntent(): Intent? = developerOptionsDeepLink
-
-    override fun mockLocationAppDeepLinkIntent(): Intent? = mockLocationAppDeepLink
 }
 
 class MockLocationSetupViewModelTest {
@@ -91,13 +85,13 @@ class MockLocationSetupViewModelTest {
     @Test
     fun `clicking a step's deep-link button emits LaunchDeepLink with that exact intent`() =
         runTest {
-            val intent = Intent("fake-action")
-            val dataSource = FakeMockLocationSetupStateSource(developerOptionsDeepLink = intent)
+            val shortcut = SetupShortcut.DEVELOPER_OPTIONS
+            val dataSource = FakeMockLocationSetupStateSource()
             val viewModel = MockLocationSetupViewModel(ObserveSetupStateUseCase(dataSource))
             val eventDeferred = async { viewModel.events.first() }
 
-            viewModel.onAction(MockLocationSetupAction.OnDeepLinkClick(intent))
+            viewModel.onAction(MockLocationSetupAction.OnDeepLinkClick(shortcut))
 
-            assertEquals(MockLocationSetupEvent.LaunchDeepLink(intent), eventDeferred.await())
+            assertEquals(MockLocationSetupEvent.LaunchDeepLink(shortcut), eventDeferred.await())
         }
 }

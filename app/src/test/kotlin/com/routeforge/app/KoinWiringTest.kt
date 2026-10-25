@@ -1,7 +1,6 @@
 package com.routeforge.app
 
 import android.content.Context
-import android.content.pm.PackageManager
 import com.routeforge.addresssearch.presentation.SearchSourceContext
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -16,7 +15,6 @@ import kotlin.reflect.KClass
 private val suppliedFromOutside: List<KClass<*>> =
     listOf(
         Context::class, // androidContext(): the application context, read by classes registered with it
-        PackageManager::class, // androidContext().packageManager, given to SetupDeepLinkIntentFactory
         File::class, // the folders of BundledRegionCatalog and BrouterRoutingEngine come from androidContext().filesDir
         Function1::class, // BundledRegionCatalog.openAsset, built from androidContext().assets
         Class.forName("io.ktor.client.engine.HttpClientEngine").kotlin, // the engine is chosen where HttpClient is created
