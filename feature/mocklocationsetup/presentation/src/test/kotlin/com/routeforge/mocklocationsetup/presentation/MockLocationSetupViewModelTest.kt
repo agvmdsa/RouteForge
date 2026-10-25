@@ -1,7 +1,7 @@
 package com.routeforge.mocklocationsetup.presentation
 
-import com.routeforge.mocklocationsetup.domain.MockLocationSetupStateSource
 import com.routeforge.mocklocationsetup.domain.model.SetupShortcut
+import com.routeforge.mocklocationsetup.domain.testing.FakeMockLocationSetupStateSource
 import com.routeforge.mocklocationsetup.domain.usecase.ObserveSetupStateUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -15,18 +15,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-
-private class FakeMockLocationSetupStateSource(
-    var developerOptionsEnabled: Boolean = false,
-    var appSelectedAsMockLocationProvider: Boolean = false,
-    var restrictedByPolicy: Boolean = false,
-) : MockLocationSetupStateSource {
-    override fun isDeveloperOptionsEnabled(): Boolean = developerOptionsEnabled
-
-    override fun isAppSelectedAsMockLocationProvider(): Boolean = appSelectedAsMockLocationProvider
-
-    override fun isDeveloperOptionsRestrictedByPolicy(): Boolean = restrictedByPolicy
-}
 
 class MockLocationSetupViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()

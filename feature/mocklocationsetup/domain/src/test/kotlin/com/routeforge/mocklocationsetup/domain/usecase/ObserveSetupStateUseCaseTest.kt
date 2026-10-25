@@ -1,8 +1,8 @@
 package com.routeforge.mocklocationsetup.domain.usecase
 
-import com.routeforge.mocklocationsetup.domain.FakeMockLocationSetupStateSource
 import com.routeforge.mocklocationsetup.domain.model.SetupShortcut
 import com.routeforge.mocklocationsetup.domain.model.SetupStepId
+import com.routeforge.mocklocationsetup.domain.testing.FakeMockLocationSetupStateSource
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

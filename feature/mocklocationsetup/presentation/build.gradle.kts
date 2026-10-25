@@ -10,4 +10,6 @@ dependencies {
     implementation(project(":feature:mocklocationsetup:domain"))
     implementation(project(":core:design-system"))
     implementation(libs.compose.material.icons.extended)
+
+    testImplementation(testFixtures(project(":feature:mocklocationsetup:domain")))
 }
