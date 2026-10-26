@@ -1,10 +1,10 @@
 package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.handoff.PendingIncomingRouteHandoffImpl
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.model.IncomingRoute
@@ -74,7 +74,7 @@ class RouteRequestViewModelTest {
     private val selectedFavoriteWaypoint = SelectedFavoriteWaypointHandoffImpl()
     private val pendingSearchWaypoint = PendingSearchWaypointHandoffImpl()
     private val pendingIncomingRoute = PendingIncomingRouteHandoffImpl()
-    private val draftWaypointsHolder = DraftWaypointsHolder()
+    private val draftWaypoints = DraftWaypointsHandoffImpl()
     private val prepareRouteOptions =
         PrepareRouteOptionsUseCase(
             computeRoute = ComputeRouteUseCase(routingEngine, regionCatalog, RecordRegionUsageUseCase(FakeRegionUsageTracker())),
@@ -102,7 +102,7 @@ class RouteRequestViewModelTest {
             )
         val routeDraftEditor =
             RouteDraftEditor(
-                draftWaypointsHolder = draftWaypointsHolder,
+                draftWaypointsWriter = draftWaypoints,
                 selectedFavoriteWaypointReceiver = selectedFavoriteWaypoint,
                 routeModePreviewer = routeModePreviewer,
             )
@@ -133,7 +133,7 @@ class RouteRequestViewModelTest {
                 RouteFileTransfer(
                     importRouteFile = importRouteFile,
                     exportRouteFile = ExportRouteFileUseCase(codecs),
-                    draftWaypointsHolder = draftWaypointsHolder,
+                    draftWaypointsWriter = draftWaypoints,
                 ),
             lastKnownRealLocationHolder = LastKnownRealLocationHolder(),
             favoriteRoutesRepository = favoriteRoutesRepository,
@@ -752,7 +752,7 @@ class RouteRequestViewModelTest {
         arrivingFile()
 
         assertEquals(arrivedPoints, viewModel.state.value.draft.points)
-        assertEquals(arrivedPoints, draftWaypointsHolder.points.value)
+        assertEquals(arrivedPoints, draftWaypoints.points.value)
         assertNull(viewModel.state.value.pendingReplaceDraft)
         assertNull(viewModel.state.value.errorType)
     }
@@ -785,7 +785,7 @@ class RouteRequestViewModelTest {
         arrivingFile()
 
         assertEquals(placed, viewModel.state.value.draft.points)
-        assertEquals(placed, draftWaypointsHolder.points.value)
+        assertEquals(placed, draftWaypoints.points.value)
         assertEquals(
             arrivedPoints,
             viewModel.state.value.pendingReplaceDraft
@@ -802,7 +802,7 @@ class RouteRequestViewModelTest {
         viewModel.onAction(RouteRequestAction.OnConfirmReplaceDraft)
 
         assertEquals(arrivedPoints, viewModel.state.value.draft.points)
-        assertEquals(arrivedPoints, draftWaypointsHolder.points.value)
+        assertEquals(arrivedPoints, draftWaypoints.points.value)
         assertNull(viewModel.state.value.pendingReplaceDraft)
     }
 
@@ -889,7 +889,7 @@ class RouteRequestViewModelTest {
         pendingIncomingRoute.send(IncomingRoute.Stops(arrivedPoints))
 
         assertEquals(arrivedPoints, viewModel.state.value.draft.points)
-        assertEquals(arrivedPoints, draftWaypointsHolder.points.value)
+        assertEquals(arrivedPoints, draftWaypoints.points.value)
         assertNull(pendingIncomingRoute.pending)
     }
 

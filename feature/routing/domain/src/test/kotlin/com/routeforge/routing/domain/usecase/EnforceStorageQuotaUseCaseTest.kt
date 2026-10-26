@@ -1,6 +1,6 @@
 package com.routeforge.routing.domain.usecase
 
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
@@ -33,7 +33,7 @@ private fun pointIn(region: Region) = RoutePoint(latitude = region.minLatitude +
 class EnforceStorageQuotaUseCaseTest {
     private val storageQuotaStore = FakeStorageQuotaStore()
     private val regionUsageTracker = FakeRegionUsageTracker()
-    private val draftWaypointsHolder = DraftWaypointsHolder()
+    private val draftWaypoints = DraftWaypointsHandoffImpl()
     private val lastComputedRouteHolder = LastComputedRouteHolder()
 
     private fun createUseCase(catalog: FakeRegionCatalog) =
@@ -41,7 +41,7 @@ class EnforceStorageQuotaUseCaseTest {
             storageQuotaStore = storageQuotaStore,
             regionCatalog = catalog,
             regionUsageTracker = regionUsageTracker,
-            draftWaypointsHolder = draftWaypointsHolder,
+            draftWaypointsReader = draftWaypoints,
             lastComputedRouteHolder = lastComputedRouteHolder,
         )
 
@@ -97,7 +97,7 @@ class EnforceStorageQuotaUseCaseTest {
             )
         regionUsageTracker.recordUsed(setOf("a"), atMillis = 1L)
         regionUsageTracker.recordUsed(setOf("b"), atMillis = 2L)
-        draftWaypointsHolder.set(listOf(pointIn(regionA)))
+        draftWaypoints.set(listOf(pointIn(regionA)))
         storageQuotaStore.setMaxBytes(1_000L)
 
         createUseCase(catalog)()
@@ -129,7 +129,7 @@ class EnforceStorageQuotaUseCaseTest {
     fun `stops once only protected regions remain, even if still over budget`() {
         val regionA = region("a")
         val catalog = FakeRegionCatalog(regions = listOf(regionA), sizesOnDiskBytes = mapOf("a" to 5_000L))
-        draftWaypointsHolder.set(listOf(pointIn(regionA)))
+        draftWaypoints.set(listOf(pointIn(regionA)))
         storageQuotaStore.setMaxBytes(1_000L)
 
         createUseCase(catalog)()

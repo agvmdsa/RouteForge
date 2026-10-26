@@ -70,7 +70,7 @@ val routingPresentationModule =
         }
         factory {
             RouteDraftEditor(
-                draftWaypointsHolder = get(),
+                draftWaypointsWriter = get(),
                 selectedFavoriteWaypointReceiver = get(),
                 routeModePreviewer = get(),
             )
@@ -93,7 +93,7 @@ val routingPresentationModule =
             RouteFileTransfer(
                 importRouteFile = get(),
                 exportRouteFile = get(),
-                draftWaypointsHolder = get(),
+                draftWaypointsWriter = get(),
             )
         }
         viewModel {

@@ -5,7 +5,7 @@ import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.coredomain.RegionDeletionResult
 import com.routeforge.coredomain.RegionUsageTracker
 import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
@@ -97,7 +97,7 @@ class RegionDownloadControllerImplTest {
                             storageQuotaStore = FakeStorageQuotaStore(initialMaxBytes = null),
                             regionCatalog = catalog,
                             regionUsageTracker = regionUsageTracker,
-                            draftWaypointsHolder = DraftWaypointsHolder(),
+                            draftWaypointsReader = DraftWaypointsHandoffImpl(),
                             lastComputedRouteHolder = LastComputedRouteHolder(),
                         ),
                 ),

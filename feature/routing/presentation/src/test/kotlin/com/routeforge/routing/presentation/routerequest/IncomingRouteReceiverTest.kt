@@ -1,9 +1,9 @@
 package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.handoff.PendingIncomingRouteHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
@@ -33,7 +33,7 @@ class IncomingRouteReceiverTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val scope = CoroutineScope(dispatcher)
     private val gpxCodec = FakeGpxCodec()
-    private val draftWaypointsHolder = DraftWaypointsHolder()
+    private val draftWaypoints = DraftWaypointsHandoffImpl()
     private val pendingIncomingRoute = PendingIncomingRouteHandoffImpl()
     private val receiver =
         IncomingRouteReceiver(
@@ -41,7 +41,7 @@ class IncomingRouteReceiverTest {
             pendingIncomingRouteReceiver = pendingIncomingRoute,
             routeDraftEditor =
                 RouteDraftEditor(
-                    draftWaypointsHolder = draftWaypointsHolder,
+                    draftWaypointsWriter = draftWaypoints,
                     selectedFavoriteWaypointReceiver = SelectedFavoriteWaypointHandoffImpl(),
                     routeModePreviewer =
                         newRouteModePreviewer(
@@ -68,7 +68,7 @@ class IncomingRouteReceiverTest {
         arrivingFile()
 
         assertEquals(arrivedPoints, state.value.draft.points)
-        assertEquals(arrivedPoints, draftWaypointsHolder.points.value)
+        assertEquals(arrivedPoints, draftWaypoints.points.value)
         assertNull(state.value.pendingReplaceDraft)
         assertNull(pendingIncomingRoute.pending)
     }
@@ -123,7 +123,7 @@ class IncomingRouteReceiverTest {
         receiver.confirmReplaceDraft(state, scope)
 
         assertEquals(arrivedPoints, state.value.draft.points)
-        assertEquals(arrivedPoints, draftWaypointsHolder.points.value)
+        assertEquals(arrivedPoints, draftWaypoints.points.value)
         assertNull(state.value.pendingReplaceDraft)
     }
 

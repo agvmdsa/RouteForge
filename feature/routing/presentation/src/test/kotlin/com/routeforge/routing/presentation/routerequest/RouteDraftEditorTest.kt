@@ -1,7 +1,7 @@
 package com.routeforge.routing.presentation.routerequest
 
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
@@ -22,11 +22,11 @@ class RouteDraftEditorTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val scope = CoroutineScope(dispatcher)
     private val routingEngine = FakeRoutingEngine(snappableLatitudes = emptySet())
-    private val draftWaypointsHolder = DraftWaypointsHolder()
+    private val draftWaypoints = DraftWaypointsHandoffImpl()
     private val selectedFavoriteWaypoint = SelectedFavoriteWaypointHandoffImpl()
     private val editor =
         RouteDraftEditor(
-            draftWaypointsHolder = draftWaypointsHolder,
+            draftWaypointsWriter = draftWaypoints,
             selectedFavoriteWaypointReceiver = selectedFavoriteWaypoint,
             routeModePreviewer = newRouteModePreviewer(routingEngine, FakeRegionCatalog(), dispatcher),
         )
@@ -57,7 +57,7 @@ class RouteDraftEditorTest {
         assertNull(state.value.chosenMode)
         assertNull(state.value.errorType)
         assertEquals(3, state.value.draft.points.size)
-        assertEquals(state.value.draft.points, draftWaypointsHolder.points.value)
+        assertEquals(state.value.draft.points, draftWaypoints.points.value)
     }
 
     @Test
@@ -131,7 +131,7 @@ class RouteDraftEditorTest {
 
         assertEquals(RoutePoint(5.5, 6.5), state.value.draft.points[0])
         assertNull(state.value.editingIndex)
-        assertEquals(state.value.draft.points, draftWaypointsHolder.points.value)
+        assertEquals(state.value.draft.points, draftWaypoints.points.value)
     }
 
     @Test

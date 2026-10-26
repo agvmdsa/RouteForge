@@ -1,7 +1,7 @@
 package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
@@ -29,12 +29,12 @@ private class FakeJsonCodec(
 class RouteFileTransferTest {
     private val codec = FakeJsonCodec()
     private val codecs = mapOf(RouteFileFormat.JSON to codec)
-    private val draftWaypointsHolder = DraftWaypointsHolder()
+    private val draftWaypoints = DraftWaypointsHandoffImpl()
     private val transfer =
         RouteFileTransfer(
             importRouteFile = ImportRouteFileUseCase(codecs),
             exportRouteFile = ExportRouteFileUseCase(codecs),
-            draftWaypointsHolder = draftWaypointsHolder,
+            draftWaypointsWriter = draftWaypoints,
         )
 
     private val placed = RouteDraft(points = listOf(RoutePoint(1.0, 1.0), RoutePoint(2.0, 2.0)))
@@ -65,7 +65,7 @@ class RouteFileTransferTest {
         assertNull(state.value.route)
         assertNull(state.value.chosenMode)
         assertNull(state.value.errorType)
-        assertEquals(imported.points, draftWaypointsHolder.points.value)
+        assertEquals(imported.points, draftWaypoints.points.value)
     }
 
     @Test
