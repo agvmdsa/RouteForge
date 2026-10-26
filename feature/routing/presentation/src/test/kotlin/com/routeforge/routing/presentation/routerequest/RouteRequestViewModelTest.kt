@@ -1,12 +1,12 @@
 package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.PendingIncomingRouteHandoffImpl
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
-import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.PlaceSearchResult
@@ -73,7 +73,7 @@ class RouteRequestViewModelTest {
     private val favoriteRoutesRepository = FakeFavoriteRoutesRepository()
     private val selectedFavoriteWaypoint = SelectedFavoriteWaypointHandoffImpl()
     private val pendingSearchWaypoint = PendingSearchWaypointHandoffImpl()
-    private val pendingIncomingRouteHolder = PendingIncomingRouteHolder()
+    private val pendingIncomingRoute = PendingIncomingRouteHandoffImpl()
     private val draftWaypointsHolder = DraftWaypointsHolder()
     private val prepareRouteOptions =
         PrepareRouteOptionsUseCase(
@@ -126,7 +126,7 @@ class RouteRequestViewModelTest {
             incomingRouteReceiver =
                 IncomingRouteReceiver(
                     importRouteFile = importRouteFile,
-                    pendingIncomingRouteHolder = pendingIncomingRouteHolder,
+                    pendingIncomingRouteReceiver = pendingIncomingRoute,
                     routeDraftEditor = routeDraftEditor,
                 ),
             routeFileTransfer =
@@ -742,7 +742,7 @@ class RouteRequestViewModelTest {
 
     private fun arrivingFile(points: List<RoutePoint> = arrivedPoints) {
         gpxCodec.parseResult = Result.Success(RouteDraft(points = points))
-        pendingIncomingRouteHolder.set(IncomingRoute.GpxFile(byteArrayOf(0)))
+        pendingIncomingRoute.send(IncomingRoute.GpxFile(byteArrayOf(0)))
     }
 
     @Test
@@ -772,7 +772,7 @@ class RouteRequestViewModelTest {
 
         arrivingFile()
 
-        assertNull(pendingIncomingRouteHolder.route.value)
+        assertNull(pendingIncomingRoute.pending)
         assertEquals(arrivedPoints, viewModel.state.value.draft.points)
     }
 
@@ -857,7 +857,7 @@ class RouteRequestViewModelTest {
         viewModel.tapTwoPoints()
         val placed = viewModel.state.value.draft.points
 
-        pendingIncomingRouteHolder.set(IncomingRoute.GpxFile(byteArrayOf(0)))
+        pendingIncomingRoute.send(IncomingRoute.GpxFile(byteArrayOf(0)))
 
         assertEquals(error, viewModel.state.value.errorType)
         assertEquals(placed, viewModel.state.value.draft.points)
@@ -886,11 +886,11 @@ class RouteRequestViewModelTest {
     fun `the stops of a directions link follow the same rules as a valid file`() {
         val viewModel = createViewModel()
 
-        pendingIncomingRouteHolder.set(IncomingRoute.Stops(arrivedPoints))
+        pendingIncomingRoute.send(IncomingRoute.Stops(arrivedPoints))
 
         assertEquals(arrivedPoints, viewModel.state.value.draft.points)
         assertEquals(arrivedPoints, draftWaypointsHolder.points.value)
-        assertNull(pendingIncomingRouteHolder.route.value)
+        assertNull(pendingIncomingRoute.pending)
     }
 
     @Test
@@ -899,7 +899,7 @@ class RouteRequestViewModelTest {
         viewModel.tapTwoPoints()
         val placed = viewModel.state.value.draft.points
 
-        pendingIncomingRouteHolder.set(IncomingRoute.Stops(arrivedPoints))
+        pendingIncomingRoute.send(IncomingRoute.Stops(arrivedPoints))
 
         assertEquals(placed, viewModel.state.value.draft.points)
         assertEquals(
@@ -913,7 +913,7 @@ class RouteRequestViewModelTest {
     fun `a single stop is too few waypoints, like a file with one point`() {
         val viewModel = createViewModel()
 
-        pendingIncomingRouteHolder.set(IncomingRoute.Stops(listOf(RoutePoint(1.0, 1.0))))
+        pendingIncomingRoute.send(IncomingRoute.Stops(listOf(RoutePoint(1.0, 1.0))))
 
         assertEquals(RouteRequestError.IMPORT_TOO_FEW_WAYPOINTS, viewModel.state.value.errorType)
         assertEquals(emptyList<RoutePoint>(), viewModel.state.value.draft.points)

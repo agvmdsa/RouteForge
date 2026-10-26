@@ -85,7 +85,7 @@ val routingPresentationModule =
         factory {
             IncomingRouteReceiver(
                 importRouteFile = get(),
-                pendingIncomingRouteHolder = get(),
+                pendingIncomingRouteReceiver = get(),
                 routeDraftEditor = get(),
             )
         }

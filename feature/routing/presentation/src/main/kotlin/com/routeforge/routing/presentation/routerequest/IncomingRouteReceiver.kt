@@ -1,7 +1,7 @@
 package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
+import com.routeforge.coredomain.handoff.PendingIncomingRouteHandoffReceiver
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.routing.domain.model.RouteDraft
 import com.routeforge.routing.domain.model.RouteFileFormat
@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.update
 
 internal class IncomingRouteReceiver(
     private val importRouteFile: ImportRouteFileUseCase,
-    private val pendingIncomingRouteHolder: PendingIncomingRouteHolder,
+    private val pendingIncomingRouteReceiver: PendingIncomingRouteHandoffReceiver,
     private val routeDraftEditor: RouteDraftEditor,
 ) {
     /** A route another app handed over: it becomes the draft at once when nothing is placed yet, otherwise the user is asked
@@ -64,12 +64,9 @@ internal class IncomingRouteReceiver(
         state: MutableStateFlow<RouteRequestState>,
         scope: CoroutineScope,
     ) {
-        pendingIncomingRouteHolder.route
+        pendingIncomingRouteReceiver.incoming
             .onEach { route ->
-                if (route != null) {
-                    receiveIncomingRoute(route, state, scope)
-                    pendingIncomingRouteHolder.clear()
-                }
+                receiveIncomingRoute(route, state, scope)
             }.launchIn(scope)
     }
 }

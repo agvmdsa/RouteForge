@@ -25,8 +25,8 @@ import com.routeforge.addresssearch.presentation.AddressSearchRoot
 import com.routeforge.addresssearch.presentation.AddressSearchRoute
 import com.routeforge.addresssearch.presentation.SearchSourceContext
 import com.routeforge.coredomain.TourReplayCoordinator
+import com.routeforge.coredomain.handoff.PendingIncomingRouteHandoffSender
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffSender
-import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
 import com.routeforge.coredomain.link.IncomingAction
 import com.routeforge.coredomain.link.IncomingPlacement
 import com.routeforge.coredomain.model.IncomingRoute
@@ -177,7 +177,7 @@ private fun HandleIncomingItems(
             ?.rootTab()
     val context = LocalContext.current
     val pendingSearchWaypointSender: PendingSearchWaypointHandoffSender = koinInject()
-    val incomingRouteHolder: PendingIncomingRouteHolder = koinInject()
+    val pendingIncomingRouteSender: PendingIncomingRouteHandoffSender = koinInject()
     LaunchedEffect(pending, rootTab) {
         if (pending == null || rootTab == null) return@LaunchedEffect
         val result = incomingItems.consume() ?: return@LaunchedEffect
@@ -206,12 +206,12 @@ private fun HandleIncomingItems(
                         navController.navigate(AddressSearchRoute(sourceContext = sourceContext, initialQuery = action.query))
                     }
                     is IncomingAction.LoadRoute -> {
-                        incomingRouteHolder.set(IncomingRoute.Stops(action.stops))
+                        pendingIncomingRouteSender.send(IncomingRoute.Stops(action.stops))
                         navController.switchToTab(PlanTabRoute)
                     }
                 }
             is IncomingResult.Route -> {
-                incomingRouteHolder.set(result.route)
+                pendingIncomingRouteSender.send(result.route)
                 navController.switchToTab(PlanTabRoute)
             }
             is IncomingResult.Message -> Toast.makeText(context, result.text, Toast.LENGTH_LONG).show()

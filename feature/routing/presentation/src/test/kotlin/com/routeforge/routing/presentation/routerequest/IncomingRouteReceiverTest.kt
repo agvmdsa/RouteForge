@@ -1,9 +1,9 @@
 package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.PendingIncomingRouteHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.holder.DraftWaypointsHolder
-import com.routeforge.coredomain.holder.PendingIncomingRouteHolder
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
@@ -34,11 +34,11 @@ class IncomingRouteReceiverTest {
     private val scope = CoroutineScope(dispatcher)
     private val gpxCodec = FakeGpxCodec()
     private val draftWaypointsHolder = DraftWaypointsHolder()
-    private val pendingIncomingRouteHolder = PendingIncomingRouteHolder()
+    private val pendingIncomingRoute = PendingIncomingRouteHandoffImpl()
     private val receiver =
         IncomingRouteReceiver(
             importRouteFile = ImportRouteFileUseCase(mapOf(RouteFileFormat.GPX to gpxCodec)),
-            pendingIncomingRouteHolder = pendingIncomingRouteHolder,
+            pendingIncomingRouteReceiver = pendingIncomingRoute,
             routeDraftEditor =
                 RouteDraftEditor(
                     draftWaypointsHolder = draftWaypointsHolder,
@@ -57,7 +57,7 @@ class IncomingRouteReceiverTest {
 
     private fun arrivingFile(points: List<RoutePoint> = arrivedPoints) {
         gpxCodec.parseResult = Result.Success(RouteDraft(points = points))
-        pendingIncomingRouteHolder.set(IncomingRoute.GpxFile(byteArrayOf(0)))
+        pendingIncomingRoute.send(IncomingRoute.GpxFile(byteArrayOf(0)))
     }
 
     @Test
@@ -70,7 +70,7 @@ class IncomingRouteReceiverTest {
         assertEquals(arrivedPoints, state.value.draft.points)
         assertEquals(arrivedPoints, draftWaypointsHolder.points.value)
         assertNull(state.value.pendingReplaceDraft)
-        assertNull(pendingIncomingRouteHolder.route.value)
+        assertNull(pendingIncomingRoute.pending)
     }
 
     @Test
@@ -78,7 +78,7 @@ class IncomingRouteReceiverTest {
         val state = MutableStateFlow(RouteRequestState())
         receiver.startObservingIncomingRoute(state, scope)
 
-        pendingIncomingRouteHolder.set(IncomingRoute.Stops(arrivedPoints))
+        pendingIncomingRoute.send(IncomingRoute.Stops(arrivedPoints))
 
         assertEquals(arrivedPoints, state.value.draft.points)
     }
@@ -143,7 +143,7 @@ class IncomingRouteReceiverTest {
         receiver.startObservingIncomingRoute(state, scope)
         gpxCodec.parseResult = Result.Error(RouteFileFailure.Malformed)
 
-        pendingIncomingRouteHolder.set(IncomingRoute.GpxFile(byteArrayOf(0)))
+        pendingIncomingRoute.send(IncomingRoute.GpxFile(byteArrayOf(0)))
 
         assertEquals(RouteRequestError.IMPORT_MALFORMED, state.value.errorType)
         assertEquals(placed.points, state.value.draft.points)
@@ -155,7 +155,7 @@ class IncomingRouteReceiverTest {
         val state = MutableStateFlow(RouteRequestState())
         receiver.startObservingIncomingRoute(state, scope)
 
-        pendingIncomingRouteHolder.set(IncomingRoute.Stops(listOf(RoutePoint(1.0, 1.0))))
+        pendingIncomingRoute.send(IncomingRoute.Stops(listOf(RoutePoint(1.0, 1.0))))
 
         assertEquals(RouteRequestError.IMPORT_TOO_FEW_WAYPOINTS, state.value.errorType)
         assertEquals(emptyList<RoutePoint>(), state.value.draft.points)
