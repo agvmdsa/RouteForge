@@ -2,11 +2,11 @@ package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
+import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffImpl
 import com.routeforge.coredomain.handoff.PendingIncomingRouteHandoffImpl
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
-import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.PlaceSearchResult
@@ -135,7 +135,7 @@ class RouteRequestViewModelTest {
                     exportRouteFile = ExportRouteFileUseCase(codecs),
                     draftWaypointsWriter = draftWaypoints,
                 ),
-            lastKnownRealLocationHolder = LastKnownRealLocationHolder(),
+            lastKnownRealLocationReader = LastKnownRealLocationHandoffImpl(),
             favoriteRoutesRepository = favoriteRoutesRepository,
             observeMapStyle = ObserveMapStyleUseCase(FakeMapStyleStore()),
         )

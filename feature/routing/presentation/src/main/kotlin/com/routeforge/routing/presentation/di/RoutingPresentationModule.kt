@@ -104,7 +104,7 @@ val routingPresentationModule =
                 pendingWaypointConfirmer = get(),
                 incomingRouteReceiver = get(),
                 routeFileTransfer = get(),
-                lastKnownRealLocationHolder = get(),
+                lastKnownRealLocationReader = get(),
                 favoriteRoutesRepository = get(),
                 observeMapStyle = get(),
             )

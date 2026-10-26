@@ -3,7 +3,7 @@ package com.routeforge.addresssearch.domain.usecase
 import com.routeforge.addresssearch.domain.testing.FakeGeocodeClient
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffImpl
 import com.routeforge.coredomain.model.RealLocation
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -11,13 +11,13 @@ import org.junit.jupiter.api.Test
 
 class SearchPlacesUseCaseTest {
     private val geocodeClient = FakeGeocodeClient()
-    private val lastKnownRealLocationHolder = LastKnownRealLocationHolder()
-    private val useCase = SearchPlacesUseCase(geocodeClient, RankSearchResultsUseCase(), lastKnownRealLocationHolder)
+    private val lastKnownRealLocation = LastKnownRealLocationHandoffImpl()
+    private val useCase = SearchPlacesUseCase(geocodeClient, RankSearchResultsUseCase(), lastKnownRealLocation)
 
     @Test
     fun `prefers the real known location over the fallback reference point`() =
         runTest {
-            lastKnownRealLocationHolder.set(RealLocation(latitude = 1.0, longitude = 1.0))
+            lastKnownRealLocation.set(RealLocation(latitude = 1.0, longitude = 1.0))
             val near = place("Near real location", latitude = 1.0, longitude = 1.0, importance = 0.1)
             val far = place("Near fallback only", latitude = 50.0, longitude = 50.0, importance = 0.1)
             geocodeClient.result = Result.Success(listOf(far, near))

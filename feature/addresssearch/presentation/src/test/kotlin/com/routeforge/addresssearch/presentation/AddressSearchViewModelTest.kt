@@ -6,9 +6,9 @@ import com.routeforge.addresssearch.domain.usecase.SearchPlacesUseCase
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffImpl
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
-import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.model.FavoriteWaypoint
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.RoutePoint
@@ -92,7 +92,7 @@ class AddressSearchViewModelTest {
             referenceLongitude = null,
             initialPlace = initialPlace,
             initialQuery = initialQuery,
-            searchPlaces = SearchPlacesUseCase(geocodeClient, RankSearchResultsUseCase(), LastKnownRealLocationHolder()),
+            searchPlaces = SearchPlacesUseCase(geocodeClient, RankSearchResultsUseCase(), LastKnownRealLocationHandoffImpl()),
             pendingSearchWaypointSender = pendingSearchWaypoint,
             pendingTeleportTargetSender = pendingTeleportTarget,
             favoriteWaypointsRepository = favoriteWaypointsRepository,

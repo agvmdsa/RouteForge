@@ -5,7 +5,7 @@ import com.routeforge.coredata.NoOpForegroundServiceController
 import com.routeforge.coredomain.GeoMath
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
 import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffReader
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.simulation.domain.ExecutionModeFailure
@@ -39,7 +39,7 @@ private const val DEFAULT_COMPLETION_AUTO_STOP_DELAY_MILLIS = 5_000L
 internal class SimulationControllerImpl(
     private val mockLocationPublisher: MockLocationPublisher,
     private val mockLocationAuthorizationChecker: MockLocationAuthorizationChecker,
-    private val lastKnownRealLocationHolder: LastKnownRealLocationHolder = LastKnownRealLocationHolder(),
+    private val lastKnownRealLocationReader: LastKnownRealLocationHandoffReader,
     private val foregroundServiceController: ForegroundServiceController = NoOpForegroundServiceController,
     private val coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
     private val tickIntervalMillis: Long = DEFAULT_TICK_INTERVAL_MILLIS,
@@ -138,7 +138,7 @@ internal class SimulationControllerImpl(
             longitude = current.longitude
         } else {
             val lastReal =
-                lastKnownRealLocationHolder.location.value
+                lastKnownRealLocationReader.location.value
                     ?: return Result.Error(JoystickStartFailure.NoRealLocationFixYet)
             latitude = lastReal.latitude
             longitude = lastReal.longitude

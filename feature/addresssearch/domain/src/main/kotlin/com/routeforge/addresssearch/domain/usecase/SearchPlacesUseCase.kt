@@ -3,7 +3,7 @@ package com.routeforge.addresssearch.domain.usecase
 import com.routeforge.addresssearch.domain.GeocodeClient
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffReader
 import com.routeforge.coredomain.model.PlaceSearchResult
 
 /** Orchestrates a search: calls [GeocodeClient] (which already caps the result count at
@@ -14,7 +14,7 @@ import com.routeforge.coredomain.model.PlaceSearchResult
 class SearchPlacesUseCase(
     private val geocodeClient: GeocodeClient,
     private val rankSearchResults: RankSearchResultsUseCase,
-    private val lastKnownRealLocationHolder: LastKnownRealLocationHolder,
+    private val lastKnownRealLocationReader: LastKnownRealLocationHandoffReader,
 ) {
     suspend operator fun invoke(
         query: String,
@@ -23,7 +23,7 @@ class SearchPlacesUseCase(
     ): Result<List<PlaceSearchResult>, DataError.Network> =
         when (val result = geocodeClient.search(query)) {
             is Result.Success -> {
-                val realLocation = lastKnownRealLocationHolder.location.value
+                val realLocation = lastKnownRealLocationReader.location.value
                 val referenceLatitude = realLocation?.latitude ?: fallbackReferenceLatitude
                 val referenceLongitude = realLocation?.longitude ?: fallbackReferenceLongitude
                 Result.Success(rankSearchResults(result.data, referenceLatitude, referenceLongitude))
