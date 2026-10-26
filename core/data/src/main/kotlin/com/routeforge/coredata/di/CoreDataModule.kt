@@ -37,9 +37,9 @@ import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffSender
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffReceiver
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffSender
-import com.routeforge.coredomain.link.RedirectFollower
-import com.routeforge.coredomain.link.RedirectSource
-import com.routeforge.coredomain.link.ResolveSharedTextUseCase
+import com.routeforge.corelink.RedirectFollower
+import com.routeforge.corelink.RedirectSource
+import com.routeforge.corelink.ResolveSharedTextUseCase
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.module.dsl.singleOf

@@ -1,8 +1,7 @@
-package com.routeforge.coredomain.testing
+package com.routeforge.corelink
 
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.link.RedirectSource
 
 class FakeRedirectSource(
     private val answers: Map<String, Result<String?, DataError.Network>> = emptyMap(),

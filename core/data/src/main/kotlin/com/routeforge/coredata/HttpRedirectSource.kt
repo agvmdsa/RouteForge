@@ -2,7 +2,7 @@ package com.routeforge.coredata
 
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.link.RedirectSource
+import com.routeforge.corelink.RedirectSource
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpRequestTimeoutException
 import io.ktor.client.request.prepareGet

@@ -1,4 +1,4 @@
-package com.routeforge.coredomain.link
+package com.routeforge.corelink
 
 import com.routeforge.coredomain.model.RoutePoint
 import java.net.URLDecoder
