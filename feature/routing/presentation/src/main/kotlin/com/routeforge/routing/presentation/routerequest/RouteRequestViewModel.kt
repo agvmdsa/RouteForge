@@ -3,7 +3,7 @@ package com.routeforge.routing.presentation.routerequest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeforge.coredomain.FavoriteRoutesRepository
-import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffReader
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.routing.domain.model.RouteDraft
@@ -26,11 +26,11 @@ internal class RouteRequestViewModel(
     private val pendingWaypointConfirmer: PendingWaypointConfirmer,
     private val incomingRouteReceiver: IncomingRouteReceiver,
     private val routeFileTransfer: RouteFileTransfer,
-    lastKnownRealLocationHolder: LastKnownRealLocationHolder,
+    lastKnownRealLocationReader: LastKnownRealLocationHandoffReader,
     private val favoriteRoutesRepository: FavoriteRoutesRepository,
     observeMapStyle: ObserveMapStyleUseCase,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(RouteRequestState(lastKnownLocation = lastKnownRealLocationHolder.location.value))
+    private val _state = MutableStateFlow(RouteRequestState(lastKnownLocation = lastKnownRealLocationReader.location.value))
     val state = _state.asStateFlow()
 
     private val _events = Channel<RouteRequestEvent>()

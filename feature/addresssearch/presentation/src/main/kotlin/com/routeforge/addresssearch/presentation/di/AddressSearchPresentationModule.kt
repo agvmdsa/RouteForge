@@ -11,7 +11,7 @@ import org.koin.dsl.module
 val addressSearchPresentationModule =
     module {
         single { RankSearchResultsUseCase() }
-        single { SearchPlacesUseCase(geocodeClient = get(), rankSearchResults = get(), lastKnownRealLocationHolder = get()) }
+        single { SearchPlacesUseCase(geocodeClient = get(), rankSearchResults = get(), lastKnownRealLocationReader = get()) }
         viewModel {
             (
                 sourceContext: SearchSourceContext,

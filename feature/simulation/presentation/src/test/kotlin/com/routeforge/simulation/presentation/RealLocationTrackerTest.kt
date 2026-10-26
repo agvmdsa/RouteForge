@@ -1,6 +1,6 @@
 package com.routeforge.simulation.presentation
 
-import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffImpl
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.simulation.domain.RealLocationDataSource
 import com.routeforge.simulation.domain.RealLocationFailure
@@ -30,11 +30,12 @@ class RealLocationTrackerTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val scope = CoroutineScope(dispatcher)
     private val dataSource = ScriptedRealLocationDataSource()
-    private val lastKnownRealLocationHolder = LastKnownRealLocationHolder()
+    private val lastKnownRealLocation = LastKnownRealLocationHandoffImpl()
     private val tracker =
         RealLocationTracker(
             observeRealLocation = ObserveRealLocationUseCase(dataSource),
-            lastKnownRealLocationHolder = lastKnownRealLocationHolder,
+            lastKnownRealLocationWriter = lastKnownRealLocation,
+            lastKnownRealLocationReader = lastKnownRealLocation,
         )
 
     private val fix = RealLocation(latitude = 1.0, longitude = 2.0)
@@ -91,7 +92,7 @@ class RealLocationTrackerTest {
 
         dataSource.updates.tryEmit(RealLocationUpdate.Fix(fix))
 
-        assertEquals(fix, lastKnownRealLocationHolder.location.value)
+        assertEquals(fix, lastKnownRealLocation.location.value)
         assertFalse(state.value.isSearchingRealLocation)
     }
 
@@ -238,10 +239,10 @@ class RealLocationTrackerTest {
         val state = MutableStateFlow(SimulationState())
         tracker.mirrorLastKnownLocation(state, scope)
 
-        lastKnownRealLocationHolder.set(fix)
+        lastKnownRealLocation.set(fix)
         assertEquals(fix, state.value.realLocation)
 
-        lastKnownRealLocationHolder.set(RealLocation(latitude = 3.0, longitude = 4.0))
+        lastKnownRealLocation.set(RealLocation(latitude = 3.0, longitude = 4.0))
         assertEquals(RealLocation(latitude = 3.0, longitude = 4.0), state.value.realLocation)
     }
 

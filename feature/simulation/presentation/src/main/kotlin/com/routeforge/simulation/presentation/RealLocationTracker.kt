@@ -1,6 +1,7 @@
 package com.routeforge.simulation.presentation
 
-import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffReader
+import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffWriter
 import com.routeforge.simulation.domain.RealLocationFailure
 import com.routeforge.simulation.domain.RealLocationUpdate
 import com.routeforge.simulation.domain.usecase.ObserveRealLocationUseCase
@@ -17,7 +18,8 @@ private const val REAL_LOCATION_TIMEOUT_MILLIS = 30_000L
 
 internal class RealLocationTracker(
     private val observeRealLocation: ObserveRealLocationUseCase,
-    private val lastKnownRealLocationHolder: LastKnownRealLocationHolder,
+    private val lastKnownRealLocationWriter: LastKnownRealLocationHandoffWriter,
+    private val lastKnownRealLocationReader: LastKnownRealLocationHandoffReader,
 ) {
     private var realLocationObservationJob: Job? = null
     private var realLocationTimeoutJob: Job? = null
@@ -26,7 +28,7 @@ internal class RealLocationTracker(
         state: MutableStateFlow<SimulationState>,
         scope: CoroutineScope,
     ) {
-        lastKnownRealLocationHolder.location
+        lastKnownRealLocationReader.location
             .onEach { location -> state.update { it.copy(realLocation = location) } }
             .launchIn(scope)
     }
@@ -59,7 +61,7 @@ internal class RealLocationTracker(
                     realLocationTimeoutJob?.cancel()
                     when (update) {
                         is RealLocationUpdate.Fix -> {
-                            lastKnownRealLocationHolder.set(update.location)
+                            lastKnownRealLocationWriter.set(update.location)
                             state.update {
                                 it.copy(isSearchingRealLocation = false, errorType = it.errorType.clearIfRealLocationRelated())
                             }

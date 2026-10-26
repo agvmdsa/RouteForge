@@ -21,7 +21,7 @@ val simulationDataModule =
             SimulationControllerImpl(
                 mockLocationPublisher = get(),
                 mockLocationAuthorizationChecker = get(),
-                lastKnownRealLocationHolder = get(),
+                lastKnownRealLocationReader = get(),
                 foregroundServiceController =
                     AndroidForegroundServiceController(androidContext(), SimulationForegroundService::class.java),
             )

@@ -1,7 +1,7 @@
 package com.routeforge.simulation.data
 
 import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
+import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffImpl
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
@@ -44,13 +44,13 @@ class SimulationControllerImplTest {
     private val backgroundScope = CoroutineScope(backgroundJob)
     private val publisher = FakeMockLocationPublisher()
     private val authorizationChecker = FakeMockLocationAuthorizationChecker()
-    private val lastKnownRealLocationHolder = LastKnownRealLocationHolder()
+    private val lastKnownRealLocation = LastKnownRealLocationHandoffImpl()
 
     private fun createController(): SimulationControllerImpl =
         SimulationControllerImpl(
             mockLocationPublisher = publisher,
             mockLocationAuthorizationChecker = authorizationChecker,
-            lastKnownRealLocationHolder = lastKnownRealLocationHolder,
+            lastKnownRealLocationReader = lastKnownRealLocation,
             coroutineScope = backgroundScope,
         )
 
@@ -136,7 +136,7 @@ class SimulationControllerImplTest {
                 SimulationControllerImpl(
                     mockLocationPublisher = publisher,
                     mockLocationAuthorizationChecker = authorizationChecker,
-                    lastKnownRealLocationHolder = lastKnownRealLocationHolder,
+                    lastKnownRealLocationReader = lastKnownRealLocation,
                     coroutineScope = this,
                     completionAutoStopDelayMillis = 5_000L,
                 )
@@ -172,7 +172,7 @@ class SimulationControllerImplTest {
                 SimulationControllerImpl(
                     mockLocationPublisher = publisher,
                     mockLocationAuthorizationChecker = authorizationChecker,
-                    lastKnownRealLocationHolder = lastKnownRealLocationHolder,
+                    lastKnownRealLocationReader = lastKnownRealLocation,
                     coroutineScope = this,
                     completionAutoStopDelayMillis = 5_000L,
                 )
@@ -195,7 +195,7 @@ class SimulationControllerImplTest {
                 SimulationControllerImpl(
                     mockLocationPublisher = publisher,
                     mockLocationAuthorizationChecker = authorizationChecker,
-                    lastKnownRealLocationHolder = lastKnownRealLocationHolder,
+                    lastKnownRealLocationReader = lastKnownRealLocation,
                     // This session loops forever, so its tick loop must not be a child of the test itself; the background scope is
                     // cancelled when the test body finishes.
                     coroutineScope = this.backgroundScope,
@@ -362,7 +362,7 @@ class SimulationControllerImplTest {
 
     @Test
     fun `startJoystick succeeds from the last known real location when no session exists`() {
-        lastKnownRealLocationHolder.set(RealLocation(latitude = 5.0, longitude = 6.0))
+        lastKnownRealLocation.set(RealLocation(latitude = 5.0, longitude = 6.0))
         val controller = createController()
 
         val result = controller.startJoystick()
@@ -389,7 +389,7 @@ class SimulationControllerImplTest {
 
     @Test
     fun `joystick moves continuously in the direction set by updateJoystickDirection`() {
-        lastKnownRealLocationHolder.set(RealLocation(latitude = 0.0, longitude = 0.0))
+        lastKnownRealLocation.set(RealLocation(latitude = 0.0, longitude = 0.0))
         val controller = createController()
         controller.startJoystick()
         controller.setSpeed(SpeedSetting.Manual(10f))
@@ -404,7 +404,7 @@ class SimulationControllerImplTest {
 
     @Test
     fun `releasing the joystick via pause stops movement in place`() {
-        lastKnownRealLocationHolder.set(RealLocation(latitude = 0.0, longitude = 0.0))
+        lastKnownRealLocation.set(RealLocation(latitude = 0.0, longitude = 0.0))
         val controller = createController()
         controller.startJoystick()
         controller.setSpeed(SpeedSetting.Manual(10f))

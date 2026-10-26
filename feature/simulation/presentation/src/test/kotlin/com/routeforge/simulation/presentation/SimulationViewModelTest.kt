@@ -1,9 +1,9 @@
 package com.routeforge.simulation.presentation
 
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffImpl
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
-import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
@@ -86,7 +86,7 @@ class SimulationViewModelTest {
     private val lastComputedRouteHolder = LastComputedRouteHolder()
     private val realLocationDataSource = FakeRealLocationDataSource()
     private val networkConnectivityChecker = FakeNetworkConnectivityChecker()
-    private val lastKnownRealLocationHolder = LastKnownRealLocationHolder()
+    private val lastKnownRealLocation = LastKnownRealLocationHandoffImpl()
     private val pendingTeleportTarget = PendingTeleportTargetHandoffImpl()
 
     @BeforeEach
@@ -147,7 +147,8 @@ class SimulationViewModelTest {
             realLocationTracker =
                 RealLocationTracker(
                     observeRealLocation = ObserveRealLocationUseCase(realLocationDataSource),
-                    lastKnownRealLocationHolder = lastKnownRealLocationHolder,
+                    lastKnownRealLocationWriter = lastKnownRealLocation,
+                    lastKnownRealLocationReader = lastKnownRealLocation,
                 ),
             observeMockedSession = ObserveMockedSessionUseCase(controller),
             lastComputedRouteHolder = lastComputedRouteHolder,
