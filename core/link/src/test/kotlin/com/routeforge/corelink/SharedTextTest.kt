@@ -1,4 +1,4 @@
-package com.routeforge.coredomain.link
+package com.routeforge.corelink
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull

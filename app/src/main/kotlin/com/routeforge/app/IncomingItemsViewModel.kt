@@ -5,8 +5,8 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.routeforge.coredomain.link.ResolveSharedTextUseCase
 import com.routeforge.coredomain.model.IncomingRoute
+import com.routeforge.corelink.ResolveSharedTextUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -1,4 +1,4 @@
-package com.routeforge.coredomain.link
+package com.routeforge.corelink
 
 private const val MAX_CHARACTERS_READ = 10_000
 private const val MAX_SEARCH_LINES = 3

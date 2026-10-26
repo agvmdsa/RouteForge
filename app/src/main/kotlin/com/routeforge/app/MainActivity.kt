@@ -27,11 +27,11 @@ import com.routeforge.addresssearch.presentation.SearchSourceContext
 import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.handoff.PendingIncomingRouteHandoffSender
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffSender
-import com.routeforge.coredomain.link.IncomingAction
-import com.routeforge.coredomain.link.IncomingPlacement
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.TourSection
+import com.routeforge.corelink.IncomingAction
+import com.routeforge.corelink.IncomingPlacement
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.mocklocationsetup.domain.usecase.ObserveSetupStateUseCase
 import com.routeforge.mocklocationsetup.presentation.MockLocationSetupRoute

@@ -2,8 +2,8 @@ package com.routeforge.app
 
 import android.net.Uri
 import androidx.annotation.StringRes
-import com.routeforge.coredomain.link.SharedTextOutcome
 import com.routeforge.coredomain.model.IncomingRoute
+import com.routeforge.corelink.SharedTextOutcome
 
 /** Something another app asked RouteForge to open or take. */
 internal sealed interface IncomingRequest {

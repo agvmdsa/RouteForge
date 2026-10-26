@@ -1,4 +1,4 @@
-package com.routeforge.coredomain.link
+package com.routeforge.corelink
 
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result

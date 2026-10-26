@@ -1,8 +1,7 @@
-package com.routeforge.coredomain.link
+package com.routeforge.corelink
 
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.testing.FakeRedirectSource
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals

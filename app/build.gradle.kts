@@ -18,6 +18,7 @@ dependencies {
     implementation(libs.compose.material.icons.extended)
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
+    implementation(project(":core:link"))
     implementation(project(":core:design-system"))
     implementation(project(":feature:addresssearch:domain"))
     implementation(project(":feature:addresssearch:data"))
