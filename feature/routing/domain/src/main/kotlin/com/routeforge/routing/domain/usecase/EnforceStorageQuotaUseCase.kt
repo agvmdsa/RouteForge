@@ -3,7 +3,7 @@ package com.routeforge.routing.domain.usecase
 import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.coredomain.RegionDeletionResult
 import com.routeforge.coredomain.RegionUsageTracker
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffReader
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.routing.domain.StorageQuotaStore
@@ -17,7 +17,7 @@ class EnforceStorageQuotaUseCase(
     private val storageQuotaStore: StorageQuotaStore,
     private val regionCatalog: RegionCatalog,
     private val regionUsageTracker: RegionUsageTracker,
-    private val draftWaypointsHolder: DraftWaypointsHolder,
+    private val draftWaypointsReader: DraftWaypointsHandoffReader,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
 ) {
     operator fun invoke() {
@@ -47,7 +47,7 @@ class EnforceStorageQuotaUseCase(
     }
 
     private fun protectedRegionIds(): Set<String> {
-        val draftPoints = draftWaypointsHolder.points.value
+        val draftPoints = draftWaypointsReader.points.value
         val activeRoutePoints =
             lastComputedRouteHolder.route.value
                 ?.points

@@ -1,7 +1,7 @@
 package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffWriter
 import com.routeforge.routing.domain.model.RouteFileFormat
 import com.routeforge.routing.domain.usecase.ExportRouteFileUseCase
 import com.routeforge.routing.domain.usecase.ImportRouteFileUseCase
@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.update
 internal class RouteFileTransfer(
     private val importRouteFile: ImportRouteFileUseCase,
     private val exportRouteFile: ExportRouteFileUseCase,
-    private val draftWaypointsHolder: DraftWaypointsHolder,
+    private val draftWaypointsWriter: DraftWaypointsHandoffWriter,
 ) {
     internal fun importRoute(
         bytes: ByteArray,
@@ -28,7 +28,7 @@ internal class RouteFileTransfer(
                         errorType = null,
                     )
                 }
-                draftWaypointsHolder.set(result.data.points)
+                draftWaypointsWriter.set(result.data.points)
             }
             is Result.Error -> state.update { it.copy(errorType = result.error.toRouteRequestError()) }
         }

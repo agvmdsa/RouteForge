@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation.regioncatalog
 
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
@@ -57,7 +57,7 @@ private val otherRegion =
 
 class RegionCatalogViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
-    private val draftWaypointsHolder = DraftWaypointsHolder()
+    private val draftWaypoints = DraftWaypointsHandoffImpl()
     private val lastComputedRouteHolder = LastComputedRouteHolder()
     private val controller = FakeRegionDownloadController()
     private val regionUsageTracker = FakeRegionUsageTracker()
@@ -78,12 +78,12 @@ class RegionCatalogViewModelTest {
             observeRegionCatalog = ObserveRegionCatalogUseCase(catalog),
             regionDownloadController = controller,
             computeRequiredRegions = ComputeRequiredRegionsUseCase(catalog),
-            draftWaypointsHolder = draftWaypointsHolder,
+            draftWaypointsReader = draftWaypoints,
             deleteRegion = DeleteRegionUseCase(catalog, regionUsageTracker),
             computeRegionUsage =
                 ComputeRegionUsageUseCase(
                     computeRequiredRegions = ComputeRequiredRegionsUseCase(catalog),
-                    draftWaypointsHolder = draftWaypointsHolder,
+                    draftWaypointsReader = draftWaypoints,
                     lastComputedRouteHolder = lastComputedRouteHolder,
                     favoriteRoutesRepository = favoriteRoutesRepository,
                 ),
@@ -108,7 +108,7 @@ class RegionCatalogViewModelTest {
     @Test
     fun `regions touched by the current draft are surfaced first and flagged as needed`() {
         val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion, otherRegion))
-        draftWaypointsHolder.set(listOf(RoutePoint(latitude = 5.5, longitude = 5.5)))
+        draftWaypoints.set(listOf(RoutePoint(latitude = 5.5, longitude = 5.5)))
 
         val viewModel = createViewModel(catalog)
 
@@ -119,7 +119,7 @@ class RegionCatalogViewModelTest {
     @Test
     fun `starting a download delegates to the controller with the resolved region`() {
         val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion))
-        draftWaypointsHolder.set(listOf(RoutePoint(latitude = 0.5, longitude = 0.5)))
+        draftWaypoints.set(listOf(RoutePoint(latitude = 0.5, longitude = 0.5)))
         val viewModel = createViewModel(catalog)
 
         viewModel.onAction(RegionCatalogAction.OnDownloadRegion(downloadableRegion.id))
@@ -130,7 +130,7 @@ class RegionCatalogViewModelTest {
     @Test
     fun `a second start while one is already active is a no-op, via the controller's own guard`() {
         val catalog = FakeRegionCatalog(regions = listOf(downloadableRegion, otherRegion))
-        draftWaypointsHolder.set(listOf(RoutePoint(latitude = 0.5, longitude = 0.5)))
+        draftWaypoints.set(listOf(RoutePoint(latitude = 0.5, longitude = 0.5)))
         val viewModel = createViewModel(catalog)
 
         viewModel.onAction(RegionCatalogAction.OnDownloadRegion(downloadableRegion.id))
@@ -261,7 +261,7 @@ class RegionCatalogViewModelTest {
     @Test
     fun `deleting a region needed by the draft, active route, or a saved route warns but still deletes on confirm`() {
         val catalog = FakeRegionCatalog(regions = listOf(otherRegion))
-        draftWaypointsHolder.set(listOf(RoutePoint(latitude = otherRegion.minLatitude, longitude = otherRegion.minLongitude)))
+        draftWaypoints.set(listOf(RoutePoint(latitude = otherRegion.minLatitude, longitude = otherRegion.minLongitude)))
         val viewModel = createViewModel(catalog)
 
         viewModel.onAction(RegionCatalogAction.OnDeleteRegionClick(otherRegion.id))

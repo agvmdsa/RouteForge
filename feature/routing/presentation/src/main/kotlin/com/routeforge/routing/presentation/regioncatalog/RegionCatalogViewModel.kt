@@ -2,7 +2,7 @@ package com.routeforge.routing.presentation.regioncatalog
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffReader
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.routing.domain.RegionDownloadController
@@ -22,7 +22,7 @@ internal class RegionCatalogViewModel(
     private val observeRegionCatalog: ObserveRegionCatalogUseCase,
     private val regionDownloadController: RegionDownloadController,
     private val computeRequiredRegions: ComputeRequiredRegionsUseCase,
-    private val draftWaypointsHolder: DraftWaypointsHolder,
+    private val draftWaypointsReader: DraftWaypointsHandoffReader,
     private val deleteRegion: DeleteRegionUseCase,
     private val computeRegionUsage: ComputeRegionUsageUseCase,
 ) : ViewModel() {
@@ -81,7 +81,7 @@ internal class RegionCatalogViewModel(
      *  placeholders) are hidden — the list should only ever show what's relevant or what's already
      *  on the device, not every region the app happens to know about. */
     fun refresh() {
-        val required = computeRequiredRegions(draftWaypointsHolder.points.value).regions
+        val required = computeRequiredRegions(draftWaypointsReader.points.value).regions
         val neededRegionIds = required.map { it.id }.toSet()
         val relevantCatalogRegions =
             observeRegionCatalog().filter { it.id in neededRegionIds || it.status != RegionStatus.NOT_DOWNLOADED }

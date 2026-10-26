@@ -1,7 +1,7 @@
 package com.routeforge.routing.presentation.routerequest
 
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffWriter
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffReceiver
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.model.RouteDraft
@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 
 internal class RouteDraftEditor(
-    private val draftWaypointsHolder: DraftWaypointsHolder,
+    private val draftWaypointsWriter: DraftWaypointsHandoffWriter,
     private val selectedFavoriteWaypointReceiver: SelectedFavoriteWaypointHandoffReceiver,
     private val routeModePreviewer: RouteModePreviewer,
 ) {
@@ -38,7 +38,7 @@ internal class RouteDraftEditor(
                 previewRoute = if (wasPreviewingGuided) it.previewRoute else null,
             )
         }
-        draftWaypointsHolder.set(state.value.draft.points)
+        draftWaypointsWriter.set(state.value.draft.points)
         // A Guided preview that was already on screen should carry over and recompute with the
         // new point list, rather than silently dropping back to the default free-roam view —
         // the user has to explicitly turn it off (OnSwitchRouteModeClick) to lose it.

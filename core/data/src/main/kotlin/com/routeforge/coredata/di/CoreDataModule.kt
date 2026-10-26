@@ -15,6 +15,9 @@ import com.routeforge.coredomain.MockLocationAuthorizationChecker
 import com.routeforge.coredomain.NetworkConnectivityChecker
 import com.routeforge.coredomain.TourProgressRepository
 import com.routeforge.coredomain.TourReplayCoordinator
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffReader
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffWriter
 import com.routeforge.coredomain.handoff.PendingIncomingRouteHandoffImpl
 import com.routeforge.coredomain.handoff.PendingIncomingRouteHandoffReceiver
 import com.routeforge.coredomain.handoff.PendingIncomingRouteHandoffSender
@@ -27,7 +30,6 @@ import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffSender
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffReceiver
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffSender
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.holder.LastKnownRealLocationHolder
 import com.routeforge.coredomain.link.RedirectFollower
@@ -46,7 +48,9 @@ val coreDataModule =
         singleOf(::PlatformMockLocationAuthorizationChecker).bind<MockLocationAuthorizationChecker>()
         single { LastComputedRouteHolder() }
         single { LastKnownRealLocationHolder() }
-        single { DraftWaypointsHolder() }
+        single<DraftWaypointsHandoffWriter> {
+            DraftWaypointsHandoffImpl()
+        } binds arrayOf(DraftWaypointsHandoffReader::class)
         single<PendingTeleportTargetHandoffSender> {
             PendingTeleportTargetHandoffImpl()
         } binds arrayOf(PendingTeleportTargetHandoffReceiver::class)

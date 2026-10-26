@@ -1,7 +1,7 @@
 package com.routeforge.routing.domain.usecase
 
 import com.routeforge.coredomain.FavoriteRoutesRepository
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffReader
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RoutePoint
@@ -14,14 +14,14 @@ import com.routeforge.routing.domain.model.RegionUsage
  *  drives is informational only — it never blocks deletion (spec 006 FR-009). */
 class ComputeRegionUsageUseCase(
     private val computeRequiredRegions: ComputeRequiredRegionsUseCase,
-    private val draftWaypointsHolder: DraftWaypointsHolder,
+    private val draftWaypointsReader: DraftWaypointsHandoffReader,
     private val lastComputedRouteHolder: LastComputedRouteHolder,
     private val favoriteRoutesRepository: FavoriteRoutesRepository,
 ) {
     operator fun invoke(region: Region): RegionUsage {
         fun touches(points: List<RoutePoint>) = computeRequiredRegions(points).regions.any { it.id == region.id }
 
-        val neededByDraft = touches(draftWaypointsHolder.points.value)
+        val neededByDraft = touches(draftWaypointsReader.points.value)
         val neededByActiveRoute =
             lastComputedRouteHolder.route.value
                 ?.points

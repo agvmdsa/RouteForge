@@ -1,8 +1,8 @@
 package com.routeforge.routing.presentation.routerequest
 
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.testing.FakeFavoriteWaypointsRepository
@@ -29,7 +29,7 @@ class PendingWaypointConfirmerTest {
             pendingSearchWaypointReceiver = pendingSearchWaypoint,
             routeDraftEditor =
                 RouteDraftEditor(
-                    draftWaypointsHolder = DraftWaypointsHolder(),
+                    draftWaypointsWriter = DraftWaypointsHandoffImpl(),
                     selectedFavoriteWaypointReceiver = SelectedFavoriteWaypointHandoffImpl(),
                     routeModePreviewer =
                         newRouteModePreviewer(

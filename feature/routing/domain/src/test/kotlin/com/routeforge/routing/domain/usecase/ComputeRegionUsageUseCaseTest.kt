@@ -1,6 +1,6 @@
 package com.routeforge.routing.domain.usecase
 
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
@@ -32,14 +32,14 @@ private val pointOutsideRegion = RoutePoint(latitude = 5.0, longitude = 5.0)
 
 class ComputeRegionUsageUseCaseTest {
     private val catalog = FakeRegionCatalog(regions = listOf(region))
-    private val draftWaypointsHolder = DraftWaypointsHolder()
+    private val draftWaypoints = DraftWaypointsHandoffImpl()
     private val lastComputedRouteHolder = LastComputedRouteHolder()
     private val favoriteRoutesRepository = FakeFavoriteRoutesRepository()
 
     private fun createUseCase(): ComputeRegionUsageUseCase =
         ComputeRegionUsageUseCase(
             computeRequiredRegions = ComputeRequiredRegionsUseCase(catalog),
-            draftWaypointsHolder = draftWaypointsHolder,
+            draftWaypointsReader = draftWaypoints,
             lastComputedRouteHolder = lastComputedRouteHolder,
             favoriteRoutesRepository = favoriteRoutesRepository,
         )
@@ -56,7 +56,7 @@ class ComputeRegionUsageUseCaseTest {
 
     @Test
     fun `a region touched by the current draft is reported as needed by the draft`() {
-        draftWaypointsHolder.set(listOf(pointInsideRegion))
+        draftWaypoints.set(listOf(pointInsideRegion))
 
         val usage = createUseCase()(region)
 
@@ -89,7 +89,7 @@ class ComputeRegionUsageUseCaseTest {
 
     @Test
     fun `a region touched by a combination of draft, active route, and saved routes reports all of them`() {
-        draftWaypointsHolder.set(listOf(pointInsideRegion))
+        draftWaypoints.set(listOf(pointInsideRegion))
         lastComputedRouteHolder.set(Route(points = listOf(pointInsideRegion), geometry = emptyList(), distanceMeters = 0.0))
         favoriteRoutesRepository.add(name = "Morning loop", points = listOf(pointInsideRegion))
 

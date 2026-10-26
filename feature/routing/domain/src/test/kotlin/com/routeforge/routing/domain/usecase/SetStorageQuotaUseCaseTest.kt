@@ -1,6 +1,6 @@
 package com.routeforge.routing.domain.usecase
 
-import com.routeforge.coredomain.holder.DraftWaypointsHolder
+import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.testing.FakeRegionCatalog
 import com.routeforge.coredomain.testing.FakeRegionUsageTracker
@@ -22,7 +22,7 @@ class SetStorageQuotaUseCaseTest {
                     storageQuotaStore = store,
                     regionCatalog = FakeRegionCatalog(),
                     regionUsageTracker = FakeRegionUsageTracker(),
-                    draftWaypointsHolder = DraftWaypointsHolder(),
+                    draftWaypointsReader = DraftWaypointsHandoffImpl(),
                     lastComputedRouteHolder = LastComputedRouteHolder(),
                 ),
         )
