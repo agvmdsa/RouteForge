@@ -1,6 +1,6 @@
 package com.routeforge.simulation.presentation
 
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
@@ -14,11 +14,11 @@ import org.junit.jupiter.api.Test
 
 class RouteModeSwitcherTest {
     private val controller = FakeSimulationController()
-    private val lastComputedRouteHolder = LastComputedRouteHolder()
+    private val lastComputedRoute = LastComputedRouteHandoffImpl()
     private val switcher =
         RouteModeSwitcher(
             updateActiveRoute = UpdateActiveRouteUseCase(controller),
-            lastComputedRouteHolder = lastComputedRouteHolder,
+            lastComputedRouteWriter = lastComputedRoute,
         )
 
     private val guidedGeometry = listOf(LatLng(0.0, 0.0), LatLng(1.0, 1.0))
@@ -90,7 +90,7 @@ class RouteModeSwitcherTest {
 
         switcher.confirmSwitchRouteMode(state)
 
-        val swapped = lastComputedRouteHolder.route.value
+        val swapped = lastComputedRoute.route.value
         assertEquals(RoutePlaybackMode.FREE_ROAM, swapped?.mode)
         assertEquals(freeRoamGeometry, swapped?.geometry)
         assertEquals(50.0, swapped?.distanceMeters)
@@ -107,7 +107,7 @@ class RouteModeSwitcherTest {
 
         switcher.confirmSwitchRouteMode(state)
 
-        assertNull(lastComputedRouteHolder.route.value)
+        assertNull(lastComputedRoute.route.value)
         assertTrue(controller.updateActiveRouteCalls.isEmpty())
     }
 
@@ -118,7 +118,7 @@ class RouteModeSwitcherTest {
         switcher.confirmSwitchRouteMode(state)
 
         assertNull(state.value.pendingRouteModeSwitch)
-        assertNull(lastComputedRouteHolder.route.value)
+        assertNull(lastComputedRoute.route.value)
         assertTrue(controller.updateActiveRouteCalls.isEmpty())
     }
 
@@ -130,7 +130,7 @@ class RouteModeSwitcherTest {
         switcher.confirmSwitchRouteMode(state)
 
         assertNull(state.value.pendingRouteModeSwitch)
-        assertNull(lastComputedRouteHolder.route.value)
+        assertNull(lastComputedRoute.route.value)
         assertTrue(controller.updateActiveRouteCalls.isEmpty())
     }
 
@@ -140,7 +140,7 @@ class RouteModeSwitcherTest {
 
         switcher.applyEditedRoute(edited)
 
-        assertEquals(edited, lastComputedRouteHolder.route.value)
+        assertEquals(edited, lastComputedRoute.route.value)
         assertEquals(listOf(edited), controller.updateActiveRouteCalls)
     }
 }

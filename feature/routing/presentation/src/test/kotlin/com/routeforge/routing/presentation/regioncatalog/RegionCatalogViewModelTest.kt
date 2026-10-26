@@ -1,7 +1,7 @@
 package com.routeforge.routing.presentation.regioncatalog
 
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.model.RoutePoint
@@ -58,7 +58,7 @@ private val otherRegion =
 class RegionCatalogViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val draftWaypoints = DraftWaypointsHandoffImpl()
-    private val lastComputedRouteHolder = LastComputedRouteHolder()
+    private val lastComputedRoute = LastComputedRouteHandoffImpl()
     private val controller = FakeRegionDownloadController()
     private val regionUsageTracker = FakeRegionUsageTracker()
     private val favoriteRoutesRepository = FakeFavoriteRoutesRepository()
@@ -84,7 +84,7 @@ class RegionCatalogViewModelTest {
                 ComputeRegionUsageUseCase(
                     computeRequiredRegions = ComputeRequiredRegionsUseCase(catalog),
                     draftWaypointsReader = draftWaypoints,
-                    lastComputedRouteHolder = lastComputedRouteHolder,
+                    lastComputedRouteReader = lastComputedRoute,
                     favoriteRoutesRepository = favoriteRoutesRepository,
                 ),
         )

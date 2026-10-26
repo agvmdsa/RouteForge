@@ -2,11 +2,11 @@ package com.routeforge.routing.presentation.routerequest
 
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffImpl
 import com.routeforge.coredomain.handoff.PendingIncomingRouteHandoffImpl
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.PlaceSearchResult
@@ -65,7 +65,7 @@ class RouteRequestViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val routingEngine = FakeRoutingEngine(snappableLatitudes = emptySet())
     private val regionCatalog = FakeRegionCatalog()
-    private val lastComputedRouteHolder = LastComputedRouteHolder()
+    private val lastComputedRoute = LastComputedRouteHandoffImpl()
     private val jsonCodec = FakeRouteFileCodec()
     private val gpxCodec = FakeRouteFileCodec()
     private val codecs = mapOf(RouteFileFormat.JSON to jsonCodec, RouteFileFormat.GPX to gpxCodec)
@@ -97,7 +97,7 @@ class RouteRequestViewModelTest {
             RouteModePreviewer(
                 prepareRouteOptions = prepareRouteOptions,
                 computeRequiredRegions = computeRequiredRegions,
-                lastComputedRouteHolder = lastComputedRouteHolder,
+                lastComputedRouteWriter = lastComputedRoute,
                 backgroundDispatcher = dispatcher,
             )
         val routeDraftEditor =
@@ -113,7 +113,7 @@ class RouteRequestViewModelTest {
                 RouteComputer(
                     prepareRouteOptions = prepareRouteOptions,
                     computeRequiredRegions = computeRequiredRegions,
-                    lastComputedRouteHolder = lastComputedRouteHolder,
+                    lastComputedRouteWriter = lastComputedRoute,
                     backgroundDispatcher = dispatcher,
                 ),
             routeDraftEditor = routeDraftEditor,
@@ -716,7 +716,7 @@ class RouteRequestViewModelTest {
             viewModel.onAction(RouteRequestAction.OnUseRoute)
 
             assertEquals(RouteRequestEvent.GoToSimulate, eventDeferred.await())
-            assertNotNull(lastComputedRouteHolder.route.value)
+            assertNotNull(lastComputedRoute.route.value)
         }
 
     @Test

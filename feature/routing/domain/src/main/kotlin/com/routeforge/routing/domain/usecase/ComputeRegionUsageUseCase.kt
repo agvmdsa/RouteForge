@@ -2,7 +2,7 @@ package com.routeforge.routing.domain.usecase
 
 import com.routeforge.coredomain.FavoriteRoutesRepository
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffReader
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffReader
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
@@ -15,7 +15,7 @@ import com.routeforge.routing.domain.model.RegionUsage
 class ComputeRegionUsageUseCase(
     private val computeRequiredRegions: ComputeRequiredRegionsUseCase,
     private val draftWaypointsReader: DraftWaypointsHandoffReader,
-    private val lastComputedRouteHolder: LastComputedRouteHolder,
+    private val lastComputedRouteReader: LastComputedRouteHandoffReader,
     private val favoriteRoutesRepository: FavoriteRoutesRepository,
 ) {
     operator fun invoke(region: Region): RegionUsage {
@@ -23,7 +23,7 @@ class ComputeRegionUsageUseCase(
 
         val neededByDraft = touches(draftWaypointsReader.points.value)
         val neededByActiveRoute =
-            lastComputedRouteHolder.route.value
+            lastComputedRouteReader.route.value
                 ?.points
                 ?.let(::touches) ?: false
         val neededBySavedRouteNames =

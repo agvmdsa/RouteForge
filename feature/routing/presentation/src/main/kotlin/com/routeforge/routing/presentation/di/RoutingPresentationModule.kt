@@ -58,14 +58,14 @@ val routingPresentationModule =
             RouteModePreviewer(
                 prepareRouteOptions = get(),
                 computeRequiredRegions = get(),
-                lastComputedRouteHolder = get(),
+                lastComputedRouteWriter = get(),
             )
         }
         factory {
             RouteComputer(
                 prepareRouteOptions = get(),
                 computeRequiredRegions = get(),
-                lastComputedRouteHolder = get(),
+                lastComputedRouteWriter = get(),
             )
         }
         factory {
@@ -116,7 +116,7 @@ val routingPresentationModule =
         viewModel {
             SavedRoutesViewModel(
                 favoriteRoutesRepository = get(),
-                lastComputedRouteHolder = get(),
+                lastComputedRouteWriter = get(),
                 computeRequiredRegions = get(),
                 prepareRouteOptions = get(),
                 exportRouteFile = get(),

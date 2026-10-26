@@ -1,7 +1,7 @@
 package com.routeforge.simulation.presentation
 
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
@@ -27,14 +27,14 @@ class PendingTeleportConfirmerTest {
     private val controller = FakeSimulationController()
     private val authorizationChecker = FakeMockLocationAuthorizationChecker()
     private val networkConnectivityChecker = FakeNetworkConnectivityChecker()
-    private val lastComputedRouteHolder = LastComputedRouteHolder()
+    private val lastComputedRoute = LastComputedRouteHandoffImpl()
     private val pendingTeleportTarget = PendingTeleportTargetHandoffImpl()
     private val confirmer =
         PendingTeleportConfirmer(
             teleport = TeleportUseCase(controller),
             isNetworkConnected = IsNetworkConnectedUseCase(networkConnectivityChecker),
             pendingTeleportTargetReceiver = pendingTeleportTarget,
-            lastComputedRouteHolder = lastComputedRouteHolder,
+            lastComputedRouteClearer = lastComputedRoute,
             mockLocationAuthorizationGuard =
                 MockLocationAuthorizationGuard(authorizationChecker, ObserveAuthorizationLostUseCase(controller)),
         )
@@ -159,7 +159,7 @@ class PendingTeleportConfirmerTest {
 
     @Test
     fun `confirming a favorite teleport cancels the loaded route and teleports`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val state =
             MutableStateFlow(
                 SimulationState(loadedRoute = sampleRoute, pendingFavoriteTeleportTarget = RoutePoint(latitude = 5.0, longitude = 6.0)),
@@ -167,19 +167,19 @@ class PendingTeleportConfirmerTest {
 
         confirmer.confirmFavoriteTeleportCancelRoute(state)
 
-        assertNull(lastComputedRouteHolder.route.value)
+        assertNull(lastComputedRoute.route.value)
         assertEquals(listOf(FakeSimulationController.TeleportCall(5.0, 6.0)), controller.teleportCalls)
         assertNull(state.value.pendingFavoriteTeleportTarget)
     }
 
     @Test
     fun `confirming a favorite teleport when none is pending changes nothing`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val state = MutableStateFlow(SimulationState(loadedRoute = sampleRoute))
 
         confirmer.confirmFavoriteTeleportCancelRoute(state)
 
-        assertNotNull(lastComputedRouteHolder.route.value)
+        assertNotNull(lastComputedRoute.route.value)
         assertTrue(controller.teleportCalls.isEmpty())
     }
 }

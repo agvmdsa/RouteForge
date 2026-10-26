@@ -2,7 +2,7 @@ package com.routeforge.routing.presentation.settings
 
 import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.model.MapStyle
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
@@ -54,7 +54,7 @@ class SettingsViewModelTest {
                             regionCatalog = regionCatalog,
                             regionUsageTracker = FakeRegionUsageTracker(),
                             draftWaypointsReader = DraftWaypointsHandoffImpl(),
-                            lastComputedRouteHolder = LastComputedRouteHolder(),
+                            lastComputedRouteReader = LastComputedRouteHandoffImpl(),
                         ),
                 ),
             getStorageUsageSummary = GetStorageUsageSummaryUseCase(regionCatalog),

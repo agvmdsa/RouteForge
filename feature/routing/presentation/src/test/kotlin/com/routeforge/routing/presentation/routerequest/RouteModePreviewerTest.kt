@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation.routerequest
 
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
@@ -30,7 +30,7 @@ class RouteModePreviewerTest {
     private val scope = CoroutineScope(dispatcher)
     private val routingEngine = FakeRoutingEngine(snappableLatitudes = emptySet())
     private val regionCatalog = FakeRegionCatalog()
-    private val lastComputedRouteHolder = LastComputedRouteHolder()
+    private val lastComputedRoute = LastComputedRouteHandoffImpl()
     private val previewer =
         RouteModePreviewer(
             prepareRouteOptions =
@@ -39,7 +39,7 @@ class RouteModePreviewerTest {
                     freeRoamRouteBuilder = FreeRoamRouteBuilder(),
                 ),
             computeRequiredRegions = ComputeRequiredRegionsUseCase(regionCatalog),
-            lastComputedRouteHolder = lastComputedRouteHolder,
+            lastComputedRouteWriter = lastComputedRoute,
             backgroundDispatcher = dispatcher,
         )
 
@@ -93,7 +93,7 @@ class RouteModePreviewerTest {
         assertEquals(RoutePlaybackMode.FREE_ROAM, state.value.chosenMode)
         assertEquals(alternate, state.value.route?.geometry)
         assertEquals(50.0, state.value.route?.distanceMeters)
-        assertEquals(state.value.route, lastComputedRouteHolder.route.value)
+        assertEquals(state.value.route, lastComputedRoute.route.value)
     }
 
     @Test
@@ -118,7 +118,7 @@ class RouteModePreviewerTest {
         assertEquals(RoutePlaybackMode.GUIDED, state.value.route?.mode)
         assertEquals(RoutePlaybackMode.GUIDED, state.value.chosenMode)
         assertFalse(state.value.isComputingPreview)
-        assertEquals(state.value.route, lastComputedRouteHolder.route.value)
+        assertEquals(state.value.route, lastComputedRoute.route.value)
     }
 
     @Test

@@ -6,7 +6,7 @@ import com.routeforge.coredomain.RegionDeletionResult
 import com.routeforge.coredomain.RegionUsageTracker
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
@@ -98,7 +98,7 @@ class RegionDownloadControllerImplTest {
                             regionCatalog = catalog,
                             regionUsageTracker = regionUsageTracker,
                             draftWaypointsReader = DraftWaypointsHandoffImpl(),
-                            lastComputedRouteHolder = LastComputedRouteHolder(),
+                            lastComputedRouteReader = LastComputedRouteHandoffImpl(),
                         ),
                 ),
             regionCatalog = catalog,

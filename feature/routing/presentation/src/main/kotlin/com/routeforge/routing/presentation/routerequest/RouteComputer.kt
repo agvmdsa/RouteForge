@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation.routerequest
 
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffWriter
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RouteOptions
 import com.routeforge.coredomain.model.RoutePlaybackMode
@@ -19,7 +19,7 @@ import kotlinx.coroutines.withContext
 internal class RouteComputer(
     private val prepareRouteOptions: PrepareRouteOptionsUseCase,
     private val computeRequiredRegions: ComputeRequiredRegionsUseCase,
-    private val lastComputedRouteHolder: LastComputedRouteHolder,
+    private val lastComputedRouteWriter: LastComputedRouteHandoffWriter,
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
     /** FR + region-awareness: before computing, checks whether the map data Guided mode needs is
@@ -91,6 +91,6 @@ internal class RouteComputer(
                     route.copy(alternateGeometry = options.guided?.geometry, alternateDistanceMeters = options.guided?.distanceMeters)
             }
         state.update { it.copy(isComputing = false, chosenMode = mode, route = withAlternate) }
-        lastComputedRouteHolder.set(withAlternate)
+        lastComputedRouteWriter.set(withAlternate)
     }
 }

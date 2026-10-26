@@ -4,7 +4,7 @@ import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.coredomain.RegionDeletionResult
 import com.routeforge.coredomain.RegionUsageTracker
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffReader
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffReader
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.routing.domain.StorageQuotaStore
 
@@ -18,7 +18,7 @@ class EnforceStorageQuotaUseCase(
     private val regionCatalog: RegionCatalog,
     private val regionUsageTracker: RegionUsageTracker,
     private val draftWaypointsReader: DraftWaypointsHandoffReader,
-    private val lastComputedRouteHolder: LastComputedRouteHolder,
+    private val lastComputedRouteReader: LastComputedRouteHandoffReader,
 ) {
     operator fun invoke() {
         val quotaBytes = storageQuotaStore.observeMaxBytes().value ?: return
@@ -49,7 +49,7 @@ class EnforceStorageQuotaUseCase(
     private fun protectedRegionIds(): Set<String> {
         val draftPoints = draftWaypointsReader.points.value
         val activeRoutePoints =
-            lastComputedRouteHolder.route.value
+            lastComputedRouteReader.route.value
                 ?.points
                 .orEmpty()
         return (draftPoints + activeRoutePoints)

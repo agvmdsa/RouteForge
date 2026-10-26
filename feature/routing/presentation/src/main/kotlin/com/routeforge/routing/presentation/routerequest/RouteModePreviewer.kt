@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation.routerequest
 
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffWriter
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
@@ -18,7 +18,7 @@ import kotlinx.coroutines.withContext
 internal class RouteModePreviewer(
     private val prepareRouteOptions: PrepareRouteOptionsUseCase,
     private val computeRequiredRegions: ComputeRequiredRegionsUseCase,
-    private val lastComputedRouteHolder: LastComputedRouteHolder,
+    private val lastComputedRouteWriter: LastComputedRouteHandoffWriter,
     private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) {
     internal fun refreshGuidedPreview(
@@ -131,6 +131,6 @@ internal class RouteModePreviewer(
     ) {
         val swapped = route.swapToMode(targetMode, alternateGeometry, alternateDistanceMeters)
         state.update { it.copy(route = swapped, chosenMode = targetMode) }
-        lastComputedRouteHolder.set(swapped)
+        lastComputedRouteWriter.set(swapped)
     }
 }

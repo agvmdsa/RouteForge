@@ -18,6 +18,10 @@ import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffReader
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffWriter
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffClearer
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffReader
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffWriter
 import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffImpl
 import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffReader
 import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffWriter
@@ -33,7 +37,6 @@ import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffSender
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffReceiver
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffSender
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.link.RedirectFollower
 import com.routeforge.coredomain.link.RedirectSource
 import com.routeforge.coredomain.link.ResolveSharedTextUseCase
@@ -48,7 +51,9 @@ val coreDataModule =
     module {
         single { HttpClientFactory.create() }
         singleOf(::PlatformMockLocationAuthorizationChecker).bind<MockLocationAuthorizationChecker>()
-        single { LastComputedRouteHolder() }
+        single<LastComputedRouteHandoffWriter> {
+            LastComputedRouteHandoffImpl()
+        } binds arrayOf(LastComputedRouteHandoffClearer::class, LastComputedRouteHandoffReader::class)
         single<LastKnownRealLocationHandoffWriter> {
             LastKnownRealLocationHandoffImpl()
         } binds arrayOf(LastKnownRealLocationHandoffReader::class)

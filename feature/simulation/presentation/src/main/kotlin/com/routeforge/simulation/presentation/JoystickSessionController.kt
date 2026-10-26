@@ -1,7 +1,7 @@
 package com.routeforge.simulation.presentation
 
 import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffClearer
 import com.routeforge.simulation.domain.model.JoystickInterruptDecision
 import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.domain.model.SimulationSession
@@ -25,7 +25,7 @@ internal class JoystickSessionController(
     private val resumeSimulation: ResumeSimulationUseCase,
     private val stopSimulation: StopSimulationUseCase,
     private val setSpeed: SetSpeedUseCase,
-    private val lastComputedRouteHolder: LastComputedRouteHolder,
+    private val lastComputedRouteClearer: LastComputedRouteHandoffClearer,
 ) {
     /**
      * Tracks locally (synchronously) whether the current joystick drag has already started a
@@ -109,7 +109,7 @@ internal class JoystickSessionController(
     }
 
     internal fun confirmJoystickInterrupt(state: MutableStateFlow<SimulationState>) {
-        lastComputedRouteHolder.clear()
+        lastComputedRouteClearer.clear()
         stopSimulation()
         joystickSessionStarted = false
         state.update { it.copy(isJoystickInterruptPending = false, isJoystickVisible = true) }

@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation.routerequest
 
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.testing.FakeRegionCatalog
 import com.routeforge.coredomain.testing.FakeRegionUsageTracker
 import com.routeforge.coredomain.testing.FakeRoutingEngine
@@ -22,6 +22,6 @@ internal fun newRouteModePreviewer(
             freeRoamRouteBuilder = FreeRoamRouteBuilder(),
         ),
     computeRequiredRegions = ComputeRequiredRegionsUseCase(regionCatalog),
-    lastComputedRouteHolder = LastComputedRouteHolder(),
+    lastComputedRouteWriter = LastComputedRouteHandoffImpl(),
     backgroundDispatcher = dispatcher,
 )

@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation.routerequest
 
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
@@ -30,7 +30,7 @@ class RouteComputerTest {
     private val scope = CoroutineScope(dispatcher)
     private val routingEngine = FakeRoutingEngine(snappableLatitudes = emptySet())
     private val regionCatalog = FakeRegionCatalog()
-    private val lastComputedRouteHolder = LastComputedRouteHolder()
+    private val lastComputedRoute = LastComputedRouteHandoffImpl()
     private val computer =
         RouteComputer(
             prepareRouteOptions =
@@ -39,7 +39,7 @@ class RouteComputerTest {
                     freeRoamRouteBuilder = FreeRoamRouteBuilder(),
                 ),
             computeRequiredRegions = ComputeRequiredRegionsUseCase(regionCatalog),
-            lastComputedRouteHolder = lastComputedRouteHolder,
+            lastComputedRouteWriter = lastComputedRoute,
             backgroundDispatcher = dispatcher,
         )
 
@@ -90,7 +90,7 @@ class RouteComputerTest {
         assertNotNull(state.value.missingRegionsWarning)
         assertNull(state.value.route)
         assertFalse(state.value.isComputing)
-        assertNull(lastComputedRouteHolder.route.value)
+        assertNull(lastComputedRoute.route.value)
     }
 
     @Test
@@ -103,7 +103,7 @@ class RouteComputerTest {
         assertEquals(RoutePlaybackMode.FREE_ROAM, state.value.route?.mode)
         assertNull(state.value.route?.alternateGeometry)
         assertNull(state.value.errorType)
-        assertEquals(state.value.route, lastComputedRouteHolder.route.value)
+        assertEquals(state.value.route, lastComputedRoute.route.value)
     }
 
     @Test

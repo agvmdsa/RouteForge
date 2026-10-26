@@ -2,7 +2,7 @@ package com.routeforge.simulation.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffReader
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.simulation.domain.usecase.ObserveMockedSessionUseCase
@@ -24,7 +24,7 @@ internal class SimulationViewModel(
     private val playbackControls: PlaybackControls,
     private val realLocationTracker: RealLocationTracker,
     observeMockedSession: ObserveMockedSessionUseCase,
-    private val lastComputedRouteHolder: LastComputedRouteHolder,
+    private val lastComputedRouteReader: LastComputedRouteHandoffReader,
     observeMapStyle: ObserveMapStyleUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SimulationState())
@@ -54,7 +54,7 @@ internal class SimulationViewModel(
             .onEach { mapStyle -> _state.update { it.copy(mapStyle = mapStyle) } }
             .launchIn(viewModelScope)
 
-        lastComputedRouteHolder.route
+        lastComputedRouteReader.route
             .onEach { route -> _state.update { it.copy(loadedRoute = route) } }
             .launchIn(viewModelScope)
 

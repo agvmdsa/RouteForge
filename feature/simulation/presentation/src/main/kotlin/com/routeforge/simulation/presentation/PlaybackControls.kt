@@ -1,6 +1,6 @@
 package com.routeforge.simulation.presentation
 
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffClearer
 import com.routeforge.simulation.domain.model.SpeedSetting
 import com.routeforge.simulation.domain.usecase.PauseSimulationUseCase
 import com.routeforge.simulation.domain.usecase.ResumeSimulationUseCase
@@ -14,7 +14,7 @@ internal class PlaybackControls(
     private val resumeSimulation: ResumeSimulationUseCase,
     private val stopSimulation: StopSimulationUseCase,
     private val setSpeed: SetSpeedUseCase,
-    private val lastComputedRouteHolder: LastComputedRouteHolder,
+    private val lastComputedRouteClearer: LastComputedRouteHandoffClearer,
 ) {
     internal fun pause() = pauseSimulation()
 
@@ -23,7 +23,7 @@ internal class PlaybackControls(
     internal fun stop(state: MutableStateFlow<SimulationState>) {
         state.update { it.copy(isPendingCancelRoute = false) }
         stopSimulation()
-        lastComputedRouteHolder.clear()
+        lastComputedRouteClearer.clear()
     }
 
     internal fun confirmCancelMock(state: MutableStateFlow<SimulationState>) {

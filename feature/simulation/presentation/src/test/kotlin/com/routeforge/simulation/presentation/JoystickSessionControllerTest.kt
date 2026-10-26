@@ -1,7 +1,7 @@
 package com.routeforge.simulation.presentation
 
 import com.routeforge.coredomain.Result
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.simulation.domain.JoystickStartFailure
@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test
 
 class JoystickSessionControllerTest {
     private val controller = FakeSimulationController()
-    private val lastComputedRouteHolder = LastComputedRouteHolder()
+    private val lastComputedRoute = LastComputedRouteHandoffImpl()
     private val joystickSessionController =
         JoystickSessionController(
             requestJoystickInterrupt = RequestJoystickInterruptUseCase(controller),
@@ -36,7 +36,7 @@ class JoystickSessionControllerTest {
             resumeSimulation = ResumeSimulationUseCase(controller),
             stopSimulation = StopSimulationUseCase(controller),
             setSpeed = SetSpeedUseCase(controller),
-            lastComputedRouteHolder = lastComputedRouteHolder,
+            lastComputedRouteClearer = lastComputedRoute,
         )
 
     private val sampleRoute =
@@ -254,12 +254,12 @@ class JoystickSessionControllerTest {
 
     @Test
     fun `confirming the interrupt clears the route, stops the session and reveals the joystick`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val state = MutableStateFlow(SimulationState(loadedRoute = sampleRoute, isJoystickInterruptPending = true))
 
         joystickSessionController.confirmJoystickInterrupt(state)
 
-        assertNull(lastComputedRouteHolder.route.value)
+        assertNull(lastComputedRoute.route.value)
         assertEquals(1, controller.stopCallCount)
         assertFalse(state.value.isJoystickInterruptPending)
         assertTrue(state.value.isJoystickVisible)
