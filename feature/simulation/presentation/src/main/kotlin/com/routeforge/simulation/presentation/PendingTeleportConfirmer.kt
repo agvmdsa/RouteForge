@@ -1,7 +1,7 @@
 package com.routeforge.simulation.presentation
 
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffClearer
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffReceiver
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.simulation.domain.usecase.IsNetworkConnectedUseCase
 import com.routeforge.simulation.domain.usecase.TeleportUseCase
 import kotlinx.coroutines.CoroutineScope
@@ -14,7 +14,7 @@ internal class PendingTeleportConfirmer(
     private val teleport: TeleportUseCase,
     private val isNetworkConnected: IsNetworkConnectedUseCase,
     private val pendingTeleportTargetReceiver: PendingTeleportTargetHandoffReceiver,
-    private val lastComputedRouteHolder: LastComputedRouteHolder,
+    private val lastComputedRouteClearer: LastComputedRouteHandoffClearer,
     private val mockLocationAuthorizationGuard: MockLocationAuthorizationGuard,
 ) {
     internal fun registerMapTap(
@@ -64,7 +64,7 @@ internal class PendingTeleportConfirmer(
     internal fun confirmFavoriteTeleportCancelRoute(state: MutableStateFlow<SimulationState>) {
         val target = state.value.pendingFavoriteTeleportTarget ?: return
         state.update { it.copy(pendingFavoriteTeleportTarget = null) }
-        lastComputedRouteHolder.clear()
+        lastComputedRouteClearer.clear()
         teleportTo(target.latitude, target.longitude, state)
     }
 

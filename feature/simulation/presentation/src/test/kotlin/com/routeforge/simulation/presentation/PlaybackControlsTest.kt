@@ -1,6 +1,6 @@
 package com.routeforge.simulation.presentation
 
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
 import com.routeforge.simulation.domain.model.SimulationMode
@@ -21,14 +21,14 @@ import org.junit.jupiter.api.Test
 
 class PlaybackControlsTest {
     private val controller = FakeSimulationController()
-    private val lastComputedRouteHolder = LastComputedRouteHolder()
+    private val lastComputedRoute = LastComputedRouteHandoffImpl()
     private val playbackControls =
         PlaybackControls(
             pauseSimulation = PauseSimulationUseCase(controller),
             resumeSimulation = ResumeSimulationUseCase(controller),
             stopSimulation = StopSimulationUseCase(controller),
             setSpeed = SetSpeedUseCase(controller),
-            lastComputedRouteHolder = lastComputedRouteHolder,
+            lastComputedRouteClearer = lastComputedRoute,
         )
 
     private val sampleRoute =
@@ -66,12 +66,12 @@ class PlaybackControlsTest {
 
     @Test
     fun `stopping the route clears the route, stops the session and closes the cancel dialog`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val state = MutableStateFlow(SimulationState(loadedRoute = sampleRoute, isPendingCancelRoute = true))
 
         playbackControls.stop(state)
 
-        assertNull(lastComputedRouteHolder.route.value)
+        assertNull(lastComputedRoute.route.value)
         assertEquals(1, controller.stopCallCount)
         assertFalse(state.value.isPendingCancelRoute)
     }
@@ -88,12 +88,12 @@ class PlaybackControlsTest {
 
     @Test
     fun `confirming cancel-mock keeps the loaded route`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val state = MutableStateFlow(SimulationState(loadedRoute = sampleRoute, isPendingCancelMock = true))
 
         playbackControls.confirmCancelMock(state)
 
-        assertEquals(sampleRoute, lastComputedRouteHolder.route.value)
+        assertEquals(sampleRoute, lastComputedRoute.route.value)
     }
 
     @Test

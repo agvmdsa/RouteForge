@@ -1,7 +1,7 @@
 package com.routeforge.routing.domain.usecase
 
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.model.Route
@@ -34,7 +34,7 @@ class EnforceStorageQuotaUseCaseTest {
     private val storageQuotaStore = FakeStorageQuotaStore()
     private val regionUsageTracker = FakeRegionUsageTracker()
     private val draftWaypoints = DraftWaypointsHandoffImpl()
-    private val lastComputedRouteHolder = LastComputedRouteHolder()
+    private val lastComputedRoute = LastComputedRouteHandoffImpl()
 
     private fun createUseCase(catalog: FakeRegionCatalog) =
         EnforceStorageQuotaUseCase(
@@ -42,7 +42,7 @@ class EnforceStorageQuotaUseCaseTest {
             regionCatalog = catalog,
             regionUsageTracker = regionUsageTracker,
             draftWaypointsReader = draftWaypoints,
-            lastComputedRouteHolder = lastComputedRouteHolder,
+            lastComputedRouteReader = lastComputedRoute,
         )
 
     @Test
@@ -117,7 +117,7 @@ class EnforceStorageQuotaUseCaseTest {
             )
         regionUsageTracker.recordUsed(setOf("a"), atMillis = 1L)
         regionUsageTracker.recordUsed(setOf("b"), atMillis = 2L)
-        lastComputedRouteHolder.set(Route(points = listOf(pointIn(regionA)), geometry = emptyList(), distanceMeters = 0.0))
+        lastComputedRoute.set(Route(points = listOf(pointIn(regionA)), geometry = emptyList(), distanceMeters = 0.0))
         storageQuotaStore.setMaxBytes(1_000L)
 
         createUseCase(catalog)()

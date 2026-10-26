@@ -1,9 +1,9 @@
 package com.routeforge.simulation.presentation
 
 import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffImpl
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
@@ -83,7 +83,7 @@ class SimulationViewModelTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val controller = FakeSimulationController()
     private val authorizationChecker = FakeMockLocationAuthorizationChecker()
-    private val lastComputedRouteHolder = LastComputedRouteHolder()
+    private val lastComputedRoute = LastComputedRouteHandoffImpl()
     private val realLocationDataSource = FakeRealLocationDataSource()
     private val networkConnectivityChecker = FakeNetworkConnectivityChecker()
     private val lastKnownRealLocation = LastKnownRealLocationHandoffImpl()
@@ -111,7 +111,7 @@ class SimulationViewModelTest {
                     teleport = TeleportUseCase(controller),
                     isNetworkConnected = IsNetworkConnectedUseCase(networkConnectivityChecker),
                     pendingTeleportTargetReceiver = pendingTeleportTarget,
-                    lastComputedRouteHolder = lastComputedRouteHolder,
+                    lastComputedRouteClearer = lastComputedRoute,
                     mockLocationAuthorizationGuard = mockLocationAuthorizationGuard,
                 ),
             mockLocationAuthorizationGuard = mockLocationAuthorizationGuard,
@@ -129,12 +129,12 @@ class SimulationViewModelTest {
                     resumeSimulation = ResumeSimulationUseCase(controller),
                     stopSimulation = StopSimulationUseCase(controller),
                     setSpeed = SetSpeedUseCase(controller),
-                    lastComputedRouteHolder = lastComputedRouteHolder,
+                    lastComputedRouteClearer = lastComputedRoute,
                 ),
             routeModeSwitcher =
                 RouteModeSwitcher(
                     updateActiveRoute = UpdateActiveRouteUseCase(controller),
-                    lastComputedRouteHolder = lastComputedRouteHolder,
+                    lastComputedRouteWriter = lastComputedRoute,
                 ),
             playbackControls =
                 PlaybackControls(
@@ -142,7 +142,7 @@ class SimulationViewModelTest {
                     resumeSimulation = ResumeSimulationUseCase(controller),
                     stopSimulation = StopSimulationUseCase(controller),
                     setSpeed = SetSpeedUseCase(controller),
-                    lastComputedRouteHolder = lastComputedRouteHolder,
+                    lastComputedRouteClearer = lastComputedRoute,
                 ),
             realLocationTracker =
                 RealLocationTracker(
@@ -151,7 +151,7 @@ class SimulationViewModelTest {
                     lastKnownRealLocationReader = lastKnownRealLocation,
                 ),
             observeMockedSession = ObserveMockedSessionUseCase(controller),
-            lastComputedRouteHolder = lastComputedRouteHolder,
+            lastComputedRouteReader = lastComputedRoute,
             observeMapStyle = ObserveMapStyleUseCase(FakeMapStyleStore()),
         )
     }
@@ -234,7 +234,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `a favorite teleport while a route is loaded asks for confirmation instead of teleporting immediately`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
 
         pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
@@ -247,7 +247,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `confirming a favorite teleport cancels the loaded route and teleports`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
         pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
 
@@ -262,7 +262,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `dismissing a favorite teleport confirmation keeps the route loaded and teleports nowhere`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
         pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
 
@@ -277,7 +277,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `clicking switch mode with no alternate available does nothing`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
 
         viewModel.onAction(SimulationAction.OnSwitchRouteModeClick)
@@ -287,7 +287,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `clicking switch mode on a guided route with an alternate proposes switching to free-roam`() {
-        lastComputedRouteHolder.set(routeWithAlternate)
+        lastComputedRoute.set(routeWithAlternate)
         val viewModel = createViewModel()
 
         viewModel.onAction(SimulationAction.OnSwitchRouteModeClick)
@@ -297,7 +297,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `clicking switch mode on a free-roam route with an alternate proposes switching to guided`() {
-        lastComputedRouteHolder.set(routeWithAlternate.copy(mode = RoutePlaybackMode.FREE_ROAM))
+        lastComputedRoute.set(routeWithAlternate.copy(mode = RoutePlaybackMode.FREE_ROAM))
         val viewModel = createViewModel()
 
         viewModel.onAction(SimulationAction.OnSwitchRouteModeClick)
@@ -307,7 +307,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `confirming the switch swaps geometry and distance reciprocally and updates the loaded route`() {
-        lastComputedRouteHolder.set(routeWithAlternate)
+        lastComputedRoute.set(routeWithAlternate)
         val viewModel = createViewModel()
         viewModel.onAction(SimulationAction.OnSwitchRouteModeClick)
 
@@ -324,7 +324,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `confirming the switch while a route session is active also updates the controller's live session`() {
-        lastComputedRouteHolder.set(routeWithAlternate)
+        lastComputedRoute.set(routeWithAlternate)
         val viewModel = createViewModel()
         controller.emit(stationarySession().copy(mode = SimulationMode.ROUTE, route = routeWithAlternate))
         viewModel.onAction(SimulationAction.OnSwitchRouteModeClick)
@@ -337,7 +337,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `dismissing the switch leaves the loaded route unchanged`() {
-        lastComputedRouteHolder.set(routeWithAlternate)
+        lastComputedRoute.set(routeWithAlternate)
         val viewModel = createViewModel()
         viewModel.onAction(SimulationAction.OnSwitchRouteModeClick)
 
@@ -350,7 +350,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `tapping play with nothing running opens the start route dialog without starting anything`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
 
         viewModel.onAction(SimulationAction.OnStartRouteSimulation)
@@ -361,7 +361,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `dismissing the start route dialog closes it without starting anything`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
         viewModel.onAction(SimulationAction.OnStartRouteSimulation)
 
@@ -374,7 +374,7 @@ class SimulationViewModelTest {
     @Test
     fun `confirming the start route dialog while unauthorized reports a distinct error, closes it, and never calls the controller`() {
         authorizationChecker.authorized = false
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
         viewModel.onAction(SimulationAction.OnStartRouteSimulation)
 
@@ -424,7 +424,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `confirming the start route dialog with a loaded route and valid speed calls the controller`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
         viewModel.onAction(SimulationAction.OnPlaybackSpeedChange(18f))
         viewModel.onAction(SimulationAction.OnStartRouteSimulation)
@@ -486,7 +486,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `clicking cancel route sets a pending confirmation without clearing the route`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
 
         viewModel.onAction(SimulationAction.OnCancelRouteClick)
@@ -498,7 +498,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `confirming cancel route stops the controller, clears the route, and closes the confirmation`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
         viewModel.onAction(SimulationAction.OnCancelRouteClick)
 
@@ -511,7 +511,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `dismissing cancel route keeps the route and clears the pending confirmation`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
         viewModel.onAction(SimulationAction.OnCancelRouteClick)
 
@@ -695,7 +695,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `starting a route with Times and an invalid count reports an error, never calls the controller, and keeps the dialog open`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
         viewModel.onAction(SimulationAction.OnStartRouteSimulation)
         viewModel.onAction(SimulationAction.OnExecutionModeSelected(ExecutionModeSelection.TIMES))
@@ -710,7 +710,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `starting a route with a valid Times count passes it through to the controller`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
         viewModel.onAction(SimulationAction.OnStartRouteSimulation)
         viewModel.onAction(SimulationAction.OnExecutionModeSelected(ExecutionModeSelection.TIMES))
@@ -723,7 +723,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `starting a route with PingPong passes it through to the controller`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
         viewModel.onAction(SimulationAction.OnStartRouteSimulation)
         viewModel.onAction(SimulationAction.OnExecutionModeSelected(ExecutionModeSelection.PING_PONG))
@@ -748,7 +748,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `toggling the joystick on while a route is only loaded, not yet playing, asks for confirmation`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
 
         viewModel.onAction(SimulationAction.OnToggleJoystick)
@@ -770,7 +770,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `dismissing the interrupt leaves the loaded route and session untouched`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
         viewModel.onAction(SimulationAction.OnToggleJoystick)
 
@@ -784,7 +784,7 @@ class SimulationViewModelTest {
 
     @Test
     fun `confirming the interrupt clears the loaded route, stops any session, and reveals the joystick`() {
-        lastComputedRouteHolder.set(sampleRoute)
+        lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
         controller.emit(stationarySession().copy(mode = SimulationMode.ROUTE, route = sampleRoute))
         viewModel.onAction(SimulationAction.OnToggleJoystick)
@@ -911,7 +911,7 @@ class SimulationViewModelTest {
 
         viewModel.applyEditedRoute(edited)
 
-        assertEquals(edited, lastComputedRouteHolder.route.value)
+        assertEquals(edited, lastComputedRoute.route.value)
         assertEquals(listOf(edited), controller.updateActiveRouteCalls)
     }
 

@@ -3,7 +3,7 @@ package com.routeforge.routing.domain.usecase
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.testing.FakeRegionCatalog
@@ -47,7 +47,7 @@ class DownloadRegionUseCaseTest {
                     regionCatalog = catalog,
                     regionUsageTracker = regionUsageTracker,
                     draftWaypointsReader = DraftWaypointsHandoffImpl(),
-                    lastComputedRouteHolder = LastComputedRouteHolder(),
+                    lastComputedRouteReader = LastComputedRouteHandoffImpl(),
                 ),
         )
 

@@ -1,6 +1,6 @@
 package com.routeforge.routing.presentation.savedroutes
 
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.model.FavoriteRoute
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Region
@@ -40,7 +40,7 @@ class SavedRoutesViewModelTest {
     private val routingEngine = FakeRoutingEngine(snappableLatitudes = emptySet())
     private val regionCatalog = FakeRegionCatalog()
     private val favoriteRoutesRepository = FakeFavoriteRoutesRepository(listOf(sampleFavoriteRoute()))
-    private val lastComputedRouteHolder = LastComputedRouteHolder()
+    private val lastComputedRoute = LastComputedRouteHandoffImpl()
 
     @BeforeEach
     fun setUp() {
@@ -55,7 +55,7 @@ class SavedRoutesViewModelTest {
     private fun createViewModel(): SavedRoutesViewModel =
         SavedRoutesViewModel(
             favoriteRoutesRepository = favoriteRoutesRepository,
-            lastComputedRouteHolder = lastComputedRouteHolder,
+            lastComputedRouteWriter = lastComputedRoute,
             computeRequiredRegions = ComputeRequiredRegionsUseCase(regionCatalog),
             prepareRouteOptions =
                 PrepareRouteOptionsUseCase(
@@ -94,7 +94,7 @@ class SavedRoutesViewModelTest {
 
         viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
 
-        assertNull(lastComputedRouteHolder.route.value)
+        assertNull(lastComputedRoute.route.value)
         assertNotNull(viewModel.state.value.missingRegionsWarning)
     }
 
@@ -150,7 +150,7 @@ class SavedRoutesViewModelTest {
             viewModel.onAction(SavedRoutesAction.OnProceedDespiteMissingRegions)
 
             assertNull(viewModel.state.value.missingRegionsWarning)
-            assertEquals(RoutePlaybackMode.FREE_ROAM, lastComputedRouteHolder.route.value?.mode)
+            assertEquals(RoutePlaybackMode.FREE_ROAM, lastComputedRoute.route.value?.mode)
             assertEquals(SavedRoutesEvent.NavigateBack, viewModel.events.first())
         }
 
@@ -161,7 +161,7 @@ class SavedRoutesViewModelTest {
 
             viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
 
-            assertEquals(RoutePlaybackMode.FREE_ROAM, lastComputedRouteHolder.route.value?.mode)
+            assertEquals(RoutePlaybackMode.FREE_ROAM, lastComputedRoute.route.value?.mode)
             assertNull(viewModel.state.value.routeOptions)
             assertEquals(SavedRoutesEvent.NavigateBack, viewModel.events.first())
         }
@@ -175,7 +175,7 @@ class SavedRoutesViewModelTest {
 
         viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
 
-        assertNull(lastComputedRouteHolder.route.value)
+        assertNull(lastComputedRoute.route.value)
         assertNotNull(viewModel.state.value.routeOptions)
     }
 
@@ -205,7 +205,7 @@ class SavedRoutesViewModelTest {
 
             viewModel.onAction(SavedRoutesAction.OnChooseMode(RoutePlaybackMode.GUIDED))
 
-            assertEquals(RoutePlaybackMode.GUIDED, lastComputedRouteHolder.route.value?.mode)
+            assertEquals(RoutePlaybackMode.GUIDED, lastComputedRoute.route.value?.mode)
             assertNull(viewModel.state.value.routeOptions)
             assertEquals(SavedRoutesEvent.NavigateBack, viewModel.events.first())
         }
@@ -224,7 +224,7 @@ class SavedRoutesViewModelTest {
 
             viewModel.onAction(SavedRoutesAction.OnChooseMode(RoutePlaybackMode.GUIDED))
 
-            val resolved = lastComputedRouteHolder.route.value
+            val resolved = lastComputedRoute.route.value
             assertEquals(freeRoam?.geometry, resolved?.alternateGeometry)
             assertEquals(freeRoam?.distanceMeters, resolved?.alternateDistanceMeters)
         }
@@ -236,7 +236,7 @@ class SavedRoutesViewModelTest {
 
             viewModel.onAction(SavedRoutesAction.OnUseClick("route-1"))
 
-            val resolved = lastComputedRouteHolder.route.value
+            val resolved = lastComputedRoute.route.value
             assertEquals(RoutePlaybackMode.FREE_ROAM, resolved?.mode)
             assertNull(resolved?.alternateGeometry)
             assertNull(resolved?.alternateDistanceMeters)

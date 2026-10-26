@@ -1,7 +1,7 @@
 package com.routeforge.routing.domain.usecase
 
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.model.Route
@@ -33,14 +33,14 @@ private val pointOutsideRegion = RoutePoint(latitude = 5.0, longitude = 5.0)
 class ComputeRegionUsageUseCaseTest {
     private val catalog = FakeRegionCatalog(regions = listOf(region))
     private val draftWaypoints = DraftWaypointsHandoffImpl()
-    private val lastComputedRouteHolder = LastComputedRouteHolder()
+    private val lastComputedRoute = LastComputedRouteHandoffImpl()
     private val favoriteRoutesRepository = FakeFavoriteRoutesRepository()
 
     private fun createUseCase(): ComputeRegionUsageUseCase =
         ComputeRegionUsageUseCase(
             computeRequiredRegions = ComputeRequiredRegionsUseCase(catalog),
             draftWaypointsReader = draftWaypoints,
-            lastComputedRouteHolder = lastComputedRouteHolder,
+            lastComputedRouteReader = lastComputedRoute,
             favoriteRoutesRepository = favoriteRoutesRepository,
         )
 
@@ -67,7 +67,7 @@ class ComputeRegionUsageUseCaseTest {
 
     @Test
     fun `a region touched by the active route is reported as needed by the active route`() {
-        lastComputedRouteHolder.set(Route(points = listOf(pointInsideRegion), geometry = emptyList(), distanceMeters = 0.0))
+        lastComputedRoute.set(Route(points = listOf(pointInsideRegion), geometry = emptyList(), distanceMeters = 0.0))
 
         val usage = createUseCase()(region)
 
@@ -90,7 +90,7 @@ class ComputeRegionUsageUseCaseTest {
     @Test
     fun `a region touched by a combination of draft, active route, and saved routes reports all of them`() {
         draftWaypoints.set(listOf(pointInsideRegion))
-        lastComputedRouteHolder.set(Route(points = listOf(pointInsideRegion), geometry = emptyList(), distanceMeters = 0.0))
+        lastComputedRoute.set(Route(points = listOf(pointInsideRegion), geometry = emptyList(), distanceMeters = 0.0))
         favoriteRoutesRepository.add(name = "Morning loop", points = listOf(pointInsideRegion))
 
         val usage = createUseCase()(region)

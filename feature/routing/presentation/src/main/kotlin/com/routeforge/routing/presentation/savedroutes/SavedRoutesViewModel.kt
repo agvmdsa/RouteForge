@@ -3,7 +3,7 @@ package com.routeforge.routing.presentation.savedroutes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeforge.coredomain.FavoriteRoutesRepository
-import com.routeforge.coredomain.holder.LastComputedRouteHolder
+import com.routeforge.coredomain.handoff.LastComputedRouteHandoffWriter
 import com.routeforge.coredomain.model.FavoriteRoute
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RouteOptions
@@ -27,7 +27,7 @@ import kotlinx.coroutines.withContext
 
 internal class SavedRoutesViewModel(
     private val favoriteRoutesRepository: FavoriteRoutesRepository,
-    private val lastComputedRouteHolder: LastComputedRouteHolder,
+    private val lastComputedRouteWriter: LastComputedRouteHandoffWriter,
     private val computeRequiredRegions: ComputeRequiredRegionsUseCase,
     private val prepareRouteOptions: PrepareRouteOptionsUseCase,
     private val exportRouteFile: ExportRouteFileUseCase,
@@ -174,7 +174,7 @@ internal class SavedRoutesViewModel(
             val bytes = exportRouteFile(resolved, exportFormat)
             viewModelScope.launch { _events.send(SavedRoutesEvent.ExportReady(bytes, exportFormat)) }
         } else {
-            lastComputedRouteHolder.set(resolved)
+            lastComputedRouteWriter.set(resolved)
             viewModelScope.launch { _events.send(SavedRoutesEvent.NavigateBack) }
         }
     }
