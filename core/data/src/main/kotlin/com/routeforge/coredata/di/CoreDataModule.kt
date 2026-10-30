@@ -7,12 +7,14 @@ import com.routeforge.coredata.PlatformMockLocationAuthorizationChecker
 import com.routeforge.coredata.SharedPreferencesFavoriteRoutesRepository
 import com.routeforge.coredata.SharedPreferencesFavoriteWaypointsRepository
 import com.routeforge.coredata.SharedPreferencesMapStyleStore
+import com.routeforge.coredata.SharedPreferencesRecentPlacesRepository
 import com.routeforge.coredata.SharedPreferencesTourProgressRepository
 import com.routeforge.coredomain.FavoriteRoutesRepository
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.MapStyleStore
 import com.routeforge.coredomain.MockLocationAuthorizationChecker
 import com.routeforge.coredomain.NetworkConnectivityChecker
+import com.routeforge.coredomain.RecentPlacesRepository
 import com.routeforge.coredomain.TourProgressRepository
 import com.routeforge.coredomain.TourReplayCoordinator
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
@@ -74,6 +76,7 @@ val coreDataModule =
         } binds arrayOf(SelectedFavoriteWaypointHandoffReceiver::class)
         single { SharedPreferencesFavoriteWaypointsRepository(androidContext()) }.bind<FavoriteWaypointsRepository>()
         single { SharedPreferencesFavoriteRoutesRepository(androidContext()) }.bind<FavoriteRoutesRepository>()
+        single { SharedPreferencesRecentPlacesRepository(androidContext()) }.bind<RecentPlacesRepository>()
         single { AndroidNetworkConnectivityChecker(androidContext()) }.bind<NetworkConnectivityChecker>()
         single { SharedPreferencesMapStyleStore(androidContext()) }.bind<MapStyleStore>()
         single { SharedPreferencesTourProgressRepository(androidContext(), get()) }.bind<TourProgressRepository>()
