@@ -1,6 +1,6 @@
 package com.routeforge.coredomain.handoff
 
-import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.model.NamedPlace
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 
 class SelectedFavoriteWaypointHandoffTest {
-    private val home = RoutePoint(52.5, 13.4)
-    private val work = RoutePoint(52.6, 13.5)
+    private val home = NamedPlace(52.5, 13.4, "Home")
+    private val work = NamedPlace(52.6, 13.5)
 
     @Test
     fun `a receiver that is already collecting gets the value that is sent`() =

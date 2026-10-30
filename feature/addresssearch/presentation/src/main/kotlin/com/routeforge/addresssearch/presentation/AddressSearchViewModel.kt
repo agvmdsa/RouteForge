@@ -7,8 +7,8 @@ import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffSender
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffSender
+import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.PlaceSearchResult
-import com.routeforge.coredomain.model.RoutePoint
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -120,7 +120,9 @@ internal class AddressSearchViewModel(
 
     private fun chooseTeleport() {
         val result = _state.value.pendingChoiceResult ?: return
-        pendingTeleportTargetSender.send(RoutePoint(latitude = result.latitude, longitude = result.longitude))
+        pendingTeleportTargetSender.send(
+            NamedPlace(latitude = result.latitude, longitude = result.longitude, name = result.name.takeIf { it.isNotBlank() }),
+        )
         viewModelScope.launch { _events.send(AddressSearchEvent.NavigateBack) }
     }
 

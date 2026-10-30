@@ -9,6 +9,7 @@ import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.LatLng
+import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
@@ -232,7 +233,7 @@ class RouteRequestViewModelTest {
         viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
         viewModel.onAction(RouteRequestAction.OnConfirmAddWaypoint)
 
-        selectedFavoriteWaypoint.send(RoutePoint(9.0, 9.0))
+        selectedFavoriteWaypoint.send(NamedPlace(9.0, 9.0, "Spot"))
 
         assertEquals(
             listOf(RoutePoint(1.0, 1.0), RoutePoint(9.0, 9.0)),

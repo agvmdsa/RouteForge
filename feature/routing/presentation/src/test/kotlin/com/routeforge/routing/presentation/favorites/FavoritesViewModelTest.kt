@@ -3,6 +3,7 @@ package com.routeforge.routing.presentation.favorites
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.model.FavoriteWaypoint
+import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.testing.FakeFavoriteWaypointsRepository
 import com.routeforge.coredomain.testing.FakeNetworkConnectivityChecker
 import kotlinx.coroutines.Dispatchers
@@ -74,8 +75,7 @@ class FavoritesViewModelTest {
             val eventDeferred = async { viewModel.events.first() }
             viewModel.onAction(FavoritesAction.OnConfirmMockHere)
 
-            assertEquals(home.latitude, pendingTeleportTarget.pending?.latitude)
-            assertEquals(home.longitude, pendingTeleportTarget.pending?.longitude)
+            assertEquals(NamedPlace(home.latitude, home.longitude, home.name), pendingTeleportTarget.pending)
             assertEquals(FavoritesEvent.NavigateBack, eventDeferred.await())
             assertNull(viewModel.state.value.pendingTeleportFavorite)
         }
@@ -112,8 +112,7 @@ class FavoritesViewModelTest {
             val eventDeferred = async { viewModel.events.first() }
             viewModel.onAction(FavoritesAction.OnFavoriteSelected(home.id))
 
-            assertEquals(home.latitude, selectedFavoriteWaypoint.pending?.latitude)
-            assertEquals(home.longitude, selectedFavoriteWaypoint.pending?.longitude)
+            assertEquals(NamedPlace(home.latitude, home.longitude, home.name), selectedFavoriteWaypoint.pending)
             assertEquals(FavoritesEvent.NavigateBack, eventDeferred.await())
         }
 

@@ -3,6 +3,7 @@ package com.routeforge.routing.presentation.routerequest
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.model.LatLng
+import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
@@ -160,7 +161,7 @@ class RouteDraftEditorTest {
         val state = MutableStateFlow(RouteRequestState(draft = twoPoints))
         editor.startObservingSelectedFavoriteWaypoint(state, scope)
 
-        selectedFavoriteWaypoint.send(RoutePoint(9.0, 9.0))
+        selectedFavoriteWaypoint.send(NamedPlace(9.0, 9.0, "Spot"))
 
         assertEquals(twoPoints.points + RoutePoint(9.0, 9.0), state.value.draft.points)
         assertNull(selectedFavoriteWaypoint.pending)

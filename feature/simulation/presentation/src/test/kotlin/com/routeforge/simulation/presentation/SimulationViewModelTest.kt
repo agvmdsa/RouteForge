@@ -5,10 +5,10 @@ import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffImpl
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
 import com.routeforge.coredomain.model.LatLng
+import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
-import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.testing.FakeMapStyleStore
 import com.routeforge.coredomain.testing.FakeMockLocationAuthorizationChecker
 import com.routeforge.coredomain.testing.FakeNetworkConnectivityChecker
@@ -210,7 +210,7 @@ class SimulationViewModelTest {
     fun `a value appearing in the pending teleport target holder teleports immediately without a confirmation sheet`() {
         val viewModel = createViewModel()
 
-        pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
+        pendingTeleportTarget.send(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home"))
 
         assertEquals(1, controller.teleportCalls.size)
         assertEquals(5.0, controller.teleportCalls.first().latitude)
@@ -225,7 +225,7 @@ class SimulationViewModelTest {
         authorizationChecker.authorized = false
         val viewModel = createViewModel()
 
-        pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
+        pendingTeleportTarget.send(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home"))
 
         assertTrue(controller.teleportCalls.isEmpty())
         assertTrue(viewModel.state.value.isBlockedByAuthorization)
@@ -237,10 +237,10 @@ class SimulationViewModelTest {
         lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
 
-        pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
+        pendingTeleportTarget.send(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home"))
 
         assertTrue(controller.teleportCalls.isEmpty())
-        assertEquals(RoutePoint(latitude = 5.0, longitude = 6.0), viewModel.state.value.pendingFavoriteTeleportTarget)
+        assertEquals(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home"), viewModel.state.value.pendingFavoriteTeleportTarget)
         assertNotNull(viewModel.state.value.loadedRoute)
         assertNull(pendingTeleportTarget.pending)
     }
@@ -249,7 +249,7 @@ class SimulationViewModelTest {
     fun `confirming a favorite teleport cancels the loaded route and teleports`() {
         lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
-        pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
+        pendingTeleportTarget.send(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home"))
 
         viewModel.onAction(SimulationAction.OnConfirmFavoriteTeleportCancelRoute)
 
@@ -264,7 +264,7 @@ class SimulationViewModelTest {
     fun `dismissing a favorite teleport confirmation keeps the route loaded and teleports nowhere`() {
         lastComputedRoute.set(sampleRoute)
         val viewModel = createViewModel()
-        pendingTeleportTarget.send(RoutePoint(latitude = 5.0, longitude = 6.0))
+        pendingTeleportTarget.send(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home"))
 
         viewModel.onAction(SimulationAction.OnDismissFavoriteTeleportCancelRoute)
 

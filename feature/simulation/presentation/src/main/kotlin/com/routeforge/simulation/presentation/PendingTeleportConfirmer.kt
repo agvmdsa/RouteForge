@@ -91,11 +91,11 @@ internal class PendingTeleportConfirmer(
         scope: CoroutineScope,
     ) {
         pendingTeleportTargetReceiver.incoming
-            .onEach { point ->
+            .onEach { place ->
                 if (state.value.loadedRoute != null) {
-                    state.update { it.copy(pendingFavoriteTeleportTarget = point) }
+                    state.update { it.copy(pendingFavoriteTeleportTarget = place) }
                 } else {
-                    teleportTo(point.latitude, point.longitude, state)
+                    teleportTo(place.latitude, place.longitude, state)
                 }
             }.launchIn(scope)
     }
