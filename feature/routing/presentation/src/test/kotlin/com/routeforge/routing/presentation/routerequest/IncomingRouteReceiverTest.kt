@@ -7,6 +7,7 @@ import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.testing.FakeRecentPlacesRepository
 import com.routeforge.coredomain.testing.FakeRegionCatalog
 import com.routeforge.coredomain.testing.FakeRoutingEngine
 import com.routeforge.routing.domain.RouteFileCodec
@@ -43,6 +44,7 @@ class IncomingRouteReceiverTest {
                 RouteDraftEditor(
                     draftWaypointsWriter = draftWaypoints,
                     selectedFavoriteWaypointReceiver = SelectedFavoriteWaypointHandoffImpl(),
+                    recentPlacesRepository = FakeRecentPlacesRepository(),
                     routeModePreviewer =
                         newRouteModePreviewer(
                             FakeRoutingEngine(snappableLatitudes = emptySet()),

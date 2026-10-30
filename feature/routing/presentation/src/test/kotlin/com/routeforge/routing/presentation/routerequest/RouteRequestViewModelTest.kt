@@ -19,6 +19,7 @@ import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.testing.FakeFavoriteRoutesRepository
 import com.routeforge.coredomain.testing.FakeFavoriteWaypointsRepository
 import com.routeforge.coredomain.testing.FakeMapStyleStore
+import com.routeforge.coredomain.testing.FakeRecentPlacesRepository
 import com.routeforge.coredomain.testing.FakeRegionCatalog
 import com.routeforge.coredomain.testing.FakeRegionUsageTracker
 import com.routeforge.coredomain.testing.FakeRoutingEngine
@@ -71,6 +72,7 @@ class RouteRequestViewModelTest {
     private val gpxCodec = FakeRouteFileCodec()
     private val codecs = mapOf(RouteFileFormat.JSON to jsonCodec, RouteFileFormat.GPX to gpxCodec)
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
+    private val recentPlaces = FakeRecentPlacesRepository()
     private val favoriteRoutesRepository = FakeFavoriteRoutesRepository()
     private val selectedFavoriteWaypoint = SelectedFavoriteWaypointHandoffImpl()
     private val pendingSearchWaypoint = PendingSearchWaypointHandoffImpl()
@@ -105,6 +107,7 @@ class RouteRequestViewModelTest {
             RouteDraftEditor(
                 draftWaypointsWriter = draftWaypoints,
                 selectedFavoriteWaypointReceiver = selectedFavoriteWaypoint,
+                recentPlacesRepository = recentPlaces,
                 routeModePreviewer = routeModePreviewer,
             )
         val importRouteFile = ImportRouteFileUseCase(codecs)
@@ -121,6 +124,7 @@ class RouteRequestViewModelTest {
             pendingWaypointConfirmer =
                 PendingWaypointConfirmer(
                     favoriteWaypointsRepository = favoriteWaypointsRepository,
+                    recentPlacesRepository = recentPlaces,
                     pendingSearchWaypointReceiver = pendingSearchWaypoint,
                     routeDraftEditor = routeDraftEditor,
                 ),
@@ -918,5 +922,45 @@ class RouteRequestViewModelTest {
 
         assertEquals(RouteRequestError.IMPORT_TOO_FEW_WAYPOINTS, viewModel.state.value.errorType)
         assertEquals(emptyList<RoutePoint>(), viewModel.state.value.draft.points)
+    }
+
+    @Test
+    fun `tapping the map marks the pending add as coming from a map tap`() {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
+
+        assertTrue(viewModel.state.value.pendingAddFromMapTap)
+    }
+
+    @Test
+    fun `adding a waypoint tapped on the map records nothing`() {
+        val viewModel = createViewModel()
+
+        viewModel.tapAndConfirm(1.0, 1.0)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `adding a waypoint tapped on the map and saved as a favorite records it under the favorite name`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(RouteRequestAction.OnMapTap(1.0, 1.0))
+        viewModel.onAction(RouteRequestAction.OnToggleSaveAsFavorite)
+        viewModel.onAction(RouteRequestAction.OnFavoriteNameInputChange("Spot"))
+
+        viewModel.onAction(RouteRequestAction.OnConfirmAddWaypoint)
+
+        assertEquals(listOf(NamedPlace(latitude = 1.0, longitude = 1.0, name = "Spot")), recentPlaces.recorded)
+    }
+
+    @Test
+    fun `undoing a waypoint records nothing`() {
+        val viewModel = createViewModel()
+        viewModel.tapAndConfirm(1.0, 1.0)
+
+        viewModel.onAction(RouteRequestAction.OnUndo)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
     }
 }

@@ -3,34 +3,41 @@ package com.routeforge.routing.presentation.routerequest
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
+import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.testing.FakeFavoriteWaypointsRepository
+import com.routeforge.coredomain.testing.FakeRecentPlacesRepository
 import com.routeforge.coredomain.testing.FakeRegionCatalog
 import com.routeforge.coredomain.testing.FakeRoutingEngine
 import com.routeforge.routing.domain.model.RouteDraft
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class PendingWaypointConfirmerTest {
     private val dispatcher = UnconfinedTestDispatcher()
     private val scope = CoroutineScope(dispatcher)
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
+    private val recentPlaces = FakeRecentPlacesRepository()
     private val pendingSearchWaypoint = PendingSearchWaypointHandoffImpl()
     private val confirmer =
         PendingWaypointConfirmer(
             favoriteWaypointsRepository = favoriteWaypointsRepository,
+            recentPlacesRepository = recentPlaces,
             pendingSearchWaypointReceiver = pendingSearchWaypoint,
             routeDraftEditor =
                 RouteDraftEditor(
                     draftWaypointsWriter = DraftWaypointsHandoffImpl(),
                     selectedFavoriteWaypointReceiver = SelectedFavoriteWaypointHandoffImpl(),
+                    recentPlacesRepository = recentPlaces,
                     routeModePreviewer =
                         newRouteModePreviewer(
                             FakeRoutingEngine(snappableLatitudes = emptySet()),
@@ -155,5 +162,102 @@ class PendingWaypointConfirmerTest {
 
         assertEquals(52.52, state.value.pendingAddLatitude)
         assertNull(state.value.pendingAddPlaceName)
+    }
+
+    private fun searchResult(name: String) =
+        PlaceSearchResult(name = name, formattedAddress = "", latitude = 48.8584, longitude = 2.2945, importance = 0.8)
+
+    @Test
+    fun `confirming a place that arrived by name records it with its name`() {
+        val state = MutableStateFlow(RouteRequestState())
+        confirmer.startObservingPendingSearchWaypoint(state, scope)
+        pendingSearchWaypoint.send(searchResult("Eiffel Tower"))
+
+        confirmer.confirmAddWaypoint(state, scope)
+
+        assertEquals(listOf(NamedPlace(latitude = 48.8584, longitude = 2.2945, name = "Eiffel Tower")), recentPlaces.recorded)
+    }
+
+    @Test
+    fun `confirming a place that arrived with no name records it with no name`() {
+        val state = MutableStateFlow(RouteRequestState())
+        confirmer.startObservingPendingSearchWaypoint(state, scope)
+        pendingSearchWaypoint.send(searchResult(""))
+
+        confirmer.confirmAddWaypoint(state, scope)
+
+        assertEquals(listOf(NamedPlace(latitude = 48.8584, longitude = 2.2945, name = null)), recentPlaces.recorded)
+    }
+
+    @Test
+    fun `dismissing a pending add records nothing`() {
+        val state = MutableStateFlow(RouteRequestState())
+        confirmer.startObservingPendingSearchWaypoint(state, scope)
+        pendingSearchWaypoint.send(searchResult("Eiffel Tower"))
+
+        confirmer.dismissAddWaypoint(state)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `confirming a waypoint tapped on the map records nothing`() {
+        val state =
+            MutableStateFlow(RouteRequestState(pendingAddLatitude = 1.0, pendingAddLongitude = 2.0, pendingAddFromMapTap = true))
+
+        confirmer.confirmAddWaypoint(state, scope)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `confirming a map tap saved as a favorite records the place under the favorite name`() {
+        val state =
+            MutableStateFlow(
+                RouteRequestState(
+                    pendingAddLatitude = 1.0,
+                    pendingAddLongitude = 2.0,
+                    pendingAddFromMapTap = true,
+                    isSaveAsFavoriteChecked = true,
+                    favoriteNameInput = "Spot",
+                ),
+            )
+
+        confirmer.confirmAddWaypoint(state, scope)
+
+        assertEquals(listOf(NamedPlace(latitude = 1.0, longitude = 2.0, name = "Spot")), recentPlaces.recorded)
+    }
+
+    @Test
+    fun `confirming a named place saved as a favorite records it under the favorite name`() {
+        val state = MutableStateFlow(RouteRequestState())
+        confirmer.startObservingPendingSearchWaypoint(state, scope)
+        pendingSearchWaypoint.send(searchResult("Eiffel Tower"))
+        state.update { it.copy(isSaveAsFavoriteChecked = true, favoriteNameInput = "Paris") }
+
+        confirmer.confirmAddWaypoint(state, scope)
+
+        assertEquals(listOf(NamedPlace(latitude = 48.8584, longitude = 2.2945, name = "Paris")), recentPlaces.recorded)
+    }
+
+    @Test
+    fun `a place that arrives after a map tap is recorded because the arrival clears the map tap mark`() {
+        val state =
+            MutableStateFlow(RouteRequestState(pendingAddLatitude = 1.0, pendingAddLongitude = 2.0, pendingAddFromMapTap = true))
+        confirmer.startObservingPendingSearchWaypoint(state, scope)
+        pendingSearchWaypoint.send(searchResult("Eiffel Tower"))
+
+        confirmer.confirmAddWaypoint(state, scope)
+
+        assertEquals(listOf(NamedPlace(latitude = 48.8584, longitude = 2.2945, name = "Eiffel Tower")), recentPlaces.recorded)
+    }
+
+    @Test
+    fun `dismissing clears the map tap mark`() {
+        val state = MutableStateFlow(RouteRequestState(pendingAddLatitude = 1.0, pendingAddLongitude = 2.0, pendingAddFromMapTap = true))
+
+        confirmer.dismissAddWaypoint(state)
+
+        assertFalse(state.value.pendingAddFromMapTap)
     }
 }

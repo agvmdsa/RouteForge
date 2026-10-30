@@ -51,7 +51,9 @@ internal class RouteRequestViewModel(
     fun onAction(action: RouteRequestAction) {
         when (action) {
             is RouteRequestAction.OnMapTap ->
-                _state.update { it.copy(pendingAddLatitude = action.latitude, pendingAddLongitude = action.longitude) }
+                _state.update {
+                    it.copy(pendingAddLatitude = action.latitude, pendingAddLongitude = action.longitude, pendingAddFromMapTap = true)
+                }
             is RouteRequestAction.OnMarkerDragged ->
                 routeDraftEditor.mutateDraft(_state, viewModelScope) {
                     it.update(action.index, RoutePoint(latitude = action.latitude, longitude = action.longitude))

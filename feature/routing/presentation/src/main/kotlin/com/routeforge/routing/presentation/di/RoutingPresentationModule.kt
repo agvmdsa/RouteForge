@@ -72,12 +72,14 @@ val routingPresentationModule =
             RouteDraftEditor(
                 draftWaypointsWriter = get(),
                 selectedFavoriteWaypointReceiver = get(),
+                recentPlacesRepository = get(),
                 routeModePreviewer = get(),
             )
         }
         factory {
             PendingWaypointConfirmer(
                 favoriteWaypointsRepository = get(),
+                recentPlacesRepository = get(),
                 pendingSearchWaypointReceiver = get(),
                 routeDraftEditor = get(),
             )
