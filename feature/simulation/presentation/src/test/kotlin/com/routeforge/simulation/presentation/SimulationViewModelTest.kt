@@ -12,6 +12,7 @@ import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.testing.FakeMapStyleStore
 import com.routeforge.coredomain.testing.FakeMockLocationAuthorizationChecker
 import com.routeforge.coredomain.testing.FakeNetworkConnectivityChecker
+import com.routeforge.coredomain.testing.FakeRecentPlacesRepository
 import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.simulation.domain.JoystickStartFailure
 import com.routeforge.simulation.domain.model.ExecutionMode
@@ -88,6 +89,7 @@ class SimulationViewModelTest {
     private val networkConnectivityChecker = FakeNetworkConnectivityChecker()
     private val lastKnownRealLocation = LastKnownRealLocationHandoffImpl()
     private val pendingTeleportTarget = PendingTeleportTargetHandoffImpl()
+    private val recentPlaces = FakeRecentPlacesRepository()
 
     @BeforeEach
     fun setUp() {
@@ -112,6 +114,7 @@ class SimulationViewModelTest {
                     isNetworkConnected = IsNetworkConnectedUseCase(networkConnectivityChecker),
                     pendingTeleportTargetReceiver = pendingTeleportTarget,
                     lastComputedRouteClearer = lastComputedRoute,
+                    recentPlacesRepository = recentPlaces,
                     mockLocationAuthorizationGuard = mockLocationAuthorizationGuard,
                 ),
             mockLocationAuthorizationGuard = mockLocationAuthorizationGuard,
@@ -271,6 +274,28 @@ class SimulationViewModelTest {
         assertTrue(controller.teleportCalls.isEmpty())
         assertNotNull(viewModel.state.value.loadedRoute)
         assertNull(viewModel.state.value.pendingFavoriteTeleportTarget)
+    }
+
+    @Test
+    fun `confirming a favorite teleport records the place with its name`() {
+        lastComputedRoute.set(sampleRoute)
+        val viewModel = createViewModel()
+        pendingTeleportTarget.send(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home"))
+
+        viewModel.onAction(SimulationAction.OnConfirmFavoriteTeleportCancelRoute)
+
+        assertEquals(listOf(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home")), recentPlaces.recorded)
+    }
+
+    @Test
+    fun `dismissing a favorite teleport confirmation records nothing`() {
+        lastComputedRoute.set(sampleRoute)
+        val viewModel = createViewModel()
+        pendingTeleportTarget.send(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home"))
+
+        viewModel.onAction(SimulationAction.OnDismissFavoriteTeleportCancelRoute)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
     }
 
     // --- Route mode switching (Guided <-> Free-roam) ---

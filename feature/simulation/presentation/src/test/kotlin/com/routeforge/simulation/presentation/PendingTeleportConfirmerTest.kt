@@ -7,6 +7,7 @@ import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.testing.FakeMockLocationAuthorizationChecker
 import com.routeforge.coredomain.testing.FakeNetworkConnectivityChecker
+import com.routeforge.coredomain.testing.FakeRecentPlacesRepository
 import com.routeforge.simulation.domain.testing.FakeSimulationController
 import com.routeforge.simulation.domain.usecase.IsNetworkConnectedUseCase
 import com.routeforge.simulation.domain.usecase.ObserveAuthorizationLostUseCase
@@ -29,12 +30,14 @@ class PendingTeleportConfirmerTest {
     private val networkConnectivityChecker = FakeNetworkConnectivityChecker()
     private val lastComputedRoute = LastComputedRouteHandoffImpl()
     private val pendingTeleportTarget = PendingTeleportTargetHandoffImpl()
+    private val recentPlaces = FakeRecentPlacesRepository()
     private val confirmer =
         PendingTeleportConfirmer(
             teleport = TeleportUseCase(controller),
             isNetworkConnected = IsNetworkConnectedUseCase(networkConnectivityChecker),
             pendingTeleportTargetReceiver = pendingTeleportTarget,
             lastComputedRouteClearer = lastComputedRoute,
+            recentPlacesRepository = recentPlaces,
             mockLocationAuthorizationGuard =
                 MockLocationAuthorizationGuard(authorizationChecker, ObserveAuthorizationLostUseCase(controller)),
         )
@@ -184,5 +187,88 @@ class PendingTeleportConfirmerTest {
 
         assertNotNull(lastComputedRoute.route.value)
         assertTrue(controller.teleportCalls.isEmpty())
+    }
+
+    @Test
+    fun `a confirmed map tap teleport is recorded with no name`() {
+        val state = MutableStateFlow(SimulationState(pendingTeleportLatitude = 10.0, pendingTeleportLongitude = 20.0))
+
+        confirmer.confirmTeleport(state)
+
+        assertEquals(listOf(NamedPlace(latitude = 10.0, longitude = 20.0, name = null)), recentPlaces.recorded)
+    }
+
+    @Test
+    fun `a canceled map tap teleport is not recorded`() {
+        val state = MutableStateFlow(SimulationState(pendingTeleportLatitude = 10.0, pendingTeleportLongitude = 20.0))
+
+        confirmer.cancelTeleport(state)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `a map tap teleport blocked offline is not recorded`() {
+        val state =
+            MutableStateFlow(
+                SimulationState(pendingTeleportLatitude = 10.0, pendingTeleportLongitude = 20.0, isPendingTeleportBlockedOffline = true),
+            )
+
+        confirmer.confirmTeleport(state)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `a map tap teleport while unauthorized is not recorded`() {
+        authorizationChecker.authorized = false
+        val state = MutableStateFlow(SimulationState(pendingTeleportLatitude = 10.0, pendingTeleportLongitude = 20.0))
+
+        confirmer.confirmTeleport(state)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `a named place teleported at once with no route loaded is recorded with its name`() {
+        val state = MutableStateFlow(SimulationState())
+        confirmer.startObservingPendingTeleportTarget(state, scope)
+
+        pendingTeleportTarget.send(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home"))
+
+        assertEquals(listOf(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home")), recentPlaces.recorded)
+    }
+
+    @Test
+    fun `a place with no name teleported at once is recorded with no name`() {
+        val state = MutableStateFlow(SimulationState())
+        confirmer.startObservingPendingTeleportTarget(state, scope)
+
+        pendingTeleportTarget.send(NamedPlace(latitude = 5.0, longitude = 6.0, name = null))
+
+        assertEquals(listOf(NamedPlace(latitude = 5.0, longitude = 6.0, name = null)), recentPlaces.recorded)
+    }
+
+    @Test
+    fun `a place handed over while unauthorized is not recorded`() {
+        authorizationChecker.authorized = false
+        val state = MutableStateFlow(SimulationState())
+        confirmer.startObservingPendingTeleportTarget(state, scope)
+
+        pendingTeleportTarget.send(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home"))
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `a place handed over while a route is loaded is recorded only after the cancel-route confirmation`() {
+        val state = MutableStateFlow(SimulationState(loadedRoute = sampleRoute))
+        confirmer.startObservingPendingTeleportTarget(state, scope)
+        pendingTeleportTarget.send(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home"))
+        assertTrue(recentPlaces.recorded.isEmpty())
+
+        confirmer.confirmFavoriteTeleportCancelRoute(state)
+
+        assertEquals(listOf(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home")), recentPlaces.recorded)
     }
 }
