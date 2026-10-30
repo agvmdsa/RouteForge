@@ -34,6 +34,7 @@ Most "fake GPS" apps on the Play Store connect waypoints with a straight line an
 - **Search for a place, not just tap a map** — look up an address or place name (OpenStreetMap/Nominatim), ranked by relevance and distance to you, then add it as a waypoint, teleport to it, or save it as a favorite.
 - **Open places from other apps** — share a place from Google Maps, or open a map link or a GPX file with RouteForge, and get the same choice as from search: add it to a route, teleport to it, or save it as a favorite.
 - **Favorites, not just one-off routes** — save a single location or a whole planned route by name and reuse it later, without re-tapping every point again.
+- **Recent places, one tap away** — the places you teleported to, added to a route or saved come back as a list on the search screen, so you can use one again without typing or a connection.
 - **Offline map data you control** — download only the regions you actually need, with a storage quota you set and manage yourself.
 - **No ads, open source.**
 
@@ -61,6 +62,7 @@ RouteForge needs Android 8.0 or newer and is not on the Play Store yet. A newer 
 - **Map style** — in Settings, switch the map between Standard (OpenStreetMap) and Topographic (terrain-shaded, OpenTopoMap).
 - **Guided tours and tooltips** — the first time you open the Simulate and Plan Route screens, a short tour points out what the buttons do; skip it whenever you like, and repeat one tour or all of them from Settings. On the Simulate screen, long-press a button to see what it does.
 - **Search** — tap the magnifying-glass icon in the bottom bar from any tab to look up an address or place. From Plan Route, picking a result adds it as a waypoint; from anywhere else, you're offered to teleport to it or save it as a favorite.
+- **Recent places** — with the search field empty, the search screen lists the places you teleported to, added to a route from a name or link, or saved as favorites, newest first and at most 20. Tap one to use it again, remove one with its × button, or clear the list. It works offline and stays on the device, out of backups.
 - **Open and share** — choose RouteForge in "Open with" for a `geo:` link, an OpenStreetMap or Google Maps link, or a `.gpx` file, or share a place from Google Maps to it. A place gets the same choice as from Search (add as a waypoint on Plan Route; teleport or save as a favorite elsewhere). A Google Maps directions link with coordinates, or a `.gpx` file, becomes the Plan Route draft, asking first if you already have waypoints placed.
 - **Offline first, one exception** — coordinates in a link or in shared text are read on the device. Only a short `maps.app.goo.gl` link is followed over the internet, when you share it: a few requests to Google's own hosts, headers only, nothing about your position. If that isn't possible, the shared text is offered to Search instead.
 
