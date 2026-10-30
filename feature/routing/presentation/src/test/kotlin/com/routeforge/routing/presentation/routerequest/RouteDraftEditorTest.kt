@@ -7,6 +7,7 @@ import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.testing.FakeRecentPlacesRepository
 import com.routeforge.coredomain.testing.FakeRegionCatalog
 import com.routeforge.coredomain.testing.FakeRoutingEngine
 import com.routeforge.routing.domain.model.RouteDraft
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class RouteDraftEditorTest {
@@ -25,10 +27,12 @@ class RouteDraftEditorTest {
     private val routingEngine = FakeRoutingEngine(snappableLatitudes = emptySet())
     private val draftWaypoints = DraftWaypointsHandoffImpl()
     private val selectedFavoriteWaypoint = SelectedFavoriteWaypointHandoffImpl()
+    private val recentPlaces = FakeRecentPlacesRepository()
     private val editor =
         RouteDraftEditor(
             draftWaypointsWriter = draftWaypoints,
             selectedFavoriteWaypointReceiver = selectedFavoriteWaypoint,
+            recentPlacesRepository = recentPlaces,
             routeModePreviewer = newRouteModePreviewer(routingEngine, FakeRegionCatalog(), dispatcher),
         )
 
@@ -165,5 +169,45 @@ class RouteDraftEditorTest {
 
         assertEquals(twoPoints.points + RoutePoint(9.0, 9.0), state.value.draft.points)
         assertNull(selectedFavoriteWaypoint.pending)
+    }
+
+    @Test
+    fun `a favorite selected elsewhere is recorded with its name`() {
+        val state = MutableStateFlow(RouteRequestState(draft = twoPoints))
+        editor.startObservingSelectedFavoriteWaypoint(state, scope)
+
+        selectedFavoriteWaypoint.send(NamedPlace(9.0, 9.0, "Spot"))
+
+        assertEquals(listOf(NamedPlace(9.0, 9.0, "Spot")), recentPlaces.recorded)
+    }
+
+    @Test
+    fun `changing the draft records nothing`() {
+        val state = MutableStateFlow(RouteRequestState(draft = twoPoints))
+
+        editor.mutateDraft(state, scope) { it.add(RoutePoint(3.0, 3.0)) }
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `confirming an edit records nothing`() {
+        val state =
+            MutableStateFlow(
+                RouteRequestState(draft = twoPoints, editingIndex = 0, editLatitudeInput = "5.5", editLongitudeInput = "6.5"),
+            )
+
+        editor.confirmEdit(state, scope)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `deleting the waypoint being edited records nothing`() {
+        val state = MutableStateFlow(RouteRequestState(draft = twoPoints, editingIndex = 0))
+
+        editor.deleteEditingWaypoint(state, scope)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
     }
 }

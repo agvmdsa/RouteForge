@@ -1,5 +1,6 @@
 package com.routeforge.routing.presentation.routerequest
 
+import com.routeforge.coredomain.RecentPlacesRepository
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffWriter
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffReceiver
 import com.routeforge.coredomain.model.RoutePlaybackMode
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.update
 internal class RouteDraftEditor(
     private val draftWaypointsWriter: DraftWaypointsHandoffWriter,
     private val selectedFavoriteWaypointReceiver: SelectedFavoriteWaypointHandoffReceiver,
+    private val recentPlacesRepository: RecentPlacesRepository,
     private val routeModePreviewer: RouteModePreviewer,
 ) {
     /** Any draft mutation invalidates a previously computed/chosen route (FR-004's spirit). */
@@ -92,6 +94,7 @@ internal class RouteDraftEditor(
         selectedFavoriteWaypointReceiver.incoming
             .onEach { place ->
                 mutateDraft(state, scope) { it.add(RoutePoint(latitude = place.latitude, longitude = place.longitude)) }
+                recentPlacesRepository.record(place)
             }.launchIn(scope)
     }
 }

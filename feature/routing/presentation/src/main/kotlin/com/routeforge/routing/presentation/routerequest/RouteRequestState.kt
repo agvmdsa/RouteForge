@@ -23,6 +23,8 @@ internal data class RouteRequestState(
     /** Set when the pending add came from address search (not a map tap) — lets the confirmation
      *  sheet name the place instead of only showing raw coordinates. */
     val pendingAddPlaceName: String? = null,
+    /** True while the pending add came from a tap on the map, as opposed to a place that arrived by name or link. */
+    val pendingAddFromMapTap: Boolean = false,
     val isSaveAsFavoriteChecked: Boolean = false,
     val favoriteNameInput: String = "",
     val isSaveRouteSheetOpen: Boolean = false,
