@@ -12,6 +12,7 @@ import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
 import com.routeforge.coredomain.model.FavoriteWaypoint
 import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.PlaceSearchResult
+import com.routeforge.coredomain.testing.FakeRecentPlacesRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -70,6 +71,7 @@ class AddressSearchViewModelTest {
     private val pendingSearchWaypoint = PendingSearchWaypointHandoffImpl()
     private val pendingTeleportTarget = PendingTeleportTargetHandoffImpl()
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
+    private val recentPlaces = FakeRecentPlacesRepository()
 
     @BeforeEach
     fun setUp() {
@@ -96,6 +98,7 @@ class AddressSearchViewModelTest {
             pendingSearchWaypointSender = pendingSearchWaypoint,
             pendingTeleportTargetSender = pendingTeleportTarget,
             favoriteWaypointsRepository = favoriteWaypointsRepository,
+            recentPlacesRepository = recentPlaces,
         )
 
     @Test
@@ -390,5 +393,163 @@ class AddressSearchViewModelTest {
 
         assertEquals(emptyList<String>(), geocodeClient.queries)
         assertFalse(viewModel.state.value.hasSearched)
+    }
+
+    private val gate = NamedPlace(latitude = 52.5163, longitude = 13.3777, name = "Brandenburg Gate")
+    private val unnamedSpot = NamedPlace(latitude = 52.1, longitude = 13.1, name = null)
+    private val gateAsResult =
+        PlaceSearchResult(name = "Brandenburg Gate", formattedAddress = "", latitude = 52.5163, longitude = 13.3777, importance = 0.0)
+
+    @Test
+    fun `the recent places in the state mirror the repository newest first`() {
+        recentPlaces.record(unnamedSpot)
+        recentPlaces.record(gate)
+
+        val viewModel = createViewModel()
+
+        assertEquals(listOf(gate, unnamedSpot), viewModel.state.value.recentPlaces)
+    }
+
+    @Test
+    fun `the recent places in the state follow later changes of the repository`() {
+        val viewModel = createViewModel()
+        val before = viewModel.state.value.recentPlaces
+
+        recentPlaces.record(gate)
+
+        assertTrue(before.isEmpty())
+        assertEquals(listOf(gate), viewModel.state.value.recentPlaces)
+    }
+
+    @Test
+    fun `the recent list shows while the query is empty and there are entries`() {
+        recentPlaces.record(gate)
+
+        val viewModel = createViewModel()
+
+        assertTrue(viewModel.state.value.showRecents)
+    }
+
+    @Test
+    fun `the recent list shows while the query is only spaces`() {
+        recentPlaces.record(gate)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(AddressSearchAction.OnQueryChange("   "))
+
+        assertTrue(viewModel.state.value.showRecents)
+    }
+
+    @Test
+    fun `typing hides the recent list and emptying the field brings it back`() {
+        recentPlaces.record(gate)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(AddressSearchAction.OnQueryChange("b"))
+        assertFalse(viewModel.state.value.showRecents)
+
+        viewModel.onAction(AddressSearchAction.OnQueryChange(""))
+        assertTrue(viewModel.state.value.showRecents)
+    }
+
+    @Test
+    fun `the recent list never shows while there are no entries`() {
+        val viewModel = createViewModel()
+
+        assertFalse(viewModel.state.value.showRecents)
+    }
+
+    @Test
+    fun `selecting a recent entry from the teleport tab makes it the pending choice with its name and coordinates`() {
+        recentPlaces.record(gate)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(AddressSearchAction.OnSelectRecent(0))
+
+        assertEquals(gateAsResult, viewModel.state.value.pendingChoiceResult)
+    }
+
+    @Test
+    fun `selecting a recent entry with no name makes a pending choice with a blank name`() {
+        recentPlaces.record(unnamedSpot)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(AddressSearchAction.OnSelectRecent(0))
+
+        val choice = viewModel.state.value.pendingChoiceResult
+        assertEquals("", choice?.name)
+        assertEquals(52.1, choice?.latitude)
+    }
+
+    @Test
+    fun `selecting a recent entry from plan route hands the place to the add-waypoint hand-off and navigates back`() =
+        runTest {
+            recentPlaces.record(gate)
+            val viewModel = createViewModel(sourceContext = SearchSourceContext.PLAN_ROUTE)
+            val eventDeferred = async { viewModel.events.first() }
+
+            viewModel.onAction(AddressSearchAction.OnSelectRecent(0))
+
+            assertEquals(gateAsResult, pendingSearchWaypoint.pending)
+            assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
+        }
+
+    @Test
+    fun `selecting a recent entry out of range does nothing`() {
+        recentPlaces.record(gate)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(AddressSearchAction.OnSelectRecent(5))
+
+        assertNull(viewModel.state.value.pendingChoiceResult)
+        assertNull(pendingSearchWaypoint.pending)
+    }
+
+    @Test
+    fun `saving a favorite records the place under the favorite name`() {
+        geocodeClient.result = Result.Success(listOf(place(name = "Found", latitude = 10.0, longitude = 20.0)))
+        val viewModel = createViewModel()
+        viewModel.onAction(AddressSearchAction.OnQueryChange("query"))
+        viewModel.onAction(AddressSearchAction.OnSubmit)
+        viewModel.onAction(AddressSearchAction.OnSelectResult(0))
+        viewModel.onAction(AddressSearchAction.OnChooseSaveAsFavorite)
+        viewModel.onAction(AddressSearchAction.OnFavoriteNameChange("Home"))
+
+        viewModel.onAction(AddressSearchAction.OnConfirmFavoriteName)
+
+        assertEquals(listOf(NamedPlace(latitude = 10.0, longitude = 20.0, name = "Home")), recentPlaces.recorded)
+    }
+
+    @Test
+    fun `canceling the favorite name step records nothing`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(AddressSearchAction.OnQueryChange("query"))
+        viewModel.onAction(AddressSearchAction.OnSubmit)
+        viewModel.onAction(AddressSearchAction.OnSelectResult(0))
+        viewModel.onAction(AddressSearchAction.OnChooseSaveAsFavorite)
+
+        viewModel.onAction(AddressSearchAction.OnDismissFavoriteName)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `choosing teleport records nothing here because the teleport is recorded where it is carried out`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(AddressSearchAction.OnQueryChange("query"))
+        viewModel.onAction(AddressSearchAction.OnSubmit)
+        viewModel.onAction(AddressSearchAction.OnSelectResult(0))
+
+        viewModel.onAction(AddressSearchAction.OnChooseTeleport)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `opening with an arrived place or text records nothing`() {
+        createViewModel(initialPlace = InitialPlace(52.52, 13.405, "Brandenburg Gate"))
+        createViewModel(initialQuery = "berlin")
+
+        assertTrue(recentPlaces.recorded.isEmpty())
     }
 }

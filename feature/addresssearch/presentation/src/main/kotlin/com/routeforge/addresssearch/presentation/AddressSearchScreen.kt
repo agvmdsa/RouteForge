@@ -19,6 +19,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -30,9 +31,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.NameEntryConfirmationSheet
@@ -100,7 +103,14 @@ internal fun AddressSearchScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            if (state.hasSearched) {
+            if (state.showRecents) {
+                Spacer(modifier = Modifier.height(Spacing.ControlsRow))
+                AddressSearchRecentPlacesList(
+                    places = state.recentPlaces,
+                    onSelectRecent = { index -> onAction(AddressSearchAction.OnSelectRecent(index)) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else if (state.hasSearched) {
                 Spacer(modifier = Modifier.height(Spacing.ControlsRow))
                 when {
                     state.errorType != null ->
@@ -180,6 +190,40 @@ private fun AddressSearchResultsList(
     }
 }
 
+/** The places the user acted on, newest first, in the same height as the search results. A place
+ *  with no name is listed by its coordinates, as the choice sheet does. */
+@Composable
+private fun AddressSearchRecentPlacesList(
+    places: List<NamedPlace>,
+    onSelectRecent: (index: Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = stringResource(R.string.address_search_recent_title),
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(horizontal = Spacing.ScreenContent),
+        )
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val listHeight = maxHeight * RESULTS_HEIGHT_FRACTION
+            LazyColumn(modifier = Modifier.fillMaxWidth().height(listHeight)) {
+                itemsIndexed(places) { index, place ->
+                    ListItem(
+                        headlineContent = {
+                            Text(
+                                text = place.name ?: formatCoordinates(place.latitude, place.longitude),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        },
+                        modifier = Modifier.clickable { onSelectRecent(index) },
+                    )
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun TeleportOrFavoriteChoiceSheet(
     result: PlaceSearchResult,
@@ -252,6 +296,25 @@ private fun AddressSearchScreenResultsPreview() {
                                 longitude = 2.0,
                                 importance = 0.4,
                             ),
+                        ),
+                ),
+            onAction = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun AddressSearchScreenRecentPlacesPreview() {
+    RouteForgeTheme {
+        AddressSearchScreen(
+            state =
+                AddressSearchState(
+                    recentPlaces =
+                        listOf(
+                            NamedPlace(latitude = 52.5163, longitude = 13.3777, name = "Brandenburg Gate"),
+                            NamedPlace(latitude = 52.1, longitude = 13.1),
                         ),
                 ),
             onAction = {},

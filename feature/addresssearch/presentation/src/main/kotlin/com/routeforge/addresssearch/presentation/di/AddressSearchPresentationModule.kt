@@ -31,6 +31,7 @@ val addressSearchPresentationModule =
                 pendingSearchWaypointSender = get(),
                 pendingTeleportTargetSender = get(),
                 favoriteWaypointsRepository = get(),
+                recentPlacesRepository = get(),
             )
         }
     }

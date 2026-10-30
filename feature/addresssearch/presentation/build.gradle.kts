@@ -12,5 +12,6 @@ dependencies {
     implementation(project(":core:design-system"))
     implementation(libs.compose.material.icons.extended)
 
+    testImplementation(testFixtures(project(":core:domain")))
     testImplementation(testFixtures(project(":feature:addresssearch:domain")))
 }

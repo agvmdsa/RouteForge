@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeforge.addresssearch.domain.usecase.SearchPlacesUseCase
 import com.routeforge.coredomain.FavoriteWaypointsRepository
+import com.routeforge.coredomain.RecentPlacesRepository
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffSender
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffSender
@@ -13,6 +14,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -31,6 +34,7 @@ internal class AddressSearchViewModel(
     private val pendingSearchWaypointSender: PendingSearchWaypointHandoffSender,
     private val pendingTeleportTargetSender: PendingTeleportTargetHandoffSender,
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
+    private val recentPlacesRepository: RecentPlacesRepository,
 ) : ViewModel() {
     private val _state =
         MutableStateFlow(
@@ -44,17 +48,11 @@ internal class AddressSearchViewModel(
     private var searchJob: Job? = null
 
     init {
-        initialPlace?.let { place ->
-            choose(
-                PlaceSearchResult(
-                    name = place.name.orEmpty(),
-                    formattedAddress = "",
-                    latitude = place.latitude,
-                    longitude = place.longitude,
-                    importance = 0.0,
-                ),
-            )
-        }
+        recentPlacesRepository
+            .observeRecents()
+            .onEach { recents -> _state.update { it.copy(recentPlaces = recents) } }
+            .launchIn(viewModelScope)
+        initialPlace?.let { place -> choose(placeWithoutAddress(place.name, place.latitude, place.longitude)) }
         // Text that arrived from another app is searched for once, as if it had been typed and submitted.
         if (_state.value.query.isNotBlank()) submit()
     }
@@ -64,6 +62,7 @@ internal class AddressSearchViewModel(
             is AddressSearchAction.OnQueryChange -> _state.update { it.copy(query = action.value) }
             AddressSearchAction.OnSubmit -> submit()
             is AddressSearchAction.OnSelectResult -> selectResult(action.index)
+            is AddressSearchAction.OnSelectRecent -> selectRecent(action.index)
             AddressSearchAction.OnDismissChoice -> _state.update { it.copy(pendingChoiceResult = null) }
             AddressSearchAction.OnChooseTeleport -> chooseTeleport()
             AddressSearchAction.OnChooseSaveAsFavorite ->
@@ -108,7 +107,12 @@ internal class AddressSearchViewModel(
         choose(result)
     }
 
-    /** Picking a result, or arriving with a place from another app, leads to the same next step. */
+    private fun selectRecent(index: Int) {
+        val place = _state.value.recentPlaces.getOrNull(index) ?: return
+        choose(placeWithoutAddress(place.name, place.latitude, place.longitude))
+    }
+
+    /** Picking a result, a recent place, or arriving with a place from another app, leads to the same next step. */
     private fun choose(result: PlaceSearchResult) {
         if (_state.value.sourceContext == SearchSourceContext.PLAN_ROUTE) {
             pendingSearchWaypointSender.send(result)
@@ -131,6 +135,19 @@ internal class AddressSearchViewModel(
         val name = _state.value.favoriteNameInput
         if (name.isBlank()) return
         favoriteWaypointsRepository.add(name, result.latitude, result.longitude)
+        recentPlacesRepository.record(NamedPlace(latitude = result.latitude, longitude = result.longitude, name = name))
         viewModelScope.launch { _events.send(AddressSearchEvent.NavigateBack) }
     }
 }
+
+private fun placeWithoutAddress(
+    name: String?,
+    latitude: Double,
+    longitude: Double,
+) = PlaceSearchResult(
+    name = name.orEmpty(),
+    formattedAddress = "",
+    latitude = latitude,
+    longitude = longitude,
+    importance = 0.0,
+)

@@ -1,5 +1,6 @@
 package com.routeforge.addresssearch.presentation
 
+import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.PlaceSearchResult
 
 internal enum class AddressSearchError {
@@ -19,4 +20,9 @@ internal data class AddressSearchState(
     val pendingChoiceResult: PlaceSearchResult? = null,
     val isNamingFavorite: Boolean = false,
     val favoriteNameInput: String = "",
-)
+    /** The places the user acted on, newest first. */
+    val recentPlaces: List<NamedPlace> = emptyList(),
+) {
+    /** The recent places show while the field is empty or only spaces, and never mixed with results. */
+    val showRecents: Boolean get() = query.isBlank() && recentPlaces.isNotEmpty()
+}
