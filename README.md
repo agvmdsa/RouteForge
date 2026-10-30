@@ -66,6 +66,18 @@ RouteForge needs Android 8.0 or newer and is not on the Play Store yet. A newer 
 - **Open and share** — choose RouteForge in "Open with" for a `geo:` link, an OpenStreetMap or Google Maps link, or a `.gpx` file, or share a place from Google Maps to it. A place gets the same choice as from Search (add as a waypoint on Plan Route; teleport or save as a favorite elsewhere). A Google Maps directions link with coordinates, or a `.gpx` file, becomes the Plan Route draft, asking first if you already have waypoints placed.
 - **Offline first, one exception** — coordinates in a link or in shared text are read on the device. Only a short `maps.app.goo.gl` link is followed over the internet, when you share it: a few requests to Google's own hosts, headers only, nothing about your position. If that isn't possible, the shared text is offered to Search instead.
 
+## Build from source
+
+Android Studio is not needed. You need the Android SDK (its path as `sdk.dir` in `local.properties`, or in `ANDROID_HOME`), JDK 21 for the compiler and JDK 25 for the Gradle daemon (pinned in `gradle/gradle-daemon-jvm.properties`).
+
+```sh
+make android   # builds the debug APK: app/build/outputs/apk/debug/app-debug.apk
+make run       # installs it on the connected phone or emulator and opens it
+make check     # code style, build and unit tests, as the pull request checks run them
+```
+
+`make` on its own lists every target. A debug build is signed with a debug key, so it cannot update over a release installed from GitHub: uninstall that one first.
+
 ## Status
 
 Early stage — actively being designed and built. Not yet on the Play Store.
