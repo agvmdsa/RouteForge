@@ -1,7 +1,9 @@
 package com.routeforge.simulation.presentation
 
+import com.routeforge.coredomain.RecentPlacesRepository
 import com.routeforge.coredomain.handoff.LastComputedRouteHandoffClearer
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffReceiver
+import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.simulation.domain.usecase.IsNetworkConnectedUseCase
 import com.routeforge.simulation.domain.usecase.TeleportUseCase
 import kotlinx.coroutines.CoroutineScope
@@ -15,6 +17,7 @@ internal class PendingTeleportConfirmer(
     private val isNetworkConnected: IsNetworkConnectedUseCase,
     private val pendingTeleportTargetReceiver: PendingTeleportTargetHandoffReceiver,
     private val lastComputedRouteClearer: LastComputedRouteHandoffClearer,
+    private val recentPlacesRepository: RecentPlacesRepository,
     private val mockLocationAuthorizationGuard: MockLocationAuthorizationGuard,
 ) {
     internal fun registerMapTap(
@@ -53,7 +56,7 @@ internal class PendingTeleportConfirmer(
             )
         }
         if (latitude == null || longitude == null || isBlockedOffline) return
-        teleportTo(latitude, longitude, state)
+        teleportTo(latitude, longitude, name = null, state)
     }
 
     /** The favorite-teleport path defers to this confirmation only when a route is loaded or
@@ -65,7 +68,7 @@ internal class PendingTeleportConfirmer(
         val target = state.value.pendingFavoriteTeleportTarget ?: return
         state.update { it.copy(pendingFavoriteTeleportTarget = null) }
         lastComputedRouteClearer.clear()
-        teleportTo(target.latitude, target.longitude, state)
+        teleportTo(target.latitude, target.longitude, target.name, state)
     }
 
     /** Shared by [confirmTeleport] (map-tap path, already confirmed via TeleportConfirmationSheet),
@@ -76,6 +79,7 @@ internal class PendingTeleportConfirmer(
     private fun teleportTo(
         latitude: Double,
         longitude: Double,
+        name: String?,
         state: MutableStateFlow<SimulationState>,
     ) {
         if (!mockLocationAuthorizationGuard.isAuthorized()) {
@@ -83,6 +87,7 @@ internal class PendingTeleportConfirmer(
             return
         }
         state.update { it.copy(errorType = null, isBlockedByAuthorization = false) }
+        recentPlacesRepository.record(NamedPlace(latitude, longitude, name))
         teleport(latitude, longitude)
     }
 
@@ -95,7 +100,7 @@ internal class PendingTeleportConfirmer(
                 if (state.value.loadedRoute != null) {
                     state.update { it.copy(pendingFavoriteTeleportTarget = place) }
                 } else {
-                    teleportTo(place.latitude, place.longitude, state)
+                    teleportTo(place.latitude, place.longitude, place.name, state)
                 }
             }.launchIn(scope)
     }
