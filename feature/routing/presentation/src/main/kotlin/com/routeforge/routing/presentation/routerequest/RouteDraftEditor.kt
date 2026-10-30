@@ -90,8 +90,8 @@ internal class RouteDraftEditor(
         scope: CoroutineScope,
     ) {
         selectedFavoriteWaypointReceiver.incoming
-            .onEach { point ->
-                mutateDraft(state, scope) { it.add(point) }
+            .onEach { place ->
+                mutateDraft(state, scope) { it.add(RoutePoint(latitude = place.latitude, longitude = place.longitude)) }
             }.launchIn(scope)
     }
 }

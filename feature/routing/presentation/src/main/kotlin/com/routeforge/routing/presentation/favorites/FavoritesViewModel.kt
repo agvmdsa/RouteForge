@@ -6,7 +6,7 @@ import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.NetworkConnectivityChecker
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffSender
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffSender
-import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.coredomain.model.NamedPlace
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -105,7 +105,7 @@ internal class FavoritesViewModel(
     private fun onFavoriteSelected(id: String) {
         if (!_state.value.isPickerMode) return
         val favorite = _state.value.favorites.firstOrNull { it.id == id } ?: return
-        selectedFavoriteWaypointSender.send(RoutePoint(latitude = favorite.latitude, longitude = favorite.longitude))
+        selectedFavoriteWaypointSender.send(NamedPlace(latitude = favorite.latitude, longitude = favorite.longitude, name = favorite.name))
         viewModelScope.launch { _events.send(FavoritesEvent.NavigateBack) }
     }
 
@@ -120,7 +120,7 @@ internal class FavoritesViewModel(
         val favorite = _state.value.pendingTeleportFavorite ?: return
         if (_state.value.isPendingTeleportBlockedOffline) return
         _state.update { it.copy(pendingTeleportFavorite = null, isPendingTeleportBlockedOffline = false) }
-        pendingTeleportTargetSender.send(RoutePoint(latitude = favorite.latitude, longitude = favorite.longitude))
+        pendingTeleportTargetSender.send(NamedPlace(latitude = favorite.latitude, longitude = favorite.longitude, name = favorite.name))
         viewModelScope.launch { _events.send(FavoritesEvent.NavigateBack) }
     }
 }

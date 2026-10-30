@@ -10,8 +10,8 @@ import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffImpl
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
 import com.routeforge.coredomain.model.FavoriteWaypoint
+import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.PlaceSearchResult
-import com.routeforge.coredomain.model.RoutePoint
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -223,8 +223,23 @@ class AddressSearchViewModelTest {
 
             viewModel.onAction(AddressSearchAction.OnChooseTeleport)
 
-            assertEquals(10.0, pendingTeleportTarget.pending?.latitude)
-            assertEquals(20.0, pendingTeleportTarget.pending?.longitude)
+            assertEquals(NamedPlace(latitude = 10.0, longitude = 20.0, name = result.name), pendingTeleportTarget.pending)
+            assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
+        }
+
+    @Test
+    fun `teleporting to a result with a blank name hands off no name`() =
+        runTest {
+            geocodeClient.result = Result.Success(listOf(place(name = "  ", latitude = 10.0, longitude = 20.0)))
+            val viewModel = createViewModel()
+            viewModel.onAction(AddressSearchAction.OnQueryChange("query"))
+            viewModel.onAction(AddressSearchAction.OnSubmit)
+            viewModel.onAction(AddressSearchAction.OnSelectResult(0))
+            val eventDeferred = async { viewModel.events.first() }
+
+            viewModel.onAction(AddressSearchAction.OnChooseTeleport)
+
+            assertEquals(NamedPlace(latitude = 10.0, longitude = 20.0, name = null), pendingTeleportTarget.pending)
             assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
         }
 
@@ -305,7 +320,7 @@ class AddressSearchViewModelTest {
 
             viewModel.onAction(AddressSearchAction.OnChooseTeleport)
 
-            assertEquals(RoutePoint(latitude = 52.52, longitude = 13.405), pendingTeleportTarget.pending)
+            assertEquals(NamedPlace(latitude = 52.52, longitude = 13.405, name = "Brandenburg Gate"), pendingTeleportTarget.pending)
             assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
         }
 
