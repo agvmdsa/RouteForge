@@ -63,6 +63,10 @@ internal class AddressSearchViewModel(
             AddressSearchAction.OnSubmit -> submit()
             is AddressSearchAction.OnSelectResult -> selectResult(action.index)
             is AddressSearchAction.OnSelectRecent -> selectRecent(action.index)
+            is AddressSearchAction.OnRemoveRecent -> removeRecent(action.index)
+            AddressSearchAction.OnClearRecentsClick -> _state.update { it.copy(isClearRecentsConfirmOpen = true) }
+            AddressSearchAction.OnConfirmClearRecents -> clearRecents()
+            AddressSearchAction.OnDismissClearRecents -> _state.update { it.copy(isClearRecentsConfirmOpen = false) }
             AddressSearchAction.OnDismissChoice -> _state.update { it.copy(pendingChoiceResult = null) }
             AddressSearchAction.OnChooseTeleport -> chooseTeleport()
             AddressSearchAction.OnChooseSaveAsFavorite ->
@@ -110,6 +114,16 @@ internal class AddressSearchViewModel(
     private fun selectRecent(index: Int) {
         val place = _state.value.recentPlaces.getOrNull(index) ?: return
         choose(placeWithoutAddress(place.name, place.latitude, place.longitude))
+    }
+
+    private fun removeRecent(index: Int) {
+        val place = _state.value.recentPlaces.getOrNull(index) ?: return
+        recentPlacesRepository.remove(place)
+    }
+
+    private fun clearRecents() {
+        recentPlacesRepository.clear()
+        _state.update { it.copy(isClearRecentsConfirmOpen = false) }
     }
 
     /** Picking a result, a recent place, or arriving with a place from another app, leads to the same next step. */

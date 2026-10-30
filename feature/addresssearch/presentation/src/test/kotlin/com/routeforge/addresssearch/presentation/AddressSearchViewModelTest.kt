@@ -552,4 +552,90 @@ class AddressSearchViewModelTest {
 
         assertTrue(recentPlaces.recorded.isEmpty())
     }
+
+    private val bridge = NamedPlace(latitude = 52.52, longitude = 13.40, name = "Bridge")
+
+    @Test
+    fun `removing a recent entry removes only that entry and keeps the others in order`() {
+        recentPlaces.record(unnamedSpot)
+        recentPlaces.record(bridge)
+        recentPlaces.record(gate)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(AddressSearchAction.OnRemoveRecent(1))
+
+        assertEquals(listOf(gate, unnamedSpot), viewModel.state.value.recentPlaces)
+    }
+
+    @Test
+    fun `removing a recent entry out of range does nothing`() {
+        recentPlaces.record(gate)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(AddressSearchAction.OnRemoveRecent(3))
+
+        assertEquals(listOf(gate), viewModel.state.value.recentPlaces)
+    }
+
+    @Test
+    fun `removing the last recent entry hides the recent list`() {
+        recentPlaces.record(gate)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(AddressSearchAction.OnRemoveRecent(0))
+
+        assertFalse(viewModel.state.value.showRecents)
+    }
+
+    @Test
+    fun `asking to clear the list opens the confirmation and removes nothing`() {
+        recentPlaces.record(gate)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(AddressSearchAction.OnClearRecentsClick)
+
+        assertTrue(viewModel.state.value.isClearRecentsConfirmOpen)
+        assertEquals(listOf(gate), viewModel.state.value.recentPlaces)
+    }
+
+    @Test
+    fun `confirming the clear empties the list and closes the confirmation`() {
+        recentPlaces.record(gate)
+        recentPlaces.record(bridge)
+        val viewModel = createViewModel()
+        viewModel.onAction(AddressSearchAction.OnClearRecentsClick)
+
+        viewModel.onAction(AddressSearchAction.OnConfirmClearRecents)
+
+        val recents = viewModel.state.value.recentPlaces
+        assertTrue(recents.isEmpty())
+        assertFalse(viewModel.state.value.isClearRecentsConfirmOpen)
+    }
+
+    @Test
+    fun `dismissing the clear closes the confirmation and removes nothing`() {
+        recentPlaces.record(gate)
+        val viewModel = createViewModel()
+        viewModel.onAction(AddressSearchAction.OnClearRecentsClick)
+
+        viewModel.onAction(AddressSearchAction.OnDismissClearRecents)
+
+        assertFalse(viewModel.state.value.isClearRecentsConfirmOpen)
+        assertEquals(listOf(gate), viewModel.state.value.recentPlaces)
+    }
+
+    @Test
+    fun `removing and clearing leave favorites and the pending hand-offs alone`() {
+        recentPlaces.record(gate)
+        recentPlaces.record(bridge)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(AddressSearchAction.OnRemoveRecent(0))
+        viewModel.onAction(AddressSearchAction.OnClearRecentsClick)
+        viewModel.onAction(AddressSearchAction.OnConfirmClearRecents)
+
+        assertTrue(favoriteWaypointsRepository.added.isEmpty())
+        assertNull(pendingSearchWaypoint.pending)
+        assertNull(pendingTeleportTarget.pending)
+    }
 }

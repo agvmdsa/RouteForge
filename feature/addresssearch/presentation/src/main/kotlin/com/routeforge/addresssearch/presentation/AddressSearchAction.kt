@@ -15,6 +15,16 @@ internal sealed interface AddressSearchAction {
         val index: Int,
     ) : AddressSearchAction
 
+    data class OnRemoveRecent(
+        val index: Int,
+    ) : AddressSearchAction
+
+    data object OnClearRecentsClick : AddressSearchAction
+
+    data object OnConfirmClearRecents : AddressSearchAction
+
+    data object OnDismissClearRecents : AddressSearchAction
+
     data object OnDismissChoice : AddressSearchAction
 
     data object OnChooseTeleport : AddressSearchAction
