@@ -9,4 +9,5 @@
     <string name="address_search_favorite_name_label">Name</string>
     <string name="address_search_favorite_save_button">Save</string>
     <string name="address_search_cancel_button">Cancel</string>
+    <string name="address_search_recent_title">Recent places</string>
 </resources>
