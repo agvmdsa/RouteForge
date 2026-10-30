@@ -3,6 +3,7 @@ package com.routeforge.addresssearch.presentation
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -13,6 +14,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,6 +30,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -39,6 +42,7 @@ import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.components.NameEntryConfirmationSheet
+import com.routeforge.designsystem.components.TwoButtonConfirmationSheet
 import com.routeforge.designsystem.format.formatCoordinates
 import com.routeforge.designsystem.theme.RouteForgeTheme
 import com.routeforge.designsystem.theme.Spacing
@@ -108,6 +112,8 @@ internal fun AddressSearchScreen(
                 AddressSearchRecentPlacesList(
                     places = state.recentPlaces,
                     onSelectRecent = { index -> onAction(AddressSearchAction.OnSelectRecent(index)) },
+                    onRemoveRecent = { index -> onAction(AddressSearchAction.OnRemoveRecent(index)) },
+                    onClearClick = { onAction(AddressSearchAction.OnClearRecentsClick) },
                     modifier = Modifier.fillMaxWidth(),
                 )
             } else if (state.hasSearched) {
@@ -146,6 +152,17 @@ private fun AddressSearchDialogs(
     state: AddressSearchState,
     onAction: (AddressSearchAction) -> Unit,
 ) {
+    if (state.isClearRecentsConfirmOpen) {
+        TwoButtonConfirmationSheet(
+            title = stringResource(R.string.address_search_recent_clear_title),
+            message = stringResource(R.string.address_search_recent_clear_message),
+            confirmLabel = stringResource(R.string.address_search_recent_clear_confirm),
+            dismissLabel = stringResource(R.string.address_search_cancel_button),
+            onConfirm = { onAction(AddressSearchAction.OnConfirmClearRecents) },
+            onDismiss = { onAction(AddressSearchAction.OnDismissClearRecents) },
+        )
+    }
+
     val choiceResult = state.pendingChoiceResult
     if (choiceResult != null) {
         if (!state.isNamingFavorite) {
@@ -196,25 +213,38 @@ private fun AddressSearchResultsList(
 private fun AddressSearchRecentPlacesList(
     places: List<NamedPlace>,
     onSelectRecent: (index: Int) -> Unit,
+    onRemoveRecent: (index: Int) -> Unit,
+    onClearClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        Text(
-            text = stringResource(R.string.address_search_recent_title),
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(horizontal = Spacing.ScreenContent),
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = Spacing.ScreenContent),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.address_search_recent_title),
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onClearClick) {
+                Text(stringResource(R.string.address_search_recent_clear_button))
+            }
+        }
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val listHeight = maxHeight * RESULTS_HEIGHT_FRACTION
             LazyColumn(modifier = Modifier.fillMaxWidth().height(listHeight)) {
                 itemsIndexed(places) { index, place ->
+                    val label = place.name ?: formatCoordinates(place.latitude, place.longitude)
                     ListItem(
-                        headlineContent = {
-                            Text(
-                                text = place.name ?: formatCoordinates(place.latitude, place.longitude),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
+                        headlineContent = { Text(text = label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                        trailingContent = {
+                            IconButton(onClick = { onRemoveRecent(index) }) {
+                                Icon(
+                                    Icons.Filled.Close,
+                                    contentDescription = stringResource(R.string.address_search_recent_remove_description, label),
+                                )
+                            }
                         },
                         modifier = Modifier.clickable { onSelectRecent(index) },
                     )

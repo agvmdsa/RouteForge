@@ -10,4 +10,9 @@
     <string name="address_search_favorite_save_button">Save</string>
     <string name="address_search_cancel_button">Cancel</string>
     <string name="address_search_recent_title">Recent places</string>
+    <string name="address_search_recent_clear_button">Clear</string>
+    <string name="address_search_recent_remove_description">Remove %1$s from recent places</string>
+    <string name="address_search_recent_clear_title">Clear recent places?</string>
+    <string name="address_search_recent_clear_message">This removes every place from the list. Your favorites are not affected.</string>
+    <string name="address_search_recent_clear_confirm">Clear</string>
 </resources>

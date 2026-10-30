@@ -22,6 +22,7 @@ internal data class AddressSearchState(
     val favoriteNameInput: String = "",
     /** The places the user acted on, newest first. */
     val recentPlaces: List<NamedPlace> = emptyList(),
+    val isClearRecentsConfirmOpen: Boolean = false,
 ) {
     /** The recent places show while the field is empty or only spaces, and never mixed with results. */
     val showRecents: Boolean get() = query.isBlank() && recentPlaces.isNotEmpty()
