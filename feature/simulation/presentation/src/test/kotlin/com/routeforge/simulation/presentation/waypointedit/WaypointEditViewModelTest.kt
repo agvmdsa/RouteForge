@@ -1,12 +1,14 @@
 package com.routeforge.simulation.presentation.waypointedit
 
 import com.routeforge.coredomain.model.LatLng
+import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.testing.FakeFavoriteWaypointsRepository
+import com.routeforge.coredomain.testing.FakeRecentPlacesRepository
 import com.routeforge.coredomain.testing.FakeRegionCatalog
 import com.routeforge.coredomain.testing.FakeRegionUsageTracker
 import com.routeforge.coredomain.testing.FakeRoutingEngine
@@ -46,7 +48,9 @@ class WaypointEditViewModelTest {
         )
     private val computeEditableWaypointRange = ComputeEditableWaypointRangeUseCase()
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
-    private val viewModel = WaypointEditViewModel(recomputeRouteForBothModes, computeEditableWaypointRange, favoriteWaypointsRepository)
+    private val recentPlaces = FakeRecentPlacesRepository()
+    private val viewModel =
+        WaypointEditViewModel(recomputeRouteForBothModes, computeEditableWaypointRange, favoriteWaypointsRepository, recentPlaces)
 
     private val points =
         listOf(
@@ -224,4 +228,78 @@ class WaypointEditViewModelTest {
             assertNull(viewModel.state.value.missingRegionsWarning)
             job.cancel()
         }
+
+    @Test
+    fun `adding a tapped spot saved as a favorite records the place under the favorite name`() {
+        viewModel.onAction(WaypointEditAction.OnOpen(loadedRoute, distanceTraveledMeters = null))
+        viewModel.onAction(WaypointEditAction.OnMapTap(latitude = 3.0, longitude = 0.0))
+        viewModel.onAction(WaypointEditAction.OnToggleSaveAsFavorite)
+        viewModel.onAction(WaypointEditAction.OnFavoriteNameChange("Edit spot"))
+
+        viewModel.onAction(WaypointEditAction.OnConfirmAdd)
+
+        assertEquals(listOf(NamedPlace(latitude = 3.0, longitude = 0.0, name = "Edit spot")), recentPlaces.recorded)
+    }
+
+    @Test
+    fun `adding a tapped spot without the favorite box records nothing`() {
+        viewModel.onAction(WaypointEditAction.OnOpen(loadedRoute, distanceTraveledMeters = null))
+        viewModel.onAction(WaypointEditAction.OnMapTap(latitude = 3.0, longitude = 0.0))
+
+        viewModel.onAction(WaypointEditAction.OnConfirmAdd)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `adding a tapped spot with the favorite box ticked and no name records nothing and saves no favorite`() {
+        viewModel.onAction(WaypointEditAction.OnOpen(loadedRoute, distanceTraveledMeters = null))
+        viewModel.onAction(WaypointEditAction.OnMapTap(latitude = 3.0, longitude = 0.0))
+        viewModel.onAction(WaypointEditAction.OnToggleSaveAsFavorite)
+
+        viewModel.onAction(WaypointEditAction.OnConfirmAdd)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+        assertTrue(favoriteWaypointsRepository.observeFavorites().value.isEmpty())
+    }
+
+    @Test
+    fun `dismissing the add confirmation records nothing`() {
+        viewModel.onAction(WaypointEditAction.OnOpen(loadedRoute, distanceTraveledMeters = null))
+        viewModel.onAction(WaypointEditAction.OnMapTap(latitude = 3.0, longitude = 0.0))
+        viewModel.onAction(WaypointEditAction.OnToggleSaveAsFavorite)
+        viewModel.onAction(WaypointEditAction.OnFavoriteNameChange("Edit spot"))
+
+        viewModel.onAction(WaypointEditAction.OnDismissAdd)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `dragging a marker records nothing`() {
+        viewModel.onAction(WaypointEditAction.OnOpen(loadedRoute, distanceTraveledMeters = null))
+
+        viewModel.onAction(WaypointEditAction.OnMarkerDragged(index = 1, latitude = 1.5, longitude = 0.5))
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `reordering and applying the change records nothing`() {
+        viewModel.onAction(WaypointEditAction.OnOpen(loadedRoute, distanceTraveledMeters = null))
+        viewModel.onAction(WaypointEditAction.OnReorder(fromIndex = 0, toIndex = 2))
+
+        viewModel.onAction(WaypointEditAction.OnApplyChanges)
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    @Test
+    fun `deleting a waypoint records nothing`() {
+        viewModel.onAction(WaypointEditAction.OnOpen(loadedRoute, distanceTraveledMeters = null))
+
+        viewModel.onAction(WaypointEditAction.OnDelete(0))
+
+        assertTrue(recentPlaces.recorded.isEmpty())
+    }
 }

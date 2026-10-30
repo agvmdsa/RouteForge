@@ -3,6 +3,8 @@ package com.routeforge.simulation.presentation.waypointedit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeforge.coredomain.FavoriteWaypointsRepository
+import com.routeforge.coredomain.RecentPlacesRepository
+import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.usecase.ComputeEditableWaypointRangeUseCase
@@ -28,6 +30,7 @@ internal class WaypointEditViewModel(
     private val recomputeRouteForBothModes: RecomputeRouteForBothModesUseCase,
     private val computeEditableWaypointRange: ComputeEditableWaypointRangeUseCase,
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
+    private val recentPlacesRepository: RecentPlacesRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(WaypointEditState())
     val state = _state.asStateFlow()
@@ -111,6 +114,7 @@ internal class WaypointEditViewModel(
         clearPendingAdd()
         if (isSaveAsFavoriteChecked && favoriteNameInput.isNotBlank()) {
             favoriteWaypointsRepository.add(favoriteNameInput, latitude, longitude)
+            recentPlacesRepository.record(NamedPlace(latitude, longitude, favoriteNameInput))
         }
         commitEdit(_state.value.points + RoutePoint(latitude = latitude, longitude = longitude))
     }
