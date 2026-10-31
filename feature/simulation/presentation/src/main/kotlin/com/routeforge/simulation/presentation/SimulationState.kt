@@ -1,5 +1,6 @@
 package com.routeforge.simulation.presentation
 
+import com.routeforge.coredomain.model.AddressLabel
 import com.routeforge.coredomain.model.MapStyle
 import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.RealLocation
@@ -27,6 +28,8 @@ internal data class SimulationState(
     val pendingTeleportLatitude: Double? = null,
     val pendingTeleportLongitude: Double? = null,
     val isPendingTeleportBlockedOffline: Boolean = false,
+    /** The address of the pending teleport's position, once the lookup has found one. */
+    val pendingTeleportAddress: AddressLabel? = null,
     val isPendingCancelMock: Boolean = false,
     val loadedRoute: Route? = null,
     val playbackSpeedKmh: Float = SpeedPresetType.CAR.kilometersPerHour.toFloat(),

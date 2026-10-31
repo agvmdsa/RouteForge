@@ -24,6 +24,7 @@ internal fun SimulationDialogs(
         TeleportConfirmationSheet(
             latitude = pendingLatitude,
             longitude = pendingLongitude,
+            address = state.pendingTeleportAddress?.full,
             isBlockedOffline = state.isPendingTeleportBlockedOffline,
             onConfirm = { onAction(SimulationAction.OnConfirmTeleport) },
             onDismiss = { onAction(SimulationAction.OnCancelTeleport) },
