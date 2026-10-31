@@ -132,9 +132,11 @@ internal fun NavController.switchToTab(tabRoute: TabRoute) {
 
 /** Wraps the tab-shell [content] in a [Scaffold] with a bottom [ShortNavigationBar] (the Material3
  *  "short" variant — 64dp tall instead of the standard 80dp "tall" bar, since the full-height one
- *  felt oversized for just four icon+label items) — visible only when the current destination is
+ *  felt oversized for just four icon+label items) — visible only when the screen showing is
  *  exactly one of the four tabs' own root screens (FR-006/FR-007: hidden on every pushed sub-screen
- *  and during first-run setup, since neither is ever one of these root routes).
+ *  and during first-run setup, since neither is ever one of these root routes). The search is drawn
+ *  over the tab it was opened from, so while it is open the screen showing is that tab's: the bar
+ *  stays, with that tab selected, and the tab behind keeps its size (spec 024, FR-013).
  *
  *  Also implements FR-012: pressing back while on a non-Simulate tab's own root switches to the
  *  Simulate tab instead of exiting the app — the same [switchToTab] call a manual tab tap performs, so
@@ -147,7 +149,15 @@ internal fun MainTabsScaffold(
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val currentDestination = navController.currentBackStackEntryAsState().value?.destination
+    // What the user sees: the tab under the search while the search is open. The back rule below keeps the real destination.
+    val visibleDestination =
+        visibleDestination(
+            current = currentDestination,
+            previous = navController.previousBackStackEntry?.destination,
+            isSearch = { it.hasRoute(AddressSearchRoute::class) },
+        )
     val activeRootTab = currentDestination?.let { destination -> Tabs.firstOrNull { it.isRootDestination(destination) } }
+    val visibleRootTab = visibleDestination?.let { destination -> Tabs.firstOrNull { it.isRootDestination(destination) } }
 
     BackHandler(enabled = activeRootTab != null && activeRootTab.tab != AppTab.SIMULATE) {
         navController.switchToTab(SimulateTabRoute)
@@ -159,7 +169,7 @@ internal fun MainTabsScaffold(
     CompositionLocalProvider(LocalTourTargetRegistry provides shellTourTargets) {
         Scaffold(
             bottomBar = {
-                if (activeRootTab != null) {
+                if (visibleRootTab != null) {
                     // FR-013: no explicit insets handling needed here — ShortNavigationBar already
                     // applies WindowInsets.systemBarsForVisualComponents (horizontal + bottom) as its
                     // own default windowInsets param, which correctly reports a slimmer inset under
@@ -170,7 +180,7 @@ internal fun MainTabsScaffold(
                             when (entry) {
                                 is NavBarEntry.Tab ->
                                     ShortNavigationBarItem(
-                                        selected = currentDestination != null && entry.item.isInHierarchy(currentDestination),
+                                        selected = visibleDestination != null && entry.item.isInHierarchy(visibleDestination),
                                         onClick = { navController.switchToTab(entry.item.tabRoute) },
                                         icon = { Icon(entry.item.icon, contentDescription = null) },
                                         label = { Text(stringResource(entry.item.labelRes)) },
@@ -186,7 +196,7 @@ internal fun MainTabsScaffold(
                                         selected = false,
                                         onClick = {
                                             val sourceContext =
-                                                if (activeRootTab?.tab ==
+                                                if (visibleRootTab?.tab ==
                                                     AppTab.PLAN_ROUTE
                                                 ) {
                                                     SearchSourceContext.PLAN_ROUTE
