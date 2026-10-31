@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.routeforge.designsystem.theme.Spacing
 
@@ -25,6 +26,7 @@ private val SheetContentSpacing = 12.dp
 fun ConfirmationBottomSheet(
     title: String,
     onDismiss: () -> Unit,
+    titleMaxLines: Int = Int.MAX_VALUE,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState()
@@ -33,7 +35,7 @@ fun ConfirmationBottomSheet(
             modifier = Modifier.padding(Spacing.ScreenContent),
             verticalArrangement = Arrangement.spacedBy(SheetContentSpacing),
         ) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(title, style = MaterialTheme.typography.titleMedium, maxLines = titleMaxLines, overflow = TextOverflow.Ellipsis)
             content()
         }
     }

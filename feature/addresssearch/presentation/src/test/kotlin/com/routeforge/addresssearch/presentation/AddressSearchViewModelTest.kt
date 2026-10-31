@@ -3,16 +3,19 @@ package com.routeforge.addresssearch.presentation
 import com.routeforge.addresssearch.domain.testing.FakeGeocodeClient
 import com.routeforge.addresssearch.domain.usecase.RankSearchResultsUseCase
 import com.routeforge.addresssearch.domain.usecase.SearchPlacesUseCase
+import com.routeforge.coredomain.AddressLookup
 import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffImpl
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
+import com.routeforge.coredomain.model.AddressLabel
 import com.routeforge.coredomain.model.FavoriteWaypoint
 import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.testing.FakeRecentPlacesRepository
+import com.routeforge.coredomain.testing.FakeReverseGeocoder
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -72,6 +75,7 @@ class AddressSearchViewModelTest {
     private val pendingTeleportTarget = PendingTeleportTargetHandoffImpl()
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
     private val recentPlaces = FakeRecentPlacesRepository()
+    private val reverseGeocoder = FakeReverseGeocoder()
 
     @BeforeEach
     fun setUp() {
@@ -99,6 +103,7 @@ class AddressSearchViewModelTest {
             pendingTeleportTargetSender = pendingTeleportTarget,
             favoriteWaypointsRepository = favoriteWaypointsRepository,
             recentPlacesRepository = recentPlaces,
+            addressLookup = AddressLookup(reverseGeocoder),
         )
 
     @Test
@@ -637,5 +642,188 @@ class AddressSearchViewModelTest {
         assertTrue(favoriteWaypointsRepository.added.isEmpty())
         assertNull(pendingSearchWaypoint.pending)
         assertNull(pendingTeleportTarget.pending)
+    }
+
+    private val address = AddressLabel(full = "Pariser Platz 1, Mitte, Berlin", short = "Pariser Platz 1")
+
+    private fun passTheLookupPause() {
+        dispatcher.scheduler.advanceTimeBy(AddressLookup.DEBOUNCE_MILLIS)
+        dispatcher.scheduler.runCurrent()
+    }
+
+    private fun AddressSearchViewModel.chooseResultWithName(name: String) {
+        geocodeClient.result = Result.Success(listOf(place(name = name, latitude = 10.0, longitude = 20.0)))
+        onAction(AddressSearchAction.OnQueryChange("query"))
+        onAction(AddressSearchAction.OnSubmit)
+        onAction(AddressSearchAction.OnSelectResult(0))
+    }
+
+    @Test
+    fun `choosing a result with no name shows its address after the pause`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val viewModel = createViewModel()
+
+        viewModel.chooseResultWithName("")
+        assertNull(viewModel.state.value.choiceAddress)
+        passTheLookupPause()
+
+        assertEquals(address, viewModel.state.value.choiceAddress)
+        assertEquals(listOf(10.0 to 20.0), reverseGeocoder.requests)
+    }
+
+    @Test
+    fun `choosing a recent entry with no name shows its address after the pause`() {
+        reverseGeocoder.answer = Result.Success(address)
+        recentPlaces.record(unnamedSpot)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(AddressSearchAction.OnSelectRecent(0))
+        passTheLookupPause()
+
+        assertEquals(address, viewModel.state.value.choiceAddress)
+    }
+
+    @Test
+    fun `choosing a result that has a name makes no request`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val viewModel = createViewModel()
+
+        viewModel.chooseResultWithName("Eiffel Tower")
+        passTheLookupPause()
+
+        assertTrue(reverseGeocoder.requests.isEmpty())
+        assertNull(viewModel.state.value.choiceAddress)
+    }
+
+    @Test
+    fun `choosing a place with no name on plan route makes no request here`() {
+        reverseGeocoder.answer = Result.Success(address)
+        recentPlaces.record(unnamedSpot)
+        val viewModel = createViewModel(sourceContext = SearchSourceContext.PLAN_ROUTE)
+
+        viewModel.onAction(AddressSearchAction.OnSelectRecent(0))
+        passTheLookupPause()
+
+        assertTrue(reverseGeocoder.requests.isEmpty())
+    }
+
+    @Test
+    fun `a failed lookup leaves no address and teleporting still works`() {
+        reverseGeocoder.answer = Result.Error(DataError.Network.NO_INTERNET)
+        val viewModel = createViewModel()
+        viewModel.chooseResultWithName("")
+        passTheLookupPause()
+
+        viewModel.onAction(AddressSearchAction.OnChooseTeleport)
+
+        assertNull(viewModel.state.value.choiceAddress)
+        assertEquals(10.0, pendingTeleportTarget.pending?.latitude)
+    }
+
+    @Test
+    fun `an answer of nothing found leaves no address`() {
+        reverseGeocoder.answer = Result.Success(null)
+        val viewModel = createViewModel()
+
+        viewModel.chooseResultWithName("")
+        passTheLookupPause()
+
+        assertEquals(1, reverseGeocoder.requests.size)
+        assertNull(viewModel.state.value.choiceAddress)
+    }
+
+    @Test
+    fun `dismissing the choice before the address arrives discards it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        reverseGeocoder.hold()
+        val viewModel = createViewModel()
+        viewModel.chooseResultWithName("")
+        passTheLookupPause()
+
+        viewModel.onAction(AddressSearchAction.OnDismissChoice)
+        reverseGeocoder.release()
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(viewModel.state.value.choiceAddress)
+    }
+
+    @Test
+    fun `teleporting before the address arrives discards it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        reverseGeocoder.hold()
+        val viewModel = createViewModel()
+        viewModel.chooseResultWithName("")
+        passTheLookupPause()
+
+        viewModel.onAction(AddressSearchAction.OnChooseTeleport)
+        reverseGeocoder.release()
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(viewModel.state.value.choiceAddress)
+    }
+
+    @Test
+    fun `leaving the favorite name step keeps the address of the choice`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val viewModel = createViewModel()
+        viewModel.chooseResultWithName("")
+        passTheLookupPause()
+        viewModel.onAction(AddressSearchAction.OnChooseSaveAsFavorite)
+
+        viewModel.onAction(AddressSearchAction.OnDismissFavoriteName)
+
+        assertEquals(address, viewModel.state.value.choiceAddress)
+    }
+
+    @Test
+    fun `saving a place with no name as a favorite starts the name as the short address`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val viewModel = createViewModel()
+        viewModel.chooseResultWithName("")
+        passTheLookupPause()
+
+        viewModel.onAction(AddressSearchAction.OnChooseSaveAsFavorite)
+
+        assertEquals("Pariser Platz 1", viewModel.state.value.favoriteNameInput)
+    }
+
+    @Test
+    fun `an address arriving during the name step fills an untouched field`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val viewModel = createViewModel()
+        viewModel.chooseResultWithName("")
+        viewModel.onAction(AddressSearchAction.OnChooseSaveAsFavorite)
+        assertEquals("", viewModel.state.value.favoriteNameInput)
+
+        passTheLookupPause()
+
+        assertEquals("Pariser Platz 1", viewModel.state.value.favoriteNameInput)
+    }
+
+    @Test
+    fun `an address arriving after the user typed a name does not replace it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val viewModel = createViewModel()
+        viewModel.chooseResultWithName("")
+        viewModel.onAction(AddressSearchAction.OnChooseSaveAsFavorite)
+        viewModel.onAction(AddressSearchAction.OnFavoriteNameChange("My spot"))
+
+        passTheLookupPause()
+
+        assertEquals("My spot", viewModel.state.value.favoriteNameInput)
+    }
+
+    @Test
+    fun `clearing the favorite name keeps the address from filling it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val viewModel = createViewModel()
+        viewModel.chooseResultWithName("")
+        viewModel.onAction(AddressSearchAction.OnChooseSaveAsFavorite)
+        viewModel.onAction(AddressSearchAction.OnFavoriteNameChange("x"))
+        viewModel.onAction(AddressSearchAction.OnFavoriteNameChange(""))
+
+        passTheLookupPause()
+
+        assertEquals("", viewModel.state.value.favoriteNameInput)
     }
 }
