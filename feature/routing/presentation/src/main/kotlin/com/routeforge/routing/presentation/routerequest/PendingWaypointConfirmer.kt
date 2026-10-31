@@ -1,5 +1,6 @@
 package com.routeforge.routing.presentation.routerequest
 
+import com.routeforge.coredomain.AddressLookup
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.RecentPlacesRepository
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffReceiver
@@ -13,10 +14,45 @@ import kotlinx.coroutines.flow.update
 
 internal class PendingWaypointConfirmer(
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
+    private val addressLookup: AddressLookup,
     private val recentPlacesRepository: RecentPlacesRepository,
     private val pendingSearchWaypointReceiver: PendingSearchWaypointHandoffReceiver,
     private val routeDraftEditor: RouteDraftEditor,
 ) {
+    internal fun registerMapTap(
+        latitude: Double,
+        longitude: Double,
+        state: MutableStateFlow<RouteRequestState>,
+        scope: CoroutineScope,
+    ) {
+        state.update {
+            it.copy(
+                pendingAddLatitude = latitude,
+                pendingAddLongitude = longitude,
+                pendingAddFromMapTap = true,
+                pendingAddAddress = null,
+            )
+        }
+        lookUpAddress(latitude, longitude, state, scope)
+    }
+
+    /** The address is looked up for a point with no name, and delivered into the state unless the add has ended or moved on. */
+    private fun lookUpAddress(
+        latitude: Double,
+        longitude: Double,
+        state: MutableStateFlow<RouteRequestState>,
+        scope: CoroutineScope,
+    ) {
+        addressLookup.start(scope, latitude, longitude) { address ->
+            state.update { current ->
+                current.copy(
+                    pendingAddAddress = address,
+                    favoriteNameInput = if (current.isFavoriteNameTouched) current.favoriteNameInput else address.short,
+                )
+            }
+        }
+    }
+
     internal fun confirmAddWaypoint(
         state: MutableStateFlow<RouteRequestState>,
         scope: CoroutineScope,
@@ -45,14 +81,17 @@ internal class PendingWaypointConfirmer(
     }
 
     internal fun dismissAddWaypoint(state: MutableStateFlow<RouteRequestState>) {
+        addressLookup.cancel()
         state.update {
             it.copy(
                 pendingAddLatitude = null,
                 pendingAddLongitude = null,
                 pendingAddPlaceName = null,
                 pendingAddFromMapTap = false,
+                pendingAddAddress = null,
                 isSaveAsFavoriteChecked = false,
                 favoriteNameInput = "",
+                isFavoriteNameTouched = false,
             )
         }
     }
@@ -63,14 +102,17 @@ internal class PendingWaypointConfirmer(
     ) {
         pendingSearchWaypointReceiver.incoming
             .onEach { result ->
+                val placeName = result.name.takeIf { it.isNotBlank() }
                 state.update {
                     it.copy(
                         pendingAddLatitude = result.latitude,
                         pendingAddLongitude = result.longitude,
-                        pendingAddPlaceName = result.name.takeIf { it.isNotBlank() },
+                        pendingAddPlaceName = placeName,
                         pendingAddFromMapTap = false,
+                        pendingAddAddress = null,
                     )
                 }
+                if (placeName == null) lookUpAddress(result.latitude, result.longitude, state, scope) else addressLookup.cancel()
             }.launchIn(scope)
     }
 }

@@ -1,5 +1,6 @@
 package com.routeforge.routing.presentation.routerequest
 
+import com.routeforge.coredomain.AddressLookup
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
@@ -7,6 +8,7 @@ import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffImpl
 import com.routeforge.coredomain.handoff.PendingIncomingRouteHandoffImpl
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
+import com.routeforge.coredomain.model.AddressLabel
 import com.routeforge.coredomain.model.IncomingRoute
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.NamedPlace
@@ -22,6 +24,7 @@ import com.routeforge.coredomain.testing.FakeMapStyleStore
 import com.routeforge.coredomain.testing.FakeRecentPlacesRepository
 import com.routeforge.coredomain.testing.FakeRegionCatalog
 import com.routeforge.coredomain.testing.FakeRegionUsageTracker
+import com.routeforge.coredomain.testing.FakeReverseGeocoder
 import com.routeforge.coredomain.testing.FakeRoutingEngine
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
 import com.routeforge.coredomain.usecase.ComputeRouteUseCase
@@ -73,6 +76,7 @@ class RouteRequestViewModelTest {
     private val codecs = mapOf(RouteFileFormat.JSON to jsonCodec, RouteFileFormat.GPX to gpxCodec)
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
     private val recentPlaces = FakeRecentPlacesRepository()
+    private val reverseGeocoder = FakeReverseGeocoder()
     private val favoriteRoutesRepository = FakeFavoriteRoutesRepository()
     private val selectedFavoriteWaypoint = SelectedFavoriteWaypointHandoffImpl()
     private val pendingSearchWaypoint = PendingSearchWaypointHandoffImpl()
@@ -124,6 +128,7 @@ class RouteRequestViewModelTest {
             pendingWaypointConfirmer =
                 PendingWaypointConfirmer(
                     favoriteWaypointsRepository = favoriteWaypointsRepository,
+                    addressLookup = AddressLookup(reverseGeocoder),
                     recentPlacesRepository = recentPlaces,
                     pendingSearchWaypointReceiver = pendingSearchWaypoint,
                     routeDraftEditor = routeDraftEditor,
@@ -962,5 +967,62 @@ class RouteRequestViewModelTest {
         viewModel.onAction(RouteRequestAction.OnUndo)
 
         assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    private val address = AddressLabel(full = "Pariser Platz 1, Mitte, Berlin", short = "Pariser Platz 1")
+
+    private fun passTheLookupPause() {
+        dispatcher.scheduler.advanceTimeBy(AddressLookup.DEBOUNCE_MILLIS)
+        dispatcher.scheduler.runCurrent()
+    }
+
+    @Test
+    fun `tapping the map shows the address of the spot after the pause`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val viewModel = createViewModel()
+
+        viewModel.onAction(RouteRequestAction.OnMapTap(52.5, 13.4))
+        passTheLookupPause()
+
+        assertEquals(address, viewModel.state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `typing in the favorite name field marks it as touched`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(RouteRequestAction.OnMapTap(52.5, 13.4))
+
+        viewModel.onAction(RouteRequestAction.OnFavoriteNameInputChange("a"))
+
+        assertTrue(viewModel.state.value.isFavoriteNameTouched)
+    }
+
+    @Test
+    fun `clearing the favorite name field keeps the address from filling it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val viewModel = createViewModel()
+        viewModel.onAction(RouteRequestAction.OnMapTap(52.5, 13.4))
+        viewModel.onAction(RouteRequestAction.OnToggleSaveAsFavorite)
+        viewModel.onAction(RouteRequestAction.OnFavoriteNameInputChange("x"))
+        viewModel.onAction(RouteRequestAction.OnFavoriteNameInputChange(""))
+
+        passTheLookupPause()
+
+        assertEquals("", viewModel.state.value.favoriteNameInput)
+    }
+
+    @Test
+    fun `ticking the favorite box leaves the offered name in place and saving uses it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val viewModel = createViewModel()
+        viewModel.onAction(RouteRequestAction.OnMapTap(52.5, 13.4))
+        passTheLookupPause()
+        assertEquals("Pariser Platz 1", viewModel.state.value.favoriteNameInput)
+
+        viewModel.onAction(RouteRequestAction.OnToggleSaveAsFavorite)
+        assertEquals("Pariser Platz 1", viewModel.state.value.favoriteNameInput)
+        viewModel.onAction(RouteRequestAction.OnConfirmAddWaypoint)
+
+        assertEquals(listOf("Pariser Platz 1"), favoriteWaypointsRepository.observeFavorites().value.map { it.name })
     }
 }

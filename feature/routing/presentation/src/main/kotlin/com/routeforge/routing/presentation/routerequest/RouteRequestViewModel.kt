@@ -51,9 +51,7 @@ internal class RouteRequestViewModel(
     fun onAction(action: RouteRequestAction) {
         when (action) {
             is RouteRequestAction.OnMapTap ->
-                _state.update {
-                    it.copy(pendingAddLatitude = action.latitude, pendingAddLongitude = action.longitude, pendingAddFromMapTap = true)
-                }
+                pendingWaypointConfirmer.registerMapTap(action.latitude, action.longitude, _state, viewModelScope)
             is RouteRequestAction.OnMarkerDragged ->
                 routeDraftEditor.mutateDraft(_state, viewModelScope) {
                     it.update(action.index, RoutePoint(latitude = action.latitude, longitude = action.longitude))
@@ -69,7 +67,8 @@ internal class RouteRequestViewModel(
             RouteRequestAction.OnDismissAddWaypoint -> pendingWaypointConfirmer.dismissAddWaypoint(_state)
             RouteRequestAction.OnToggleSaveAsFavorite ->
                 _state.update { it.copy(isSaveAsFavoriteChecked = !it.isSaveAsFavoriteChecked) }
-            is RouteRequestAction.OnFavoriteNameInputChange -> _state.update { it.copy(favoriteNameInput = action.value) }
+            is RouteRequestAction.OnFavoriteNameInputChange ->
+                _state.update { it.copy(favoriteNameInput = action.value, isFavoriteNameTouched = true) }
             is RouteRequestAction.OnRouteFileImported -> routeFileTransfer.importRoute(action.bytes, action.format, _state)
             RouteRequestAction.OnConfirmReplaceDraft -> incomingRouteReceiver.confirmReplaceDraft(_state, viewModelScope)
             RouteRequestAction.OnKeepDraft -> _state.update { it.copy(pendingReplaceDraft = null) }

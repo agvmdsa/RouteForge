@@ -1,14 +1,19 @@
 package com.routeforge.routing.presentation.routerequest
 
+import com.routeforge.coredomain.AddressLookup
+import com.routeforge.coredomain.DataError
+import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.handoff.DraftWaypointsHandoffImpl
 import com.routeforge.coredomain.handoff.PendingSearchWaypointHandoffImpl
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffImpl
+import com.routeforge.coredomain.model.AddressLabel
 import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.PlaceSearchResult
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.testing.FakeFavoriteWaypointsRepository
 import com.routeforge.coredomain.testing.FakeRecentPlacesRepository
 import com.routeforge.coredomain.testing.FakeRegionCatalog
+import com.routeforge.coredomain.testing.FakeReverseGeocoder
 import com.routeforge.coredomain.testing.FakeRoutingEngine
 import com.routeforge.routing.domain.model.RouteDraft
 import kotlinx.coroutines.CoroutineScope
@@ -27,10 +32,12 @@ class PendingWaypointConfirmerTest {
     private val scope = CoroutineScope(dispatcher)
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
     private val recentPlaces = FakeRecentPlacesRepository()
+    private val reverseGeocoder = FakeReverseGeocoder()
     private val pendingSearchWaypoint = PendingSearchWaypointHandoffImpl()
     private val confirmer =
         PendingWaypointConfirmer(
             favoriteWaypointsRepository = favoriteWaypointsRepository,
+            addressLookup = AddressLookup(reverseGeocoder),
             recentPlacesRepository = recentPlaces,
             pendingSearchWaypointReceiver = pendingSearchWaypoint,
             routeDraftEditor =
@@ -259,5 +266,161 @@ class PendingWaypointConfirmerTest {
         confirmer.dismissAddWaypoint(state)
 
         assertFalse(state.value.pendingAddFromMapTap)
+    }
+
+    private val address = AddressLabel(full = "Pariser Platz 1, Mitte, Berlin", short = "Pariser Platz 1")
+
+    private fun passTheLookupPause() {
+        dispatcher.scheduler.advanceTimeBy(AddressLookup.DEBOUNCE_MILLIS)
+        dispatcher.scheduler.runCurrent()
+    }
+
+    @Test
+    fun `a map tap sets the pending add and, after the pause, its address`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val state = MutableStateFlow(RouteRequestState())
+
+        confirmer.registerMapTap(latitude = 52.5, longitude = 13.4, state = state, scope = scope)
+        assertNull(state.value.pendingAddAddress)
+        passTheLookupPause()
+
+        assertEquals(52.5, state.value.pendingAddLatitude)
+        assertTrue(state.value.pendingAddFromMapTap)
+        assertEquals(address, state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `a place arriving with no name gets its address after the pause`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val state = MutableStateFlow(RouteRequestState())
+        confirmer.startObservingPendingSearchWaypoint(state, scope)
+
+        pendingSearchWaypoint.send(searchResult(""))
+        passTheLookupPause()
+
+        assertEquals(address, state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `a place arriving with a name makes no request`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val state = MutableStateFlow(RouteRequestState())
+        confirmer.startObservingPendingSearchWaypoint(state, scope)
+
+        pendingSearchWaypoint.send(searchResult("Eiffel Tower"))
+        passTheLookupPause()
+
+        assertTrue(reverseGeocoder.requests.isEmpty())
+        assertNull(state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `a failed lookup leaves no address and the waypoint is still added at once`() {
+        reverseGeocoder.answer = Result.Error(DataError.Network.NO_INTERNET)
+        val state = MutableStateFlow(RouteRequestState())
+        confirmer.registerMapTap(latitude = 1.0, longitude = 2.0, state = state, scope = scope)
+        passTheLookupPause()
+
+        confirmer.confirmAddWaypoint(state, scope)
+
+        assertEquals(listOf(RoutePoint(1.0, 2.0)), state.value.draft.points)
+        assertNull(state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `an answer of nothing found leaves no address`() {
+        reverseGeocoder.answer = Result.Success(null)
+        val state = MutableStateFlow(RouteRequestState())
+
+        confirmer.registerMapTap(latitude = 0.0, longitude = -30.0, state = state, scope = scope)
+        passTheLookupPause()
+
+        assertEquals(1, reverseGeocoder.requests.size)
+        assertNull(state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `confirming before the address arrives discards it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        reverseGeocoder.hold()
+        val state = MutableStateFlow(RouteRequestState())
+        confirmer.registerMapTap(latitude = 1.0, longitude = 2.0, state = state, scope = scope)
+        passTheLookupPause()
+
+        confirmer.confirmAddWaypoint(state, scope)
+        reverseGeocoder.release()
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `dismissing before the address arrives discards it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        reverseGeocoder.hold()
+        val state = MutableStateFlow(RouteRequestState())
+        confirmer.registerMapTap(latitude = 1.0, longitude = 2.0, state = state, scope = scope)
+        passTheLookupPause()
+
+        confirmer.dismissAddWaypoint(state)
+        reverseGeocoder.release()
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `a new map tap clears the earlier address until its own arrives`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val state = MutableStateFlow(RouteRequestState())
+        confirmer.registerMapTap(latitude = 1.0, longitude = 2.0, state = state, scope = scope)
+        passTheLookupPause()
+        assertEquals(address, state.value.pendingAddAddress)
+
+        confirmer.registerMapTap(latitude = 3.0, longitude = 4.0, state = state, scope = scope)
+
+        assertNull(state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `an address arriving while the favorite name is untouched is offered as the name`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val state = MutableStateFlow(RouteRequestState())
+
+        confirmer.registerMapTap(latitude = 1.0, longitude = 2.0, state = state, scope = scope)
+        passTheLookupPause()
+
+        assertEquals("Pariser Platz 1", state.value.favoriteNameInput)
+    }
+
+    @Test
+    fun `an address arriving after the user edited the favorite name does not replace it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val state = MutableStateFlow(RouteRequestState(favoriteNameInput = "My spot", isFavoriteNameTouched = true))
+
+        confirmer.registerMapTap(latitude = 1.0, longitude = 2.0, state = state, scope = scope)
+        passTheLookupPause()
+
+        assertEquals("My spot", state.value.favoriteNameInput)
+    }
+
+    @Test
+    fun `dismissing resets the favorite name and the touched mark`() {
+        val state =
+            MutableStateFlow(
+                RouteRequestState(
+                    pendingAddLatitude = 1.0,
+                    pendingAddLongitude = 2.0,
+                    pendingAddAddress = address,
+                    favoriteNameInput = "My spot",
+                    isFavoriteNameTouched = true,
+                ),
+            )
+
+        confirmer.dismissAddWaypoint(state)
+
+        assertEquals("", state.value.favoriteNameInput)
+        assertFalse(state.value.isFavoriteNameTouched)
+        assertNull(state.value.pendingAddAddress)
     }
 }

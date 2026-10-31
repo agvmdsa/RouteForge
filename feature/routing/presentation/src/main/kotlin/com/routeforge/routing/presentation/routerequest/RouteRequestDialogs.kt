@@ -89,6 +89,7 @@ internal fun RouteRequestDialogs(
         val pendingAddPlaceName = state.pendingAddPlaceName
         AddWaypointConfirmationSheet(
             title = stringResource(R.string.routing_add_waypoint_title),
+            addressLine = if (pendingAddPlaceName == null) state.pendingAddAddress?.full else null,
             coordinatesMessage =
                 if (pendingAddPlaceName != null) {
                     stringResource(R.string.routing_add_waypoint_message_named, pendingAddPlaceName)
