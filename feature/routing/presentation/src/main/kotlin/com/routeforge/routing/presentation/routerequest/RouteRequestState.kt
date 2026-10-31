@@ -1,5 +1,6 @@
 package com.routeforge.routing.presentation.routerequest
 
+import com.routeforge.coredomain.model.AddressLabel
 import com.routeforge.coredomain.model.MapStyle
 import com.routeforge.coredomain.model.RealLocation
 import com.routeforge.coredomain.model.RequiredRegionsSummary
@@ -25,8 +26,12 @@ internal data class RouteRequestState(
     val pendingAddPlaceName: String? = null,
     /** True while the pending add came from a tap on the map, as opposed to a place that arrived by name or link. */
     val pendingAddFromMapTap: Boolean = false,
+    /** The address of the pending add's position, once the lookup has found one. */
+    val pendingAddAddress: AddressLabel? = null,
     val isSaveAsFavoriteChecked: Boolean = false,
     val favoriteNameInput: String = "",
+    /** True once the user has typed in, or cleared, the favorite name field: an address then never fills it. */
+    val isFavoriteNameTouched: Boolean = false,
     val isSaveRouteSheetOpen: Boolean = false,
     val routeNameInput: String = "",
     val pendingModePreviewTarget: RoutePlaybackMode? = null,
