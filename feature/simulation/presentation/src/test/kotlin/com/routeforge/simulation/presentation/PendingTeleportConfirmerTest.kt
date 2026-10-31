@@ -1,13 +1,18 @@
 package com.routeforge.simulation.presentation
 
+import com.routeforge.coredomain.AddressLookup
+import com.routeforge.coredomain.DataError
+import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffImpl
+import com.routeforge.coredomain.model.AddressLabel
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.testing.FakeMockLocationAuthorizationChecker
 import com.routeforge.coredomain.testing.FakeNetworkConnectivityChecker
 import com.routeforge.coredomain.testing.FakeRecentPlacesRepository
+import com.routeforge.coredomain.testing.FakeReverseGeocoder
 import com.routeforge.simulation.domain.testing.FakeSimulationController
 import com.routeforge.simulation.domain.usecase.IsNetworkConnectedUseCase
 import com.routeforge.simulation.domain.usecase.ObserveAuthorizationLostUseCase
@@ -31,10 +36,12 @@ class PendingTeleportConfirmerTest {
     private val lastComputedRoute = LastComputedRouteHandoffImpl()
     private val pendingTeleportTarget = PendingTeleportTargetHandoffImpl()
     private val recentPlaces = FakeRecentPlacesRepository()
+    private val reverseGeocoder = FakeReverseGeocoder()
     private val confirmer =
         PendingTeleportConfirmer(
             teleport = TeleportUseCase(controller),
             isNetworkConnected = IsNetworkConnectedUseCase(networkConnectivityChecker),
+            addressLookup = AddressLookup(reverseGeocoder),
             pendingTeleportTargetReceiver = pendingTeleportTarget,
             lastComputedRouteClearer = lastComputedRoute,
             recentPlacesRepository = recentPlaces,
@@ -53,7 +60,7 @@ class PendingTeleportConfirmerTest {
     fun `tapping the map sets a pending teleport point without calling the controller`() {
         val state = MutableStateFlow(SimulationState())
 
-        confirmer.registerMapTap(10.0, 20.0, state)
+        confirmer.registerMapTap(10.0, 20.0, state, scope)
 
         assertEquals(10.0, state.value.pendingTeleportLatitude)
         assertEquals(20.0, state.value.pendingTeleportLongitude)
@@ -66,7 +73,7 @@ class PendingTeleportConfirmerTest {
         networkConnectivityChecker.connected = false
         val state = MutableStateFlow(SimulationState())
 
-        confirmer.registerMapTap(10.0, 20.0, state)
+        confirmer.registerMapTap(10.0, 20.0, state, scope)
 
         assertTrue(state.value.isPendingTeleportBlockedOffline)
     }
@@ -270,5 +277,107 @@ class PendingTeleportConfirmerTest {
         confirmer.confirmFavoriteTeleportCancelRoute(state)
 
         assertEquals(listOf(NamedPlace(latitude = 5.0, longitude = 6.0, name = "Home")), recentPlaces.recorded)
+    }
+
+    private val address = AddressLabel(full = "Pariser Platz 1, Mitte, Berlin", short = "Pariser Platz 1")
+
+    private fun passTheLookupPause() {
+        dispatcher.scheduler.advanceTimeBy(AddressLookup.DEBOUNCE_MILLIS)
+        dispatcher.scheduler.runCurrent()
+    }
+
+    @Test
+    fun `a map tap shows the address of the spot after the pause`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val state = MutableStateFlow(SimulationState())
+
+        confirmer.registerMapTap(52.5, 13.4, state, scope)
+        assertNull(state.value.pendingTeleportAddress)
+        passTheLookupPause()
+
+        assertEquals(address, state.value.pendingTeleportAddress)
+        assertEquals(listOf(52.5 to 13.4), reverseGeocoder.requests)
+    }
+
+    @Test
+    fun `a map tap blocked offline makes no request and keeps the offline block`() {
+        networkConnectivityChecker.connected = false
+        reverseGeocoder.answer = Result.Success(address)
+        val state = MutableStateFlow(SimulationState())
+
+        confirmer.registerMapTap(52.5, 13.4, state, scope)
+        passTheLookupPause()
+
+        assertTrue(reverseGeocoder.requests.isEmpty())
+        assertNull(state.value.pendingTeleportAddress)
+        assertTrue(state.value.isPendingTeleportBlockedOffline)
+    }
+
+    @Test
+    fun `a failed lookup leaves no address and confirming still teleports at once`() {
+        reverseGeocoder.answer = Result.Error(DataError.Network.NO_INTERNET)
+        val state = MutableStateFlow(SimulationState())
+        confirmer.registerMapTap(10.0, 20.0, state, scope)
+        passTheLookupPause()
+
+        confirmer.confirmTeleport(state)
+
+        assertEquals(listOf(FakeSimulationController.TeleportCall(10.0, 20.0)), controller.teleportCalls)
+        assertNull(state.value.pendingTeleportAddress)
+    }
+
+    @Test
+    fun `an answer of nothing found leaves no address`() {
+        reverseGeocoder.answer = Result.Success(null)
+        val state = MutableStateFlow(SimulationState())
+
+        confirmer.registerMapTap(0.0, -30.0, state, scope)
+        passTheLookupPause()
+
+        assertEquals(1, reverseGeocoder.requests.size)
+        assertNull(state.value.pendingTeleportAddress)
+    }
+
+    @Test
+    fun `confirming before the address arrives discards it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        reverseGeocoder.hold()
+        val state = MutableStateFlow(SimulationState())
+        confirmer.registerMapTap(10.0, 20.0, state, scope)
+        passTheLookupPause()
+
+        confirmer.confirmTeleport(state)
+        reverseGeocoder.release()
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(state.value.pendingTeleportAddress)
+    }
+
+    @Test
+    fun `canceling before the address arrives discards it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        reverseGeocoder.hold()
+        val state = MutableStateFlow(SimulationState())
+        confirmer.registerMapTap(10.0, 20.0, state, scope)
+        passTheLookupPause()
+
+        confirmer.cancelTeleport(state)
+        reverseGeocoder.release()
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(state.value.pendingTeleportAddress)
+    }
+
+    @Test
+    fun `a new map tap clears the earlier address until its own arrives`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val state = MutableStateFlow(SimulationState())
+        confirmer.registerMapTap(10.0, 20.0, state, scope)
+        passTheLookupPause()
+        assertEquals(address, state.value.pendingTeleportAddress)
+
+        confirmer.registerMapTap(30.0, 40.0, state, scope)
+
+        assertNull(state.value.pendingTeleportAddress)
     }
 }

@@ -65,7 +65,8 @@ internal class SimulationViewModel(
 
     fun onAction(action: SimulationAction) {
         when (action) {
-            is SimulationAction.OnMapTap -> pendingTeleportConfirmer.registerMapTap(action.latitude, action.longitude, _state)
+            is SimulationAction.OnMapTap ->
+                pendingTeleportConfirmer.registerMapTap(action.latitude, action.longitude, _state, viewModelScope)
             SimulationAction.OnConfirmTeleport -> pendingTeleportConfirmer.confirmTeleport(_state)
             SimulationAction.OnCancelTeleport -> pendingTeleportConfirmer.cancelTeleport(_state)
             is SimulationAction.OnPlaybackSpeedChange -> playbackControls.changePlaybackSpeed(action.kmh, _state)

@@ -1,5 +1,6 @@
 package com.routeforge.simulation.presentation
 
+import com.routeforge.coredomain.AddressLookup
 import com.routeforge.coredomain.RecentPlacesRepository
 import com.routeforge.coredomain.handoff.LastComputedRouteHandoffClearer
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffReceiver
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.update
 internal class PendingTeleportConfirmer(
     private val teleport: TeleportUseCase,
     private val isNetworkConnected: IsNetworkConnectedUseCase,
+    private val addressLookup: AddressLookup,
     private val pendingTeleportTargetReceiver: PendingTeleportTargetHandoffReceiver,
     private val lastComputedRouteClearer: LastComputedRouteHandoffClearer,
     private val recentPlacesRepository: RecentPlacesRepository,
@@ -24,22 +26,32 @@ internal class PendingTeleportConfirmer(
         latitude: Double,
         longitude: Double,
         state: MutableStateFlow<SimulationState>,
+        scope: CoroutineScope,
     ) {
         state.update {
             it.copy(
                 pendingTeleportLatitude = latitude,
                 pendingTeleportLongitude = longitude,
                 isPendingTeleportBlockedOffline = !isNetworkConnected(),
+                pendingTeleportAddress = null,
             )
+        }
+        // A teleport blocked without a connection is not offered, so no address is asked for either.
+        if (state.value.isPendingTeleportBlockedOffline) {
+            addressLookup.cancel()
+        } else {
+            addressLookup.start(scope, latitude, longitude) { address -> state.update { it.copy(pendingTeleportAddress = address) } }
         }
     }
 
     internal fun cancelTeleport(state: MutableStateFlow<SimulationState>) {
+        addressLookup.cancel()
         state.update {
             it.copy(
                 pendingTeleportLatitude = null,
                 pendingTeleportLongitude = null,
                 isPendingTeleportBlockedOffline = false,
+                pendingTeleportAddress = null,
             )
         }
     }
@@ -48,11 +60,13 @@ internal class PendingTeleportConfirmer(
         val latitude = state.value.pendingTeleportLatitude
         val longitude = state.value.pendingTeleportLongitude
         val isBlockedOffline = state.value.isPendingTeleportBlockedOffline
+        addressLookup.cancel()
         state.update {
             it.copy(
                 pendingTeleportLatitude = null,
                 pendingTeleportLongitude = null,
                 isPendingTeleportBlockedOffline = false,
+                pendingTeleportAddress = null,
             )
         }
         if (latitude == null || longitude == null || isBlockedOffline) return

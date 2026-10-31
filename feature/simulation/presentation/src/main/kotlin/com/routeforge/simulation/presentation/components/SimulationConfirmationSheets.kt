@@ -6,25 +6,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.designsystem.components.TwoButtonConfirmationSheet
+import com.routeforge.designsystem.sheets.PlaceDescription
 import com.routeforge.simulation.presentation.R
 
 @Composable
 internal fun TeleportConfirmationSheet(
     latitude: Double,
     longitude: Double,
+    address: String?,
     isBlockedOffline: Boolean,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     TwoButtonConfirmationSheet(
         title = stringResource(R.string.simulation_teleport_confirm_title),
-        message = stringResource(R.string.simulation_teleport_confirm_message, latitude, longitude),
         confirmLabel = stringResource(R.string.simulation_teleport_confirm_button),
         dismissLabel = stringResource(R.string.simulation_teleport_cancel_button),
         onConfirm = onConfirm,
         onDismiss = onDismiss,
         confirmEnabled = !isBlockedOffline,
         extraContent = {
+            PlaceDescription(
+                address = address,
+                coordinates = stringResource(R.string.simulation_teleport_confirm_message, latitude, longitude),
+            )
             if (isBlockedOffline) {
                 Text(
                     text = stringResource(R.string.simulation_teleport_blocked_offline_message),

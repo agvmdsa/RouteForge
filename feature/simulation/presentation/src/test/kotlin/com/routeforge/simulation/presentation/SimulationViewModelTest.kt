@@ -1,5 +1,6 @@
 package com.routeforge.simulation.presentation
 
+import com.routeforge.coredomain.AddressLookup
 import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.handoff.LastKnownRealLocationHandoffImpl
@@ -13,6 +14,7 @@ import com.routeforge.coredomain.testing.FakeMapStyleStore
 import com.routeforge.coredomain.testing.FakeMockLocationAuthorizationChecker
 import com.routeforge.coredomain.testing.FakeNetworkConnectivityChecker
 import com.routeforge.coredomain.testing.FakeRecentPlacesRepository
+import com.routeforge.coredomain.testing.FakeReverseGeocoder
 import com.routeforge.coredomain.usecase.ObserveMapStyleUseCase
 import com.routeforge.simulation.domain.JoystickStartFailure
 import com.routeforge.simulation.domain.model.ExecutionMode
@@ -112,6 +114,7 @@ class SimulationViewModelTest {
                 PendingTeleportConfirmer(
                     teleport = TeleportUseCase(controller),
                     isNetworkConnected = IsNetworkConnectedUseCase(networkConnectivityChecker),
+                    addressLookup = AddressLookup(FakeReverseGeocoder()),
                     pendingTeleportTargetReceiver = pendingTeleportTarget,
                     lastComputedRouteClearer = lastComputedRoute,
                     recentPlacesRepository = recentPlaces,
