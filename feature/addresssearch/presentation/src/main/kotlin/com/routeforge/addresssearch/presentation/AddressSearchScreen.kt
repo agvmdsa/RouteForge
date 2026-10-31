@@ -74,7 +74,8 @@ fun AddressSearchRoot(
     AddressSearchScreen(state = state, onAction = viewModel::onAction, onNavigateBack = onNavigateBack)
 }
 
-/** A single bottom sheet (no map preview) — a search field up top, and once a search has been
+/** A single bottom sheet (no map preview), shown over the tab it was opened from (the app draws it as a dialog destination, so
+ *  that tab stays composed behind it) — a search field up top, and once a search has been
  *  submitted, a scrollable results list capped at [RESULTS_HEIGHT_FRACTION] of the available
  *  height, matching [com.routeforge.designsystem.waypointedit.WaypointEditSheet]'s established
  *  `BoxWithConstraints`-based fixed-fraction pattern for the same reason: a reactively-measured

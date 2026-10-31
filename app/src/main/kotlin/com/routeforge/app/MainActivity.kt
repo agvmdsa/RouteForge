@@ -14,10 +14,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.dialog
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
@@ -117,12 +118,18 @@ internal class MainActivity : ComponentActivity() {
                         navigation<SettingsTabRoute>(startDestination = SettingsRoute) {
                             settingsGraph(navController = navController)
                         }
-                        composable<AddressSearchRoute> { backStackEntry ->
+                        // A dialog destination is drawn over the destination below it, so the tab the search was opened
+                        // from stays on screen (and live) behind the sheet instead of being replaced by it.
+                        dialog<AddressSearchRoute>(
+                            dialogProperties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+                        ) { backStackEntry ->
                             val route = backStackEntry.toRoute<AddressSearchRoute>()
-                            AddressSearchRoot(
-                                route = route,
-                                onNavigateBack = { navController.popBackStack() },
-                            )
+                            SearchDialogWindow {
+                                AddressSearchRoot(
+                                    route = route,
+                                    onNavigateBack = { navController.popBackStack() },
+                                )
+                            }
                         }
                     }
                 }
