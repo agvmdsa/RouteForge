@@ -26,6 +26,8 @@ private const val REVERSE_URL = "https://nominatim.openstreetmap.org/reverse"
 private const val STREET_LEVEL_ZOOM = 18
 private const val COORDINATE_FORMAT = "%.6f"
 
+// The logs name the kind of failure only: an exception's message can carry the request address, which holds the spot's coordinates.
+
 internal class NominatimReverseGeocoder(
     private val httpClient: HttpClient,
     private val spacing: RequestSpacing,
@@ -58,24 +60,24 @@ internal class NominatimReverseGeocoder(
             }
         } catch (e: HttpRequestTimeoutException) {
             // Before CancellationException: Ktor's timeout plugin throws a subclass of it.
-            Log.w(TAG, "Reverse lookup timed out", e)
+            Log.w(TAG, "Reverse lookup timed out")
             Result.Error(DataError.Network.REQUEST_TIMEOUT)
         } catch (e: SerializationException) {
-            Log.w(TAG, "Couldn't parse Nominatim's answer", e)
+            Log.w(TAG, "Couldn't parse Nominatim's answer")
             Result.Error(DataError.Network.SERIALIZATION)
         } catch (e: JsonConvertException) {
-            Log.w(TAG, "Couldn't convert Nominatim's answer", e)
+            Log.w(TAG, "Couldn't convert Nominatim's answer")
             Result.Error(DataError.Network.SERIALIZATION)
         } catch (e: UnknownHostException) {
-            Log.w(TAG, "Couldn't resolve the host", e)
+            Log.w(TAG, "Couldn't resolve the host")
             Result.Error(DataError.Network.NO_INTERNET)
         } catch (e: IOException) {
-            Log.w(TAG, "Reverse lookup failed", e)
+            Log.w(TAG, "Reverse lookup failed: ${e.javaClass.simpleName}")
             Result.Error(DataError.Network.UNKNOWN)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.w(TAG, "Unexpected reverse lookup failure", e)
+            Log.w(TAG, "Unexpected reverse lookup failure: ${e.javaClass.simpleName}")
             Result.Error(DataError.Network.UNKNOWN)
         }
 }
