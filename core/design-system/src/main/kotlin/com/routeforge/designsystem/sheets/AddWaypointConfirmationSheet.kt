@@ -15,12 +15,14 @@ import com.routeforge.designsystem.components.ConfirmationBottomSheet
 import com.routeforge.designsystem.theme.Spacing
 
 /** Shared add-waypoint confirmation, used identically on Plan Route and Simulate's waypoint-edit
- *  surfaces (FR-006 of spec 008) — takes pre-formatted strings rather than owning its own string
- *  resources, matching [ConfirmationBottomSheet]'s existing no-owned-resources pattern. */
+ *  surfaces (FR-006 of spec 008). [addressLine], when known, is shown above the coordinates. Takes
+ *  pre-formatted strings rather than owning its own string resources, matching [ConfirmationBottomSheet]'s
+ *  existing no-owned-resources pattern. */
 @Composable
 fun AddWaypointConfirmationSheet(
     title: String,
     coordinatesMessage: String,
+    addressLine: String? = null,
     saveAsFavoriteLabel: String,
     favoriteNameLabel: String,
     confirmLabel: String,
@@ -33,7 +35,7 @@ fun AddWaypointConfirmationSheet(
     onDismiss: () -> Unit,
 ) {
     ConfirmationBottomSheet(title = title, onDismiss = onDismiss) {
-        Text(coordinatesMessage)
+        PlaceDescription(address = addressLine, coordinates = coordinatesMessage)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = isSaveAsFavoriteChecked, onCheckedChange = { onToggleSaveAsFavorite() })
             Text(saveAsFavoriteLabel)
