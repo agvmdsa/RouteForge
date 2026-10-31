@@ -28,8 +28,14 @@ private const val COORDINATE_FORMAT = "%.6f"
 
 internal class NominatimReverseGeocoder(
     private val httpClient: HttpClient,
+    private val spacing: RequestSpacing,
 ) : ReverseGeocoder {
     override suspend fun addressAt(
+        latitude: Double,
+        longitude: Double,
+    ): Result<AddressLabel?, DataError.Network> = spacing.addressFor(latitude, longitude) { request(latitude, longitude) }
+
+    private suspend fun request(
         latitude: Double,
         longitude: Double,
     ): Result<AddressLabel?, DataError.Network> =
