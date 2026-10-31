@@ -1,5 +1,6 @@
 package com.routeforge.simulation.presentation.waypointedit
 
+import com.routeforge.coredomain.model.AddressLabel
 import com.routeforge.coredomain.model.ModeAvailability
 import com.routeforge.coredomain.model.RequiredRegionsSummary
 import com.routeforge.coredomain.model.RoutePoint
@@ -23,6 +24,10 @@ internal data class WaypointEditState(
     val errorMessage: String? = null,
     val pendingAddLatitude: Double? = null,
     val pendingAddLongitude: Double? = null,
+    /** The address of the pending add's position, once the lookup has found one. */
+    val pendingAddAddress: AddressLabel? = null,
     val isSaveAsFavoriteChecked: Boolean = false,
     val favoriteNameInput: String = "",
+    /** True once the user has typed in, or cleared, the favorite name field: an address then never fills it. */
+    val isFavoriteNameTouched: Boolean = false,
 )

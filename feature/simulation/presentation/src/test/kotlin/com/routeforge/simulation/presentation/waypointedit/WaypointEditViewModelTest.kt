@@ -1,5 +1,9 @@
 package com.routeforge.simulation.presentation.waypointedit
 
+import com.routeforge.coredomain.AddressLookup
+import com.routeforge.coredomain.DataError
+import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.model.AddressLabel
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.Region
@@ -11,6 +15,7 @@ import com.routeforge.coredomain.testing.FakeFavoriteWaypointsRepository
 import com.routeforge.coredomain.testing.FakeRecentPlacesRepository
 import com.routeforge.coredomain.testing.FakeRegionCatalog
 import com.routeforge.coredomain.testing.FakeRegionUsageTracker
+import com.routeforge.coredomain.testing.FakeReverseGeocoder
 import com.routeforge.coredomain.testing.FakeRoutingEngine
 import com.routeforge.coredomain.usecase.ComputeEditableWaypointRangeUseCase
 import com.routeforge.coredomain.usecase.ComputeRequiredRegionsUseCase
@@ -49,8 +54,16 @@ class WaypointEditViewModelTest {
     private val computeEditableWaypointRange = ComputeEditableWaypointRangeUseCase()
     private val favoriteWaypointsRepository = FakeFavoriteWaypointsRepository()
     private val recentPlaces = FakeRecentPlacesRepository()
+    private val reverseGeocoder = FakeReverseGeocoder()
+    private val dispatcher = UnconfinedTestDispatcher()
     private val viewModel =
-        WaypointEditViewModel(recomputeRouteForBothModes, computeEditableWaypointRange, favoriteWaypointsRepository, recentPlaces)
+        WaypointEditViewModel(
+            recomputeRouteForBothModes,
+            computeEditableWaypointRange,
+            favoriteWaypointsRepository,
+            recentPlaces,
+            AddressLookup(reverseGeocoder),
+        )
 
     private val points =
         listOf(
@@ -69,7 +82,7 @@ class WaypointEditViewModelTest {
 
     @BeforeEach
     fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
+        Dispatchers.setMain(dispatcher)
         routingEngine.computePathResult =
             Route(
                 points = points,
@@ -301,5 +314,169 @@ class WaypointEditViewModelTest {
         viewModel.onAction(WaypointEditAction.OnDelete(0))
 
         assertTrue(recentPlaces.recorded.isEmpty())
+    }
+
+    private val address = AddressLabel(full = "Pariser Platz 1, Mitte, Berlin", short = "Pariser Platz 1")
+
+    private fun passTheLookupPause() {
+        dispatcher.scheduler.advanceTimeBy(AddressLookup.DEBOUNCE_MILLIS)
+        dispatcher.scheduler.runCurrent()
+    }
+
+    private fun openAndTap(
+        latitude: Double = 3.0,
+        longitude: Double = 0.0,
+    ) {
+        viewModel.onAction(WaypointEditAction.OnOpen(loadedRoute, distanceTraveledMeters = null))
+        viewModel.onAction(WaypointEditAction.OnMapTap(latitude = latitude, longitude = longitude))
+    }
+
+    @Test
+    fun `tapping the map shows the address of the spot after the pause`() {
+        reverseGeocoder.answer = Result.Success(address)
+        openAndTap()
+        assertNull(viewModel.state.value.pendingAddAddress)
+
+        passTheLookupPause()
+
+        assertEquals(address, viewModel.state.value.pendingAddAddress)
+        assertEquals(listOf(3.0 to 0.0), reverseGeocoder.requests)
+    }
+
+    @Test
+    fun `a failed lookup leaves no address and adding the waypoint still closes the confirmation at once`() {
+        reverseGeocoder.answer = Result.Error(DataError.Network.NO_INTERNET)
+        openAndTap()
+        passTheLookupPause()
+
+        viewModel.onAction(WaypointEditAction.OnConfirmAdd)
+
+        assertNull(viewModel.state.value.pendingAddAddress)
+        assertNull(viewModel.state.value.pendingAddLatitude)
+    }
+
+    @Test
+    fun `an answer of nothing found leaves no address`() {
+        reverseGeocoder.answer = Result.Success(null)
+        openAndTap()
+
+        passTheLookupPause()
+
+        assertEquals(1, reverseGeocoder.requests.size)
+        assertNull(viewModel.state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `confirming before the address arrives discards it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        reverseGeocoder.hold()
+        openAndTap()
+        passTheLookupPause()
+
+        viewModel.onAction(WaypointEditAction.OnConfirmAdd)
+        reverseGeocoder.release()
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(viewModel.state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `dismissing before the address arrives discards it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        reverseGeocoder.hold()
+        openAndTap()
+        passTheLookupPause()
+
+        viewModel.onAction(WaypointEditAction.OnDismissAdd)
+        reverseGeocoder.release()
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(viewModel.state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `closing the sheet before the address arrives discards it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        reverseGeocoder.hold()
+        openAndTap()
+        passTheLookupPause()
+
+        viewModel.onAction(WaypointEditAction.OnClose)
+        reverseGeocoder.release()
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(viewModel.state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `a new map tap clears the earlier address until its own arrives`() {
+        reverseGeocoder.answer = Result.Success(address)
+        openAndTap()
+        passTheLookupPause()
+        assertEquals(address, viewModel.state.value.pendingAddAddress)
+
+        viewModel.onAction(WaypointEditAction.OnMapTap(latitude = 4.0, longitude = 0.0))
+
+        assertNull(viewModel.state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `an address arriving while the favorite name is untouched is offered as the name`() {
+        reverseGeocoder.answer = Result.Success(address)
+        openAndTap()
+
+        passTheLookupPause()
+
+        assertEquals("Pariser Platz 1", viewModel.state.value.favoriteNameInput)
+    }
+
+    @Test
+    fun `an address arriving after the user typed a favorite name does not replace it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        openAndTap()
+        viewModel.onAction(WaypointEditAction.OnToggleSaveAsFavorite)
+        viewModel.onAction(WaypointEditAction.OnFavoriteNameChange("My spot"))
+
+        passTheLookupPause()
+
+        assertEquals("My spot", viewModel.state.value.favoriteNameInput)
+    }
+
+    @Test
+    fun `clearing the favorite name keeps the address from filling it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        openAndTap()
+        viewModel.onAction(WaypointEditAction.OnToggleSaveAsFavorite)
+        viewModel.onAction(WaypointEditAction.OnFavoriteNameChange("x"))
+        viewModel.onAction(WaypointEditAction.OnFavoriteNameChange(""))
+
+        passTheLookupPause()
+
+        assertEquals("", viewModel.state.value.favoriteNameInput)
+    }
+
+    @Test
+    fun `ticking the favorite box leaves the offered name in place and saving uses it`() {
+        reverseGeocoder.answer = Result.Success(address)
+        openAndTap()
+        passTheLookupPause()
+
+        viewModel.onAction(WaypointEditAction.OnToggleSaveAsFavorite)
+        assertEquals("Pariser Platz 1", viewModel.state.value.favoriteNameInput)
+        viewModel.onAction(WaypointEditAction.OnConfirmAdd)
+
+        assertEquals(listOf("Pariser Platz 1"), favoriteWaypointsRepository.observeFavorites().value.map { it.name })
+    }
+
+    @Test
+    fun `dismissing resets the favorite name and the touched mark`() {
+        openAndTap()
+        viewModel.onAction(WaypointEditAction.OnToggleSaveAsFavorite)
+        viewModel.onAction(WaypointEditAction.OnFavoriteNameChange("My spot"))
+
+        viewModel.onAction(WaypointEditAction.OnDismissAdd)
+
+        assertEquals("", viewModel.state.value.favoriteNameInput)
+        assertFalse(viewModel.state.value.isFavoriteNameTouched)
     }
 }

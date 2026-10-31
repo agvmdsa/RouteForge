@@ -2,6 +2,7 @@ package com.routeforge.simulation.presentation.waypointedit
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.routeforge.coredomain.AddressLookup
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.RecentPlacesRepository
 import com.routeforge.coredomain.model.NamedPlace
@@ -31,6 +32,7 @@ internal class WaypointEditViewModel(
     private val computeEditableWaypointRange: ComputeEditableWaypointRangeUseCase,
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
     private val recentPlacesRepository: RecentPlacesRepository,
+    private val addressLookup: AddressLookup,
 ) : ViewModel() {
     private val _state = MutableStateFlow(WaypointEditState())
     val state = _state.asStateFlow()
@@ -50,12 +52,12 @@ internal class WaypointEditViewModel(
         when (action) {
             is WaypointEditAction.OnOpen -> open(action.route, action.distanceTraveledMeters)
             WaypointEditAction.OnClose -> close()
-            is WaypointEditAction.OnMapTap ->
-                _state.update { it.copy(pendingAddLatitude = action.latitude, pendingAddLongitude = action.longitude) }
+            is WaypointEditAction.OnMapTap -> registerMapTap(action.latitude, action.longitude)
             WaypointEditAction.OnDismissAdd -> clearPendingAdd()
             WaypointEditAction.OnToggleSaveAsFavorite ->
                 _state.update { it.copy(isSaveAsFavoriteChecked = !it.isSaveAsFavoriteChecked) }
-            is WaypointEditAction.OnFavoriteNameChange -> _state.update { it.copy(favoriteNameInput = action.value) }
+            is WaypointEditAction.OnFavoriteNameChange ->
+                _state.update { it.copy(favoriteNameInput = action.value, isFavoriteNameTouched = true) }
             WaypointEditAction.OnConfirmAdd -> confirmAdd()
             is WaypointEditAction.OnMarkerDragged -> onMarkerDragged(action.index, action.latitude, action.longitude)
             is WaypointEditAction.OnReorder -> onReorder(action.fromIndex, action.toIndex)
@@ -88,6 +90,7 @@ internal class WaypointEditViewModel(
     }
 
     private fun close() {
+        addressLookup.cancel()
         editJob?.cancel()
         editJob = null
         route = null
@@ -95,13 +98,31 @@ internal class WaypointEditViewModel(
         _state.value = WaypointEditState()
     }
 
+    private fun registerMapTap(
+        latitude: Double,
+        longitude: Double,
+    ) {
+        _state.update { it.copy(pendingAddLatitude = latitude, pendingAddLongitude = longitude, pendingAddAddress = null) }
+        addressLookup.start(viewModelScope, latitude, longitude) { address ->
+            _state.update { current ->
+                current.copy(
+                    pendingAddAddress = address,
+                    favoriteNameInput = if (current.isFavoriteNameTouched) current.favoriteNameInput else address.short,
+                )
+            }
+        }
+    }
+
     private fun clearPendingAdd() {
+        addressLookup.cancel()
         _state.update {
             it.copy(
                 pendingAddLatitude = null,
                 pendingAddLongitude = null,
+                pendingAddAddress = null,
                 isSaveAsFavoriteChecked = false,
                 favoriteNameInput = "",
+                isFavoriteNameTouched = false,
             )
         }
     }

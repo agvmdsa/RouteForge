@@ -98,6 +98,7 @@ internal fun WaypointEditOverlays(
         AddWaypointConfirmationSheet(
             title = stringResource(R.string.simulation_add_waypoint_title),
             coordinatesMessage = stringResource(R.string.simulation_add_waypoint_message, pendingAddLatitude, pendingAddLongitude),
+            addressLine = editState.pendingAddAddress?.full,
             saveAsFavoriteLabel = stringResource(R.string.simulation_save_as_favorite_label),
             favoriteNameLabel = stringResource(R.string.simulation_favorite_name_label),
             confirmLabel = stringResource(R.string.simulation_add_waypoint_confirm_button),
