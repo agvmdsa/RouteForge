@@ -51,6 +51,7 @@ import org.koin.core.parameter.parametersOf
 
 private val SubmitIndicatorSize = 24.dp
 private const val RESULTS_HEIGHT_FRACTION = 0.75f
+private const val CHOICE_TITLE_MAX_LINES = 3
 
 @Composable
 fun AddressSearchRoot(
@@ -169,6 +170,7 @@ private fun AddressSearchDialogs(
         if (!state.isNamingFavorite) {
             TeleportOrFavoriteChoiceSheet(
                 result = choiceResult,
+                address = state.choiceAddress?.full,
                 onChooseTeleport = { onAction(AddressSearchAction.OnChooseTeleport) },
                 onChooseSaveAsFavorite = { onAction(AddressSearchAction.OnChooseSaveAsFavorite) },
                 onDismiss = { onAction(AddressSearchAction.OnDismissChoice) },
@@ -258,14 +260,21 @@ private fun AddressSearchRecentPlacesList(
 @Composable
 private fun TeleportOrFavoriteChoiceSheet(
     result: PlaceSearchResult,
+    address: String?,
     onChooseTeleport: () -> Unit,
     onChooseSaveAsFavorite: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val coordinates = formatCoordinates(result.latitude, result.longitude)
+    val hasAddress = result.name.isBlank() && address != null
     ConfirmationBottomSheet(
-        title = result.name.ifBlank { formatCoordinates(result.latitude, result.longitude) },
+        title = result.name.ifBlank { address ?: coordinates },
         onDismiss = onDismiss,
+        titleMaxLines = CHOICE_TITLE_MAX_LINES,
     ) {
+        if (hasAddress) {
+            Text(text = coordinates, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         Button(onClick = onChooseTeleport, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.address_search_teleport_button))
         }

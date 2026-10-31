@@ -3,6 +3,7 @@ package com.routeforge.addresssearch.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routeforge.addresssearch.domain.usecase.SearchPlacesUseCase
+import com.routeforge.coredomain.AddressLookup
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.RecentPlacesRepository
 import com.routeforge.coredomain.Result
@@ -35,6 +36,7 @@ internal class AddressSearchViewModel(
     private val pendingTeleportTargetSender: PendingTeleportTargetHandoffSender,
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
     private val recentPlacesRepository: RecentPlacesRepository,
+    private val addressLookup: AddressLookup,
 ) : ViewModel() {
     private val _state =
         MutableStateFlow(
@@ -67,13 +69,17 @@ internal class AddressSearchViewModel(
             AddressSearchAction.OnClearRecentsClick -> _state.update { it.copy(isClearRecentsConfirmOpen = true) }
             AddressSearchAction.OnConfirmClearRecents -> clearRecents()
             AddressSearchAction.OnDismissClearRecents -> _state.update { it.copy(isClearRecentsConfirmOpen = false) }
-            AddressSearchAction.OnDismissChoice -> _state.update { it.copy(pendingChoiceResult = null) }
+            AddressSearchAction.OnDismissChoice -> dismissChoice()
             AddressSearchAction.OnChooseTeleport -> chooseTeleport()
             AddressSearchAction.OnChooseSaveAsFavorite ->
                 _state.update {
-                    it.copy(isNamingFavorite = true, favoriteNameInput = it.pendingChoiceResult?.name.orEmpty())
+                    // A place with no name starts from its address, when that is already known.
+                    val chosenName = it.pendingChoiceResult?.name.orEmpty()
+                    val startingName = chosenName.ifBlank { it.choiceAddress?.short.orEmpty() }
+                    it.copy(isNamingFavorite = true, isFavoriteNameTouched = false, favoriteNameInput = startingName)
                 }
-            is AddressSearchAction.OnFavoriteNameChange -> _state.update { it.copy(favoriteNameInput = action.value) }
+            is AddressSearchAction.OnFavoriteNameChange ->
+                _state.update { it.copy(favoriteNameInput = action.value, isFavoriteNameTouched = true) }
             AddressSearchAction.OnConfirmFavoriteName -> confirmFavoriteName()
             AddressSearchAction.OnDismissFavoriteName -> _state.update { it.copy(isNamingFavorite = false) }
         }
@@ -132,12 +138,33 @@ internal class AddressSearchViewModel(
             pendingSearchWaypointSender.send(result)
             viewModelScope.launch { _events.send(AddressSearchEvent.NavigateBack) }
         } else {
-            _state.update { it.copy(pendingChoiceResult = result) }
+            _state.update { it.copy(pendingChoiceResult = result, choiceAddress = null) }
+            if (result.name.isBlank()) lookUpAddress(result) else addressLookup.cancel()
         }
+    }
+
+    /** Only a place with no name gets its address looked up; it is shown in the choice and offered as the favorite's name. */
+    private fun lookUpAddress(result: PlaceSearchResult) {
+        addressLookup.start(viewModelScope, result.latitude, result.longitude) { address ->
+            _state.update { current ->
+                current.copy(
+                    choiceAddress = address,
+                    favoriteNameInput =
+                        if (current.isNamingFavorite && !current.isFavoriteNameTouched) address.short else current.favoriteNameInput,
+                )
+            }
+        }
+    }
+
+    private fun dismissChoice() {
+        addressLookup.cancel()
+        _state.update { it.copy(pendingChoiceResult = null, choiceAddress = null) }
     }
 
     private fun chooseTeleport() {
         val result = _state.value.pendingChoiceResult ?: return
+        addressLookup.cancel()
+        _state.update { it.copy(choiceAddress = null) }
         pendingTeleportTargetSender.send(
             NamedPlace(latitude = result.latitude, longitude = result.longitude, name = result.name.takeIf { it.isNotBlank() }),
         )
@@ -148,6 +175,7 @@ internal class AddressSearchViewModel(
         val result = _state.value.pendingChoiceResult ?: return
         val name = _state.value.favoriteNameInput
         if (name.isBlank()) return
+        addressLookup.cancel()
         favoriteWaypointsRepository.add(name, result.latitude, result.longitude)
         recentPlacesRepository.record(NamedPlace(latitude = result.latitude, longitude = result.longitude, name = name))
         viewModelScope.launch { _events.send(AddressSearchEvent.NavigateBack) }
