@@ -1,0 +1,195 @@
+package com.routeforge.addresssearch.data
+
+import com.routeforge.coredomain.DataError
+import com.routeforge.coredomain.Result
+import com.routeforge.coredomain.model.AddressLabel
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.client.engine.mock.respondError
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.HttpRequestData
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import java.io.IOException
+import java.net.UnknownHostException
+import java.util.Locale
+
+private fun reverseClient(engine: MockEngine): NominatimReverseGeocoder =
+    NominatimReverseGeocoder(HttpClient(engine) { install(ContentNegotiation) { json() } })
+
+private fun answering(body: String) =
+    MockEngine {
+        respond(
+            content = body,
+            status = HttpStatusCode.OK,
+            headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+        )
+    }
+
+class NominatimReverseGeocoderTest {
+    @Test
+    fun `a place with a name is described by it, with the display name as the full text`() =
+        runTest {
+            val body =
+                """{"display_name": "Brandenburger Tor, Pariser Platz, Mitte, Berlin", "name": "Brandenburger Tor",
+                    "address": {"road": "Pariser Platz", "house_number": "1"}}"""
+            val client = reverseClient(answering(body))
+
+            val result = client.addressAt(52.5163, 13.3777)
+
+            val expected = AddressLabel(full = "Brandenburger Tor, Pariser Platz, Mitte, Berlin", short = "Brandenburger Tor")
+            assertEquals(Result.Success(expected), result)
+        }
+
+    @Test
+    fun `without a name the short text is the street and the house number`() =
+        runTest {
+            val body = """{"display_name": "1, Pariser Platz, Mitte, Berlin", "address": {"road": "Pariser Platz", "house_number": "1"}}"""
+
+            val result = reverseClient(answering(body)).addressAt(52.5163, 13.3777)
+
+            assertEquals(Result.Success(AddressLabel(full = "1, Pariser Platz, Mitte, Berlin", short = "Pariser Platz 1")), result)
+        }
+
+    @Test
+    fun `without a name or a number the short text is the street`() =
+        runTest {
+            val body = """{"display_name": "Pariser Platz, Mitte, Berlin", "address": {"road": "Pariser Platz"}}"""
+
+            val result = reverseClient(answering(body)).addressAt(52.5163, 13.3777)
+
+            assertEquals(Result.Success(AddressLabel(full = "Pariser Platz, Mitte, Berlin", short = "Pariser Platz")), result)
+        }
+
+    @Test
+    fun `without a name or a street the short text is the first part of the display name`() =
+        runTest {
+            val body = """{"display_name": "Mitte, Berlin, Germany", "address": {}}"""
+
+            val result = reverseClient(answering(body)).addressAt(52.5163, 13.3777)
+
+            assertEquals(Result.Success(AddressLabel(full = "Mitte, Berlin, Germany", short = "Mitte")), result)
+        }
+
+    @Test
+    fun `blank pieces are skipped as if they were missing`() =
+        runTest {
+            val body = """{"display_name": "Somewhere, Else", "name": "  ", "address": {"road": " ", "house_number": " "}}"""
+
+            val result = reverseClient(answering(body)).addressAt(1.0, 2.0)
+
+            assertEquals(Result.Success(AddressLabel(full = "Somewhere, Else", short = "Somewhere")), result)
+        }
+
+    @Test
+    fun `an answer with an error field means nothing was found`() =
+        runTest {
+            val result = reverseClient(answering("""{"error": "Unable to geocode"}""")).addressAt(0.0, -30.0)
+
+            assertEquals(Result.Success(null), result)
+        }
+
+    @Test
+    fun `an answer with no usable text means nothing was found`() =
+        runTest {
+            val result = reverseClient(answering("""{"display_name": "  ", "address": {}}""")).addressAt(0.0, -30.0)
+
+            assertEquals(Result.Success(null), result)
+        }
+
+    @Test
+    fun `the request carries the position, the options and the device language`() =
+        runTest {
+            val saved = Locale.getDefault()
+            Locale.setDefault(Locale.GERMANY)
+            try {
+                var captured: HttpRequestData? = null
+                val engine =
+                    MockEngine { request ->
+                        captured = request
+                        respond(
+                            content = """{"error": "Unable to geocode"}""",
+                            status = HttpStatusCode.OK,
+                            headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                        )
+                    }
+
+                reverseClient(engine).addressAt(52.5163, 13.3777)
+
+                val request = requireNotNull(captured)
+                assertEquals("/reverse", request.url.encodedPath)
+                assertEquals("52.516300", request.url.parameters["lat"])
+                assertEquals("13.377700", request.url.parameters["lon"])
+                assertEquals("jsonv2", request.url.parameters["format"])
+                assertEquals("18", request.url.parameters["zoom"])
+                assertEquals("1", request.url.parameters["addressdetails"])
+                assertEquals("de-DE", request.headers[HttpHeaders.AcceptLanguage])
+            } finally {
+                Locale.setDefault(saved)
+            }
+        }
+
+    @Test
+    fun `a 500 response maps to SERVER_ERROR`() =
+        runTest {
+            val result = reverseClient(MockEngine { respondError(HttpStatusCode.InternalServerError) }).addressAt(1.0, 2.0)
+
+            assertEquals(Result.Error(DataError.Network.SERVER_ERROR), result)
+        }
+
+    @Test
+    fun `a 429 response maps to TOO_MANY_REQUESTS`() =
+        runTest {
+            val result = reverseClient(MockEngine { respondError(HttpStatusCode.TooManyRequests) }).addressAt(1.0, 2.0)
+
+            assertEquals(Result.Error(DataError.Network.TOO_MANY_REQUESTS), result)
+        }
+
+    @Test
+    fun `a 403 response maps to FORBIDDEN`() =
+        runTest {
+            val result = reverseClient(MockEngine { respondError(HttpStatusCode.Forbidden) }).addressAt(1.0, 2.0)
+
+            assertEquals(Result.Error(DataError.Network.FORBIDDEN), result)
+        }
+
+    @Test
+    fun `a body that is not readable maps to SERIALIZATION`() =
+        runTest {
+            val result = reverseClient(answering("this is not json")).addressAt(1.0, 2.0)
+
+            assertEquals(Result.Error(DataError.Network.SERIALIZATION), result)
+        }
+
+    @Test
+    fun `a timeout maps to REQUEST_TIMEOUT`() =
+        runTest {
+            val result = reverseClient(MockEngine { throw HttpRequestTimeoutException("https://example.org", 1L) }).addressAt(1.0, 2.0)
+
+            assertEquals(Result.Error(DataError.Network.REQUEST_TIMEOUT), result)
+        }
+
+    @Test
+    fun `an unknown host maps to NO_INTERNET`() =
+        runTest {
+            val result = reverseClient(MockEngine { throw UnknownHostException("nominatim.openstreetmap.org") }).addressAt(1.0, 2.0)
+
+            assertEquals(Result.Error(DataError.Network.NO_INTERNET), result)
+        }
+
+    @Test
+    fun `any other connection failure maps to UNKNOWN`() =
+        runTest {
+            val result = reverseClient(MockEngine { throw IOException("connection reset") }).addressAt(1.0, 2.0)
+
+            assertEquals(Result.Error(DataError.Network.UNKNOWN), result)
+        }
+}

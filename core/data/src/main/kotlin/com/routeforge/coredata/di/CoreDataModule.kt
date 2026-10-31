@@ -9,6 +9,7 @@ import com.routeforge.coredata.SharedPreferencesFavoriteWaypointsRepository
 import com.routeforge.coredata.SharedPreferencesMapStyleStore
 import com.routeforge.coredata.SharedPreferencesRecentPlacesRepository
 import com.routeforge.coredata.SharedPreferencesTourProgressRepository
+import com.routeforge.coredomain.AddressLookup
 import com.routeforge.coredomain.FavoriteRoutesRepository
 import com.routeforge.coredomain.FavoriteWaypointsRepository
 import com.routeforge.coredomain.MapStyleStore
@@ -84,4 +85,5 @@ val coreDataModule =
         single { HttpRedirectSource(get()) }.bind<RedirectSource>()
         single { RedirectFollower(get()) }
         factoryOf(::ResolveSharedTextUseCase)
+        factory { AddressLookup(reverseGeocoder = get()) }
     }
