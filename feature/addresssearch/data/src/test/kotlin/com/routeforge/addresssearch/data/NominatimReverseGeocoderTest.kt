@@ -15,15 +15,22 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.testTimeSource
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.io.IOException
 import java.net.UnknownHostException
 import java.util.Locale
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.TimeSource
 
-private fun reverseClient(engine: MockEngine): NominatimReverseGeocoder =
-    NominatimReverseGeocoder(HttpClient(engine) { install(ContentNegotiation) { json() } })
+private fun reverseClient(
+    engine: MockEngine,
+    spacing: RequestSpacing = RequestSpacing(TimeSource.Monotonic),
+): NominatimReverseGeocoder = NominatimReverseGeocoder(HttpClient(engine) { install(ContentNegotiation) { json() } }, spacing)
 
 private fun answering(body: String) =
     MockEngine {
@@ -191,5 +198,83 @@ class NominatimReverseGeocoderTest {
             val result = reverseClient(MockEngine { throw IOException("connection reset") }).addressAt(1.0, 2.0)
 
             assertEquals(Result.Error(DataError.Network.UNKNOWN), result)
+        }
+
+    @Test
+    fun `two lookups of different spots reach the service at least a second apart`() =
+        runTest {
+            val reachedAt = mutableListOf<Long>()
+            val engine =
+                MockEngine {
+                    reachedAt.add(currentTime)
+                    respond(
+                        content = """{"error": "Unable to geocode"}""",
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                    )
+                }
+            val client = reverseClient(engine, RequestSpacing(testTimeSource))
+
+            client.addressAt(1.0, 1.0)
+            client.addressAt(2.0, 2.0)
+
+            assertEquals(listOf(0L, 1_000L), reachedAt)
+        }
+
+    @Test
+    fun `two lookups of the same spot reach the service once`() =
+        runTest {
+            var reached = 0
+            val engine =
+                MockEngine {
+                    reached++
+                    respond(
+                        content = """{"display_name": "Somewhere, Else"}""",
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                    )
+                }
+            val client = reverseClient(engine, RequestSpacing(testTimeSource))
+
+            client.addressAt(1.0, 1.0)
+            client.addressAt(1.0, 1.0)
+
+            assertEquals(1, reached)
+        }
+
+    @Test
+    fun `a refusal with 403 or 429 stops all requests for ten minutes`() =
+        runTest {
+            var reached = 0
+            val engine =
+                MockEngine {
+                    reached++
+                    respondError(HttpStatusCode.TooManyRequests)
+                }
+            val client = reverseClient(engine, RequestSpacing(testTimeSource))
+            client.addressAt(1.0, 1.0)
+
+            delay(9.minutes)
+            val duringThePause = client.addressAt(2.0, 2.0)
+
+            assertEquals(1, reached)
+            assertEquals(Result.Error(DataError.Network.TOO_MANY_REQUESTS), duringThePause)
+        }
+
+    @Test
+    fun `a 500 answer does not start the pause`() =
+        runTest {
+            var reached = 0
+            val engine =
+                MockEngine {
+                    reached++
+                    respondError(HttpStatusCode.InternalServerError)
+                }
+            val client = reverseClient(engine, RequestSpacing(testTimeSource))
+
+            client.addressAt(1.0, 1.0)
+            client.addressAt(2.0, 2.0)
+
+            assertEquals(2, reached)
         }
 }
