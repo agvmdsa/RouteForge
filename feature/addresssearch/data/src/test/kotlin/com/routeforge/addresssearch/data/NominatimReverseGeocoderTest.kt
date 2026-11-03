@@ -19,6 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.testTimeSource
+import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.io.IOException
@@ -27,10 +28,13 @@ import java.util.Locale
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 
+// The app's own client ignores the fields it does not read (`HttpClientFactory`); the real answers carry many of them.
+private val appJson = Json { ignoreUnknownKeys = true }
+
 private fun reverseClient(
     engine: MockEngine,
     spacing: RequestSpacing = RequestSpacing(TimeSource.Monotonic),
-): NominatimReverseGeocoder = NominatimReverseGeocoder(HttpClient(engine) { install(ContentNegotiation) { json() } }, spacing)
+): NominatimReverseGeocoder = NominatimReverseGeocoder(HttpClient(engine) { install(ContentNegotiation) { json(appJson) } }, spacing)
 
 private fun answering(body: String) =
     MockEngine {
@@ -94,6 +98,28 @@ class NominatimReverseGeocoderTest {
             val result = reverseClient(answering(body)).addressAt(1.0, 2.0)
 
             assertEquals(Result.Success(AddressLabel(full = "Somewhere, Else", short = "Somewhere")), result)
+        }
+
+    @Test
+    fun `a real answer of the service, with all its extra fields, is read`() =
+        runTest {
+            // Taken from the service on 2026-11-03 for 52.5163, 13.3777; the fields the app does not use must be ignored.
+            val body =
+                """
+                {"place_id":144588537,"licence":"Data (c) OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+                 "osm_type":"node","osm_id":3786417057,"lat":"52.5162700","lon":"13.3777021","category":"tourism","type":"artwork",
+                 "place_rank":30,"importance":8.875486381318407e-05,"addresstype":"tourism","name":"Quadriga with Victoria",
+                 "display_name":"Quadriga with Victoria, 1, Pariser Platz, Friedrich-Wilhelm-Stadt, Mitte, Berlin, 10117, Germany",
+                 "address":{"tourism":"Quadriga with Victoria","house_number":"1","road":"Pariser Platz",
+                 "quarter":"Friedrich-Wilhelm-Stadt","suburb":"Mitte","borough":"Mitte","city":"Berlin","ISO3166-2-lvl4":"DE-BE",
+                 "postcode":"10117","country":"Germany","country_code":"de"},
+                 "boundingbox":["52.5162200","52.5163200","13.3776521","13.3777521"]}
+                """.trimIndent()
+
+            val result = reverseClient(answering(body)).addressAt(52.5163, 13.3777)
+
+            val full = "Quadriga with Victoria, 1, Pariser Platz, Friedrich-Wilhelm-Stadt, Mitte, Berlin, 10117, Germany"
+            assertEquals(Result.Success(AddressLabel(full = full, short = "Quadriga with Victoria")), result)
         }
 
     @Test
