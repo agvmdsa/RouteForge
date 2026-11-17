@@ -270,7 +270,7 @@ private fun TeleportOrFavoriteChoiceSheet(
     ConfirmationBottomSheet(
         title = result.name.ifBlank { address ?: coordinates },
         onDismiss = onDismiss,
-        titleMaxLines = CHOICE_TITLE_MAX_LINES,
+        titleMaxLines = if (hasAddress) CHOICE_TITLE_MAX_LINES else Int.MAX_VALUE,
     ) {
         if (hasAddress) {
             Text(text = coordinates, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
