@@ -495,4 +495,14 @@ class WaypointEditViewModelTest {
         assertEquals("Pariser Platz 1", viewModel.state.value.favoriteNameInput)
     }
 
+    @Test
+    fun `two map taps within the pause make one request, for the second position`() {
+        reverseGeocoder.answer = Result.Success(address)
+        openAndTap(latitude = 3.0, longitude = 0.0)
+        dispatcher.scheduler.advanceTimeBy(AddressLookup.DEBOUNCE_MILLIS / 2)
+        viewModel.onAction(WaypointEditAction.OnMapTap(latitude = 4.0, longitude = 0.0))
+        passTheLookupPause()
+
+        assertEquals(listOf(4.0 to 0.0), reverseGeocoder.requests)
+    }
 }

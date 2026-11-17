@@ -439,6 +439,38 @@ class PendingWaypointConfirmerTest {
     }
 
     @Test
+    fun `two map taps within the pause make one request, for the second position`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val state = MutableStateFlow(RouteRequestState())
+
+        confirmer.registerMapTap(latitude = 1.0, longitude = 2.0, state = state, scope = scope)
+        dispatcher.scheduler.advanceTimeBy(AddressLookup.DEBOUNCE_MILLIS / 2)
+        confirmer.registerMapTap(latitude = 3.0, longitude = 4.0, state = state, scope = scope)
+        passTheLookupPause()
+        dispatcher.scheduler.advanceTimeBy(AddressLookup.DEBOUNCE_MILLIS)
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(1, reverseGeocoder.requests.size)
+        assertEquals(3.0 to 4.0, reverseGeocoder.requests.single())
+        assertEquals(address, state.value.pendingAddAddress)
+    }
+
+    @Test
+    fun `an answer held for the first tap never appears after a second tap`() {
+        reverseGeocoder.answer = Result.Success(address)
+        reverseGeocoder.hold()
+        val state = MutableStateFlow(RouteRequestState())
+        confirmer.registerMapTap(latitude = 1.0, longitude = 2.0, state = state, scope = scope)
+        passTheLookupPause()
+
+        confirmer.registerMapTap(latitude = 3.0, longitude = 4.0, state = state, scope = scope)
+        reverseGeocoder.release()
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(state.value.pendingAddAddress)
+    }
+
+    @Test
     fun `dismissing resets the favorite name and the touched mark`() {
         val state =
             MutableStateFlow(

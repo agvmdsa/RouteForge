@@ -380,4 +380,35 @@ class PendingTeleportConfirmerTest {
 
         assertNull(state.value.pendingTeleportAddress)
     }
+
+    @Test
+    fun `two map taps within the pause make one request, for the second position`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val state = MutableStateFlow(SimulationState())
+
+        confirmer.registerMapTap(10.0, 20.0, state, scope)
+        dispatcher.scheduler.advanceTimeBy(AddressLookup.DEBOUNCE_MILLIS / 2)
+        confirmer.registerMapTap(30.0, 40.0, state, scope)
+        passTheLookupPause()
+        dispatcher.scheduler.advanceTimeBy(AddressLookup.DEBOUNCE_MILLIS)
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(listOf(30.0 to 40.0), reverseGeocoder.requests)
+        assertEquals(address, state.value.pendingTeleportAddress)
+    }
+
+    @Test
+    fun `an answer held for the first tap never appears after a second tap`() {
+        reverseGeocoder.answer = Result.Success(address)
+        reverseGeocoder.hold()
+        val state = MutableStateFlow(SimulationState())
+        confirmer.registerMapTap(10.0, 20.0, state, scope)
+        passTheLookupPause()
+
+        confirmer.registerMapTap(30.0, 40.0, state, scope)
+        reverseGeocoder.release()
+        dispatcher.scheduler.runCurrent()
+
+        assertNull(state.value.pendingTeleportAddress)
+    }
 }
