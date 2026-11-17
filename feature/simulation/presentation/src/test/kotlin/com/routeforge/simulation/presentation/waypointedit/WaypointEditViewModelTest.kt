@@ -479,4 +479,20 @@ class WaypointEditViewModelTest {
         assertEquals("", viewModel.state.value.favoriteNameInput)
         assertFalse(viewModel.state.value.isFavoriteNameTouched)
     }
+
+    @Test
+    fun `a new map tap resets the favorite name and lets its own address be offered`() {
+        reverseGeocoder.answer = Result.Success(address)
+        openAndTap()
+        viewModel.onAction(WaypointEditAction.OnToggleSaveAsFavorite)
+        viewModel.onAction(WaypointEditAction.OnFavoriteNameChange("My spot"))
+
+        viewModel.onAction(WaypointEditAction.OnMapTap(latitude = 4.0, longitude = 0.0))
+        assertEquals("", viewModel.state.value.favoriteNameInput)
+        assertFalse(viewModel.state.value.isFavoriteNameTouched)
+        passTheLookupPause()
+
+        assertEquals("Pariser Platz 1", viewModel.state.value.favoriteNameInput)
+    }
+
 }

@@ -396,12 +396,46 @@ class PendingWaypointConfirmerTest {
     @Test
     fun `an address arriving after the user edited the favorite name does not replace it`() {
         reverseGeocoder.answer = Result.Success(address)
-        val state = MutableStateFlow(RouteRequestState(favoriteNameInput = "My spot", isFavoriteNameTouched = true))
-
+        val state = MutableStateFlow(RouteRequestState())
         confirmer.registerMapTap(latitude = 1.0, longitude = 2.0, state = state, scope = scope)
+        state.update { it.copy(favoriteNameInput = "My spot", isFavoriteNameTouched = true) }
+
         passTheLookupPause()
 
         assertEquals("My spot", state.value.favoriteNameInput)
+    }
+
+    @Test
+    fun `a new map tap resets the favorite name and the touched mark`() {
+        val state = MutableStateFlow(RouteRequestState(favoriteNameInput = "My spot", isFavoriteNameTouched = true))
+
+        confirmer.registerMapTap(latitude = 3.0, longitude = 4.0, state = state, scope = scope)
+
+        assertEquals("", state.value.favoriteNameInput)
+        assertFalse(state.value.isFavoriteNameTouched)
+    }
+
+    @Test
+    fun `a new map tap lets its own address be offered as the name again`() {
+        reverseGeocoder.answer = Result.Success(address)
+        val state = MutableStateFlow(RouteRequestState(favoriteNameInput = "My spot", isFavoriteNameTouched = true))
+
+        confirmer.registerMapTap(latitude = 3.0, longitude = 4.0, state = state, scope = scope)
+        passTheLookupPause()
+
+        assertEquals("Pariser Platz 1", state.value.favoriteNameInput)
+    }
+
+    @Test
+    fun `a place arriving with no name resets the favorite name and the touched mark`() {
+        val state = MutableStateFlow(RouteRequestState(favoriteNameInput = "My spot", isFavoriteNameTouched = true))
+        confirmer.startObservingPendingSearchWaypoint(state, scope)
+
+        pendingSearchWaypoint.send(searchResult(""))
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals("", state.value.favoriteNameInput)
+        assertFalse(state.value.isFavoriteNameTouched)
     }
 
     @Test
