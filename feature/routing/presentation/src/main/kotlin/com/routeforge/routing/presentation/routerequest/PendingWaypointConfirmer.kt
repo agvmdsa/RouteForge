@@ -31,6 +31,8 @@ internal class PendingWaypointConfirmer(
                 pendingAddLongitude = longitude,
                 pendingAddFromMapTap = true,
                 pendingAddAddress = null,
+                favoriteNameInput = "",
+                isFavoriteNameTouched = false,
             )
         }
         lookUpAddress(latitude, longitude, state, scope)
@@ -110,6 +112,8 @@ internal class PendingWaypointConfirmer(
                         pendingAddPlaceName = placeName,
                         pendingAddFromMapTap = false,
                         pendingAddAddress = null,
+                        favoriteNameInput = "",
+                        isFavoriteNameTouched = false,
                     )
                 }
                 if (placeName == null) lookUpAddress(result.latitude, result.longitude, state, scope) else addressLookup.cancel()

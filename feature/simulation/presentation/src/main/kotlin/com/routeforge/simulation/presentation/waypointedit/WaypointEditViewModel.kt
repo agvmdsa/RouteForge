@@ -102,7 +102,15 @@ internal class WaypointEditViewModel(
         latitude: Double,
         longitude: Double,
     ) {
-        _state.update { it.copy(pendingAddLatitude = latitude, pendingAddLongitude = longitude, pendingAddAddress = null) }
+        _state.update {
+            it.copy(
+                pendingAddLatitude = latitude,
+                pendingAddLongitude = longitude,
+                pendingAddAddress = null,
+                favoriteNameInput = "",
+                isFavoriteNameTouched = false,
+            )
+        }
         addressLookup.start(viewModelScope, latitude, longitude) { address ->
             _state.update { current ->
                 current.copy(
