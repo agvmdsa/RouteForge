@@ -37,6 +37,13 @@ class ExternalLinkParserTest {
     }
 
     @Test
+    fun `a stray percent sign in a query does not hide the position of the link`() {
+        check(place(48.85, 2.35), "geo:48.85,2.35?z=100%")
+        check(place(48.85, 2.35, "Pizza 100%"), "geo:0,0?q=48.85,2.35(Pizza 100%)")
+        check(place(48.85, 2.35), "https://www.openstreetmap.org/?mlat=48.85&mlon=2.35&x=%")
+    }
+
+    @Test
     fun `a geo link may keep its position in the query, with an optional label`() {
         check(place(52.52, 13.405), "geo:0,0?q=52.52,13.405")
         check(place(52.52, 13.405, "Brandenburg Gate"), "geo:0,0?q=52.52,13.405(Brandenburg%20Gate)")
