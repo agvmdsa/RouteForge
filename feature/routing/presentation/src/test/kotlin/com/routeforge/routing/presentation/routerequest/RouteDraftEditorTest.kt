@@ -126,6 +126,33 @@ class RouteDraftEditorTest {
     }
 
     @Test
+    fun `confirming an edit with a coordinate that is not finite or out of range shows the error and keeps the dialog open`() {
+        val rejected =
+            listOf(
+                "NaN" to "2.0",
+                "Infinity" to "2.0",
+                "1e999" to "2.0",
+                "95" to "2.0",
+                "1.0" to "NaN",
+                "1.0" to "-Infinity",
+                "1.0" to "200",
+            )
+
+        for ((latitude, longitude) in rejected) {
+            val state =
+                MutableStateFlow(
+                    RouteRequestState(draft = twoPoints, editingIndex = 0, editLatitudeInput = latitude, editLongitudeInput = longitude),
+                )
+
+            editor.confirmEdit(state, scope)
+
+            assertEquals(RouteRequestError.INVALID_EDIT_COORDINATES, state.value.errorType, "$latitude, $longitude")
+            assertEquals(0, state.value.editingIndex, "$latitude, $longitude")
+            assertEquals(twoPoints.points, state.value.draft.points, "$latitude, $longitude")
+        }
+    }
+
+    @Test
     fun `confirming an edit replaces the waypoint and closes the dialog`() {
         val state =
             MutableStateFlow(

@@ -177,6 +177,43 @@ class FavoritesViewModelTest {
     }
 
     @Test
+    fun `confirming an edit with a coordinate that is not finite or out of range is rejected`() {
+        val rejectedLatitudes = listOf("NaN", "Infinity", "-Infinity", "1e999", "90.1", "-91")
+        val rejectedLongitudes = listOf("NaN", "Infinity", "180.5", "-181")
+
+        for (latitude in rejectedLatitudes) {
+            val viewModel = createViewModel()
+            viewModel.onAction(FavoritesAction.OnEditClick(home.id))
+            viewModel.onAction(FavoritesAction.OnEditLatitudeChange(latitude))
+
+            viewModel.onAction(FavoritesAction.OnConfirmEdit)
+
+            assertEquals(FavoritesError.INVALID_COORDINATES, viewModel.state.value.editError, "latitude $latitude")
+            assertEquals(
+                home,
+                viewModel.state.value.favorites
+                    .first { it.id == home.id },
+                "latitude $latitude",
+            )
+        }
+        for (longitude in rejectedLongitudes) {
+            val viewModel = createViewModel()
+            viewModel.onAction(FavoritesAction.OnEditClick(home.id))
+            viewModel.onAction(FavoritesAction.OnEditLongitudeChange(longitude))
+
+            viewModel.onAction(FavoritesAction.OnConfirmEdit)
+
+            assertEquals(FavoritesError.INVALID_COORDINATES, viewModel.state.value.editError, "longitude $longitude")
+            assertEquals(
+                home,
+                viewModel.state.value.favorites
+                    .first { it.id == home.id },
+                "longitude $longitude",
+            )
+        }
+    }
+
+    @Test
     fun `confirming a delete removes the favorite`() {
         val viewModel = createViewModel()
         viewModel.onAction(FavoritesAction.OnDeleteClick(home.id))
