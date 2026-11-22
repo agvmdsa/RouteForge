@@ -25,7 +25,7 @@ import com.routeforge.routing.presentation.settings.SettingsRoute
  *  whichever tab opened it is what keeps the back button returning to that same tab. */
 fun NavGraphBuilder.regionCatalogGraph(navController: NavController) {
     composable<RegionCatalogRoute> {
-        RegionCatalogRoot(onOpenCoverageMap = { navController.navigate(RegionCoverageMapRoute) })
+        RegionCatalogRoot(onOpenCoverageMap = { navController.navigate(RegionCoverageMapRoute) { launchSingleTop = true } })
     }
     composable<RegionCoverageMapRoute> {
         RegionCoverageMapRoot()
@@ -40,8 +40,8 @@ fun NavGraphBuilder.planRouteGraph(
     composable<RouteRequestRoute> {
         RouteRequestRoot(
             onGoToSimulate = onGoToSimulate,
-            onOpenRegionCatalog = { navController.navigate(RegionCatalogRoute) },
-            onOpenFavorites = { navController.navigate(FavoritesRoute(isPickerMode = true)) },
+            onOpenRegionCatalog = { navController.navigate(RegionCatalogRoute) { launchSingleTop = true } },
+            onOpenFavorites = { navController.navigate(FavoritesRoute(isPickerMode = true)) { launchSingleTop = true } },
         )
     }
     regionCatalogGraph(navController)
@@ -60,7 +60,7 @@ fun NavGraphBuilder.savedGraph(
     composable<SavedRoute> {
         SavedRoot(
             onGoToSimulate = onGoToSimulate,
-            onOpenRegionCatalog = { navController.navigate(RegionCatalogRoute) },
+            onOpenRegionCatalog = { navController.navigate(RegionCatalogRoute) { launchSingleTop = true } },
         )
     }
     regionCatalogGraph(navController)
@@ -72,7 +72,7 @@ fun NavGraphBuilder.savedGraph(
  *  depend on, and Settings is already off screen when "Repeat all" moves on to its next section. */
 fun NavGraphBuilder.settingsGraph(navController: NavController) {
     composable<SettingsRoute> {
-        SettingsRoot(onManageDownloadsClick = { navController.navigate(RegionCatalogRoute) })
+        SettingsRoot(onManageDownloadsClick = { navController.navigate(RegionCatalogRoute) { launchSingleTop = true } })
     }
     regionCatalogGraph(navController)
 }
