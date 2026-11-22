@@ -214,6 +214,24 @@ class FavoritesViewModelTest {
     }
 
     @Test
+    fun `confirming an edit accepts a decimal comma and trims the name`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(FavoritesAction.OnEditClick(home.id))
+        viewModel.onAction(FavoritesAction.OnEditNameChange("  Casa  "))
+        viewModel.onAction(FavoritesAction.OnEditLatitudeChange("-23,55"))
+        viewModel.onAction(FavoritesAction.OnEditLongitudeChange(" -46,63 "))
+
+        viewModel.onAction(FavoritesAction.OnConfirmEdit)
+
+        assertNull(viewModel.state.value.editError)
+        assertEquals(
+            FavoriteWaypoint(id = home.id, name = "Casa", latitude = -23.55, longitude = -46.63),
+            viewModel.state.value.favorites
+                .first { it.id == home.id },
+        )
+    }
+
+    @Test
     fun `confirming a delete removes the favorite`() {
         val viewModel = createViewModel()
         viewModel.onAction(FavoritesAction.OnDeleteClick(home.id))
