@@ -94,6 +94,7 @@ internal class SimulationViewModel(
                 viewModelScope.launch { _events.send(SimulationEvent.NavigateToSetup) }
             SimulationAction.OnLocationPermissionGranted ->
                 realLocationTracker.startObservingRealLocationIfNotMocking(_state, viewModelScope)
+            SimulationAction.OnRuntimePermissionsRequested -> _state.update { it.copy(isRuntimePermissionRequestPending = false) }
             SimulationAction.OnScreenResumed -> checkAuthorizationStillGranted()
             SimulationAction.OnConfirmFavoriteTeleportCancelRoute -> pendingTeleportConfirmer.confirmFavoriteTeleportCancelRoute(_state)
             SimulationAction.OnDismissFavoriteTeleportCancelRoute ->

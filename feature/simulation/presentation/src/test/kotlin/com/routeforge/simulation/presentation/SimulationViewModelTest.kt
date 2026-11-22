@@ -48,6 +48,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -626,6 +627,17 @@ class SimulationViewModelTest {
         viewModel.onAction(SimulationAction.OnLocationPermissionGranted)
 
         assertEquals(RealLocation(latitude = 5.0, longitude = 6.0), viewModel.state.value.realLocation)
+    }
+
+    @Test
+    fun `the runtime permissions are requested once, however often the screen comes back`() {
+        val viewModel = createViewModel()
+        assertTrue(viewModel.state.value.isRuntimePermissionRequestPending)
+
+        viewModel.onAction(SimulationAction.OnRuntimePermissionsRequested)
+        viewModel.onAction(SimulationAction.OnScreenResumed)
+
+        assertFalse(viewModel.state.value.isRuntimePermissionRequestPending)
     }
 
     @Test
