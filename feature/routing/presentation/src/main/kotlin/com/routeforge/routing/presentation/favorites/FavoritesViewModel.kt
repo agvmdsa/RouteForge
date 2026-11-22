@@ -7,6 +7,8 @@ import com.routeforge.coredomain.NetworkConnectivityChecker
 import com.routeforge.coredomain.handoff.PendingTeleportTargetHandoffSender
 import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffSender
 import com.routeforge.coredomain.model.NamedPlace
+import com.routeforge.coredomain.model.RoutePoint
+import com.routeforge.routing.domain.model.hasValidCoordinates
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -82,7 +84,7 @@ internal class FavoritesViewModel(
         }
         val latitude = _state.value.editLatitudeInput.toDoubleOrNull()
         val longitude = _state.value.editLongitudeInput.toDoubleOrNull()
-        if (latitude == null || longitude == null) {
+        if (latitude == null || longitude == null || !RoutePoint(latitude, longitude).hasValidCoordinates()) {
             _state.update { it.copy(editError = FavoritesError.INVALID_COORDINATES) }
             return
         }

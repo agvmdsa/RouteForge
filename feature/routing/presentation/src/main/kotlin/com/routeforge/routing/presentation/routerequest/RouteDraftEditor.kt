@@ -6,6 +6,7 @@ import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffReceiver
 import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.model.RouteDraft
+import com.routeforge.routing.domain.model.hasValidCoordinates
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -70,7 +71,7 @@ internal class RouteDraftEditor(
         val index = state.value.editingIndex ?: return
         val latitude = state.value.editLatitudeInput.toDoubleOrNull()
         val longitude = state.value.editLongitudeInput.toDoubleOrNull()
-        if (latitude == null || longitude == null) {
+        if (latitude == null || longitude == null || !RoutePoint(latitude, longitude).hasValidCoordinates()) {
             state.update { it.copy(errorType = RouteRequestError.INVALID_EDIT_COORDINATES) }
             return
         }
