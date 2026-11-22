@@ -95,13 +95,14 @@ internal class MainActivity : ComponentActivity() {
                             onSetupReady = {
                                 navController.navigate(SimulateTabRoute) {
                                     popUpTo(MockLocationSetupRoute) { inclusive = true }
+                                    launchSingleTop = true
                                 }
                             },
                         )
                         navigation<SimulateTabRoute>(startDestination = SimulationRoute) {
                             simulationGraph(
-                                onOpenSetup = { navController.navigate(MockLocationSetupRoute) },
-                                onOpenRegionCatalog = { navController.navigate(RegionCatalogRoute) },
+                                onOpenSetup = { navController.navigate(MockLocationSetupRoute) { launchSingleTop = true } },
+                                onOpenRegionCatalog = { navController.navigate(RegionCatalogRoute) { launchSingleTop = true } },
                             )
                             regionCatalogGraph(navController)
                         }

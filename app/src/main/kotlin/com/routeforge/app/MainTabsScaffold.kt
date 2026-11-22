@@ -203,7 +203,9 @@ internal fun MainTabsScaffold(
                                                 } else {
                                                     SearchSourceContext.TELEPORT_OR_FAVORITE
                                                 }
-                                            navController.navigate(AddressSearchRoute(sourceContext = sourceContext))
+                                            navController.navigate(AddressSearchRoute(sourceContext = sourceContext)) {
+                                                launchSingleTop = true
+                                            }
                                         },
                                         icon = {
                                             Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.tab_search_label))
