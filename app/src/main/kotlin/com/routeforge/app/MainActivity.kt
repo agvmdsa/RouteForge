@@ -65,8 +65,10 @@ internal class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // After a rebuild the system delivers the original intent again; only a fresh start reads it.
-        if (savedInstanceState == null) IncomingIntentReader.read(intent)?.let(incomingItems::submit)
-        handleIntent(intent)
+        if (savedInstanceState == null) {
+            IncomingIntentReader.read(intent)?.let(incomingItems::submit)
+            handleIntent(intent)
+        }
         // Skip the setup flow entirely on launch if it's already done — it should only ever be
         // seen again if something actually revokes mock-location access later (see
         // SimulationViewModel's resume-triggered re-check), never just because the app restarted.
