@@ -48,6 +48,7 @@ internal class AddressSearchViewModel(
     val events = _events.receiveAsFlow()
 
     private var searchJob: Job? = null
+    private var isLeaving = false
 
     init {
         recentPlacesRepository
@@ -135,8 +136,7 @@ internal class AddressSearchViewModel(
     /** Picking a result, a recent place, or arriving with a place from another app, leads to the same next step. */
     private fun choose(result: PlaceSearchResult) {
         if (_state.value.sourceContext == SearchSourceContext.PLAN_ROUTE) {
-            pendingSearchWaypointSender.send(result)
-            viewModelScope.launch { _events.send(AddressSearchEvent.NavigateBack) }
+            leaveSearch { pendingSearchWaypointSender.send(result) }
         } else {
             _state.update { it.copy(pendingChoiceResult = result, choiceAddress = null) }
             if (result.name.isBlank()) lookUpAddress(result) else addressLookup.cancel()
@@ -163,21 +163,31 @@ internal class AddressSearchViewModel(
 
     private fun chooseTeleport() {
         val result = _state.value.pendingChoiceResult ?: return
-        addressLookup.cancel()
-        _state.update { it.copy(choiceAddress = null) }
-        pendingTeleportTargetSender.send(
-            NamedPlace(latitude = result.latitude, longitude = result.longitude, name = result.name.takeIf { it.isNotBlank() }),
-        )
-        viewModelScope.launch { _events.send(AddressSearchEvent.NavigateBack) }
+        leaveSearch {
+            addressLookup.cancel()
+            _state.update { it.copy(choiceAddress = null) }
+            pendingTeleportTargetSender.send(
+                NamedPlace(latitude = result.latitude, longitude = result.longitude, name = result.name.takeIf { it.isNotBlank() }),
+            )
+        }
     }
 
     private fun confirmFavoriteName() {
         val result = _state.value.pendingChoiceResult ?: return
         val name = _state.value.favoriteNameInput
         if (name.isBlank()) return
-        addressLookup.cancel()
-        favoriteWaypointsRepository.add(name, result.latitude, result.longitude)
-        recentPlacesRepository.record(NamedPlace(latitude = result.latitude, longitude = result.longitude, name = name))
+        leaveSearch {
+            addressLookup.cancel()
+            favoriteWaypointsRepository.add(name, result.latitude, result.longitude)
+            recentPlacesRepository.record(NamedPlace(latitude = result.latitude, longitude = result.longitude, name = name))
+        }
+    }
+
+    /** Leaving happens once: a second tap that lands before the screen is gone must not hand over, save or navigate again. */
+    private fun leaveSearch(beforeLeaving: () -> Unit) {
+        if (isLeaving) return
+        isLeaving = true
+        beforeLeaving()
         viewModelScope.launch { _events.send(AddressSearchEvent.NavigateBack) }
     }
 }

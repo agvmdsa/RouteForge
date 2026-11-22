@@ -22,6 +22,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -497,6 +499,63 @@ class AddressSearchViewModelTest {
 
             assertEquals(gateAsResult, pendingSearchWaypoint.pending)
             assertEquals(AddressSearchEvent.NavigateBack, eventDeferred.await())
+        }
+
+    @Test
+    fun `a second tap on teleport while leaving navigates back only once`() =
+        runTest {
+            geocodeClient.result = Result.Success(listOf(place()))
+            val viewModel = createViewModel()
+            viewModel.onAction(AddressSearchAction.OnQueryChange("query"))
+            viewModel.onAction(AddressSearchAction.OnSubmit)
+            viewModel.onAction(AddressSearchAction.OnSelectResult(0))
+            val events = mutableListOf<AddressSearchEvent>()
+            backgroundScope.launch { viewModel.events.toList(events) }
+            runCurrent()
+
+            viewModel.onAction(AddressSearchAction.OnChooseTeleport)
+            viewModel.onAction(AddressSearchAction.OnChooseTeleport)
+            runCurrent()
+
+            assertEquals(listOf<AddressSearchEvent>(AddressSearchEvent.NavigateBack), events)
+        }
+
+    @Test
+    fun `a second tap on confirm while leaving saves the favorite and navigates back only once`() =
+        runTest {
+            geocodeClient.result = Result.Success(listOf(place(latitude = 5.0, longitude = 6.0)))
+            val viewModel = createViewModel()
+            viewModel.onAction(AddressSearchAction.OnQueryChange("query"))
+            viewModel.onAction(AddressSearchAction.OnSubmit)
+            viewModel.onAction(AddressSearchAction.OnSelectResult(0))
+            viewModel.onAction(AddressSearchAction.OnChooseSaveAsFavorite)
+            viewModel.onAction(AddressSearchAction.OnFavoriteNameChange("Home"))
+            val events = mutableListOf<AddressSearchEvent>()
+            backgroundScope.launch { viewModel.events.toList(events) }
+            runCurrent()
+
+            viewModel.onAction(AddressSearchAction.OnConfirmFavoriteName)
+            viewModel.onAction(AddressSearchAction.OnConfirmFavoriteName)
+            runCurrent()
+
+            assertEquals(listOf(Triple("Home", 5.0, 6.0)), favoriteWaypointsRepository.added)
+            assertEquals(listOf<AddressSearchEvent>(AddressSearchEvent.NavigateBack), events)
+        }
+
+    @Test
+    fun `a second tap on a recent entry from plan route navigates back only once`() =
+        runTest {
+            recentPlaces.record(gate)
+            val viewModel = createViewModel(sourceContext = SearchSourceContext.PLAN_ROUTE)
+            val events = mutableListOf<AddressSearchEvent>()
+            backgroundScope.launch { viewModel.events.toList(events) }
+            runCurrent()
+
+            viewModel.onAction(AddressSearchAction.OnSelectRecent(0))
+            viewModel.onAction(AddressSearchAction.OnSelectRecent(0))
+            runCurrent()
+
+            assertEquals(listOf<AddressSearchEvent>(AddressSearchEvent.NavigateBack), events)
         }
 
     @Test
