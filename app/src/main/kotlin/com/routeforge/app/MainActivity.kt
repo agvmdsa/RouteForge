@@ -64,8 +64,8 @@ internal class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // After a rebuild the system delivers the original intent again; only a fresh start reads it.
-        if (savedInstanceState == null) {
+        // After a rebuild, or when the task is reopened from the recent apps, the system delivers the original intent again.
+        if (isFreshLaunchIntent(isRecreated = savedInstanceState != null, intentFlags = intent.flags)) {
             IncomingIntentReader.read(intent)?.let(incomingItems::submit)
             handleIntent(intent)
         }
