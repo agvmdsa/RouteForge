@@ -312,6 +312,37 @@ class RouteRequestViewModelTest {
     }
 
     @Test
+    fun `confirming save-route saves the name without the spaces around it`() {
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        viewModel.onAction(RouteRequestAction.OnSaveRouteClick)
+        viewModel.onAction(RouteRequestAction.OnRouteNameInputChange("  Morning loop "))
+
+        viewModel.onAction(RouteRequestAction.OnConfirmSaveRoute)
+
+        assertEquals(
+            "Morning loop",
+            favoriteRoutesRepository
+                .observeFavoriteRoutes()
+                .value
+                .single()
+                .name,
+        )
+    }
+
+    @Test
+    fun `confirming save-route with a name of only spaces does not save`() {
+        val viewModel = createViewModel()
+        viewModel.tapTwoPoints()
+        viewModel.onAction(RouteRequestAction.OnSaveRouteClick)
+        viewModel.onAction(RouteRequestAction.OnRouteNameInputChange("   "))
+
+        viewModel.onAction(RouteRequestAction.OnConfirmSaveRoute)
+
+        assertEquals(emptyList<Any>(), favoriteRoutesRepository.observeFavoriteRoutes().value)
+    }
+
+    @Test
     fun `confirming save-route with a name saves the draft's current points in order and closes the sheet`() {
         val viewModel = createViewModel()
         viewModel.tapTwoPoints()

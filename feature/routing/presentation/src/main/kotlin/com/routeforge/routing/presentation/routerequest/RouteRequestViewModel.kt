@@ -104,7 +104,7 @@ internal class RouteRequestViewModel(
 
     private fun confirmSaveRoute() {
         val points = _state.value.draft.points
-        val name = _state.value.routeNameInput
+        val name = _state.value.routeNameInput.trim()
         if (points.size < MIN_WAYPOINTS_TO_PLAY || name.isBlank()) return
         favoriteRoutesRepository.add(name, points)
         dismissSaveRoute()

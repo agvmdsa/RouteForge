@@ -167,6 +167,19 @@ class RouteDraftEditorTest {
     }
 
     @Test
+    fun `confirming an edit accepts a decimal comma`() {
+        val state =
+            MutableStateFlow(
+                RouteRequestState(draft = twoPoints, editingIndex = 0, editLatitudeInput = "-23,55", editLongitudeInput = " 6,5 "),
+            )
+
+        editor.confirmEdit(state, scope)
+
+        assertEquals(RoutePoint(-23.55, 6.5), state.value.draft.points[0])
+        assertNull(state.value.editingIndex)
+    }
+
+    @Test
     fun `confirming or deleting with no waypoint being edited changes nothing`() {
         val state = MutableStateFlow(RouteRequestState(draft = twoPoints))
 

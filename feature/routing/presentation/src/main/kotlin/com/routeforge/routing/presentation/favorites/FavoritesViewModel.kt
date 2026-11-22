@@ -9,6 +9,7 @@ import com.routeforge.coredomain.handoff.SelectedFavoriteWaypointHandoffSender
 import com.routeforge.coredomain.model.NamedPlace
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.model.hasValidCoordinates
+import com.routeforge.routing.domain.model.toCoordinateOrNull
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -77,13 +78,13 @@ internal class FavoritesViewModel(
 
     private fun confirmEdit() {
         val id = _state.value.editingId ?: return
-        val name = _state.value.editNameInput
+        val name = _state.value.editNameInput.trim()
         if (name.isBlank()) {
             _state.update { it.copy(editError = FavoritesError.INVALID_NAME) }
             return
         }
-        val latitude = _state.value.editLatitudeInput.toDoubleOrNull()
-        val longitude = _state.value.editLongitudeInput.toDoubleOrNull()
+        val latitude = _state.value.editLatitudeInput.toCoordinateOrNull()
+        val longitude = _state.value.editLongitudeInput.toCoordinateOrNull()
         if (latitude == null || longitude == null || !RoutePoint(latitude, longitude).hasValidCoordinates()) {
             _state.update { it.copy(editError = FavoritesError.INVALID_COORDINATES) }
             return

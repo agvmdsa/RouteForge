@@ -7,6 +7,7 @@ import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.routing.domain.model.RouteDraft
 import com.routeforge.routing.domain.model.hasValidCoordinates
+import com.routeforge.routing.domain.model.toCoordinateOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -69,8 +70,8 @@ internal class RouteDraftEditor(
         scope: CoroutineScope,
     ) {
         val index = state.value.editingIndex ?: return
-        val latitude = state.value.editLatitudeInput.toDoubleOrNull()
-        val longitude = state.value.editLongitudeInput.toDoubleOrNull()
+        val latitude = state.value.editLatitudeInput.toCoordinateOrNull()
+        val longitude = state.value.editLongitudeInput.toCoordinateOrNull()
         if (latitude == null || longitude == null || !RoutePoint(latitude, longitude).hasValidCoordinates()) {
             state.update { it.copy(errorType = RouteRequestError.INVALID_EDIT_COORDINATES) }
             return

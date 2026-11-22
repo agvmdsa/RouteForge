@@ -79,7 +79,7 @@ internal class SavedRoutesViewModel(
 
     private fun confirmEdit() {
         val id = _state.value.editingId ?: return
-        val name = _state.value.editNameInput
+        val name = _state.value.editNameInput.trim()
         if (name.isBlank()) {
             _state.update { it.copy(editError = SavedRoutesError.INVALID_NAME) }
             return

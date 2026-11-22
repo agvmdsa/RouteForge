@@ -291,6 +291,24 @@ class SavedRoutesViewModelTest {
     }
 
     @Test
+    fun `confirming a rename saves the name without the spaces around it`() {
+        val viewModel = createViewModel()
+        viewModel.onAction(SavedRoutesAction.OnEditClick("route-1"))
+        viewModel.onAction(SavedRoutesAction.OnEditNameChange("  Evening loop "))
+
+        viewModel.onAction(SavedRoutesAction.OnConfirmEdit)
+
+        assertEquals(
+            "Evening loop",
+            favoriteRoutesRepository
+                .observeFavoriteRoutes()
+                .value
+                .first()
+                .name,
+        )
+    }
+
+    @Test
     fun `deleting a route requires confirmation`() {
         val viewModel = createViewModel()
         viewModel.onAction(SavedRoutesAction.OnDeleteClick("route-1"))
