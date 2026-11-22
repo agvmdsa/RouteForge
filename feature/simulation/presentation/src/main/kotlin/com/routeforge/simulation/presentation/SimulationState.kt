@@ -31,6 +31,7 @@ internal data class SimulationState(
     /** The address of the pending teleport's position, once the lookup has found one. */
     val pendingTeleportAddress: AddressLabel? = null,
     val isPendingCancelMock: Boolean = false,
+    val isRuntimePermissionRequestPending: Boolean = true,
     val loadedRoute: Route? = null,
     val playbackSpeedKmh: Float = SpeedPresetType.CAR.kilometersPerHour.toFloat(),
     val executionModeSelection: ExecutionModeSelection = ExecutionModeSelection.ONCE,

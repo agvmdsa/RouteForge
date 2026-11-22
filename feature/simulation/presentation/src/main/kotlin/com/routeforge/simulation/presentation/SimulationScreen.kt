@@ -60,7 +60,9 @@ internal fun SimulationRoot(
             }
         }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(state.isRuntimePermissionRequestPending) {
+        if (!state.isRuntimePermissionRequestPending) return@LaunchedEffect
+        viewModel.onAction(SimulationAction.OnRuntimePermissionsRequested)
         val requiredPermissions =
             buildList {
                 add(Manifest.permission.ACCESS_FINE_LOCATION)

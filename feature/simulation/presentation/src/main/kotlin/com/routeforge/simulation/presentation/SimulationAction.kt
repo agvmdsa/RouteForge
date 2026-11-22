@@ -68,6 +68,9 @@ internal sealed interface SimulationAction {
 
     data object OnLocationPermissionGranted : SimulationAction
 
+    /** Fired when the screen is about to ask for the runtime permissions, so that coming back to the screen does not ask again. */
+    data object OnRuntimePermissionsRequested : SimulationAction
+
     /** Fired when the screen resumes (app foregrounded, or returning from Settings) — re-checks
      *  mock-location authorization so a revocation is caught even without the user acting on it. */
     data object OnScreenResumed : SimulationAction
