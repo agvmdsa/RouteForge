@@ -116,7 +116,7 @@ internal object ExternalLinkParser {
         path
             .removePrefix("/maps/dir")
             .split('/')
-            .mapNotNull { COORDINATE_PAIR.matchEntire(URLDecoder.decode(it, "UTF-8")) }
+            .mapNotNull { COORDINATE_PAIR.matchEntire(decodeOrKeep(it)) }
             .map { pointOf(it) }
 
     private fun googlePlaceName(path: String): String? =
@@ -124,14 +124,18 @@ internal object ExternalLinkParser {
             .find(path)
             ?.groupValues
             ?.get(1)
-            ?.let { URLDecoder.decode(it, "UTF-8").trim() }
+            ?.let { decodeOrKeep(it).trim() }
             ?.takeIf { it.isNotBlank() && !COORDINATE_PAIR.matches(it) }
 
     private fun queryParameters(query: String): Map<String, String> =
         query
             .split('&')
             .filter { it.contains('=') }
-            .associate { it.substringBefore('=').lowercase() to URLDecoder.decode(it.substringAfter('='), "UTF-8") }
+            .associate { it.substringBefore('=').lowercase() to decodeOrKeep(it.substringAfter('=')) }
+
+    /** A `%` that does not start an escape (as in "100%") is common in links written by hand; the text is kept as it is then,
+     *  rather than throwing away the whole link for one part of it. */
+    private fun decodeOrKeep(text: String): String = runCatching { URLDecoder.decode(text, "UTF-8") }.getOrDefault(text)
 
     private fun pointOf(match: MatchResult): RoutePoint? = pointOf(match.groupValues[1], match.groupValues[2])
 
