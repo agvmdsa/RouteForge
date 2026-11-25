@@ -20,8 +20,7 @@ when you reach it. Order matters: the first two parts are mostly waiting, so sta
       with GitHub Pages (a free plan needs the repository to be public); expected address:
       `https://agvmdsa.github.io/routeforge-site/privacy/`. **Do not rename or delete that repository afterwards.**
 - [ ] A public contact: `agvmdsa@gmail.com` (it is shown on the store page).
-- [ ] A new release key (the maintainer creates it; the key of the 1.0.0 test file is abandoned). `RELEASING.md` has the steps;
-      with Play App Signing it becomes the upload key, and Google keeps the key that signs what users install.
+- [ ] A new release key (the maintainer creates it; the key of the 1.0.0 test file is abandoned). With Play App Signing it becomes the upload key, and Google keeps the key that signs what users install.
 
 ## 3. Changes in the app before the release
 
