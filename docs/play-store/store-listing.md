@@ -39,11 +39,10 @@ GOOD TO KNOW
 • Search, map pictures and map downloads need an internet connection. Routes work offline once their region is downloaded.
 • Map data © OpenStreetMap contributors.
 
-Privacy policy: PASTE THE ADDRESS OF THE POLICY PAGE HERE
+Privacy policy: https://routeforge.andgabx.dev/privacy/
 ```
 
-**Contact details:** e-mail `agvmdsa@gmail.com` (shown publicly on the store page); website: the address of the site once it is
-public; phone: optional, leave empty.
+**Contact details:** e-mail `agvmdsa@gmail.com` (shown publicly on the store page); website: `https://routeforge.andgabx.dev/`; phone: optional, leave empty.
 
 **Category:** Tools. **Tags:** choose from the Console's list, the ones that fit (tools, maps and navigation if offered).
 
