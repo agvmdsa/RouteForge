@@ -19,9 +19,8 @@ private const val MIN_WAYPOINTS = 2
 /** Plan Route's half of spec 008's shared edit-sheet feature (research.md Decision 9) — a second,
  *  sibling ViewModel to [com.routeforge.routing.presentation.routerequest.RouteRequestViewModel].
  *  Only the reorder-list's own reorder/delete actions go through this pipeline; Plan Route's
- *  existing map-tap-add/marker-drag-move paths are unchanged. Per research.md Decision 12
- *  (`/speckit-analyze` finding C3), [WaypointEditAction.OnOpen.activeMode] is Free-roam whenever
- *  no mode has been chosen yet on Plan Route — it always succeeds, so a pre-choice edit here can
+ *  existing map-tap-add/marker-drag-move paths are unchanged. [WaypointEditAction.OnOpen.activeMode] is
+ *  Free-roam whenever no mode has been chosen yet on Plan Route — it always succeeds, so a pre-choice edit here can
  *  never trigger FR-010's revert path, matching Plan Route's existing never-reverts behavior. */
 internal class WaypointEditViewModel(
     private val recomputeRouteForBothModes: RecomputeRouteForBothModesUseCase,

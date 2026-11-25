@@ -51,8 +51,8 @@ private const val READ_ONLY_ALPHA = 0.5f
 /** Shared reorderable waypoint list (FR-001) — long-press-and-drag the handle to reorder, swipe to
  *  delete. Items with [WaypointListItem.isEditable] `false` render dimmed, with no drag handle or
  *  delete affordance, and never start a drag (FR-012/FR-013). The 2-waypoint delete floor (FR-008)
- *  is the caller's responsibility, not this component's (spec 008's `/speckit-analyze` finding
- *  C5) — [onDelete] is only ever invoked for a tap/swipe the caller already decided to allow. */
+ *  is the caller's responsibility, not this component's — [onDelete] is only ever invoked for a tap/swipe
+ *  the caller already decided to allow. */
 @Composable
 internal fun WaypointReorderList(
     items: List<WaypointListItem>,
