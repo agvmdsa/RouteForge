@@ -9,7 +9,7 @@ export const SectionSubheading = ({
 }) => {
   return (
     <p
-      className={`text-center text-base text-zinc-400 md:text-lg ${persistCenter ? "" : "mx-auto max-w-md md:mx-0 md:text-start"}`}
+      className={`text-center text-base text-coffee md:text-lg ${persistCenter ? "" : "mx-auto max-w-xl md:mx-0 md:text-start"}`}
     >
       {children}
     </p>
