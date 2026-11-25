@@ -6,7 +6,7 @@
 #   publish       creates the Release; the only job that can write, and it cannot read the signing secrets
 #
 # The four secrets are secrets of the repository environment "release", which the owner restricts to tags v*, so a run
-# started from a branch never receives them. See docs/RELEASING.md.
+# started from a branch never receives them.
 name: Release
 
 on:
