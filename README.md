@@ -36,7 +36,7 @@ Most "fake GPS" apps on the Play Store connect waypoints with a straight line an
 - **Favorites, not just one-off routes** — save a single location or a whole planned route by name and reuse it later, without re-tapping every point again.
 - **Recent places, one tap away** — the places you teleported to, added to a route or saved come back as a list on the search screen, so you can use one again without typing or a connection.
 - **Offline map data you control** — download only the regions you actually need, with a storage quota you set and manage yourself.
-- **No ads, open source.**
+- **No ads. Source available** for reading and noncommercial use (see [License](#license)).
 
 ## Install
 
@@ -86,4 +86,4 @@ Every pull request is checked automatically (code style, build and unit tests), 
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+The source is released under the [PolyForm Noncommercial License 1.0.0](LICENSE): you may read it, build it and use it for any noncommercial purpose, but not use it commercially or distribute it. See [LICENSE](LICENSE) for the full terms.
