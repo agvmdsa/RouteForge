@@ -4,22 +4,24 @@ import { twMerge } from "tailwind-merge";
 type Props = {
   children: ReactNode;
   href: string;
-  variant?: "splash" | "ghost";
+  variant?: "solid" | "ghost" | "onDark";
   external?: boolean;
   className?: string;
 };
 
 const VARIANTS = {
-  splash:
-    "rounded-md bg-gradient-to-br from-blue-400 to-blue-700 px-4 py-2 text-lg text-zinc-50 ring-2 ring-blue-500/50 ring-offset-2 ring-offset-zinc-950 transition-all hover:scale-[1.02] hover:ring-transparent active:scale-[0.98] active:ring-blue-500/70",
+  solid:
+    "bg-espresso text-cream shadow-sm hover:bg-coffee focus-visible:outline-espresso",
   ghost:
-    "rounded-md px-4 py-2 text-lg text-zinc-100 transition-all hover:scale-[1.02] hover:bg-zinc-800 hover:text-zinc-50 active:scale-[0.98]",
+    "border border-tan-deep text-espresso hover:bg-tan/40 focus-visible:outline-espresso",
+  onDark:
+    "bg-cream text-espresso hover:bg-cream-surface focus-visible:outline-cream",
 };
 
 export const ButtonLink = ({
   children,
   href,
-  variant = "splash",
+  variant = "solid",
   external,
   className,
 }: Props) => (
@@ -27,7 +29,11 @@ export const ButtonLink = ({
     href={href}
     target={external ? "_blank" : undefined}
     rel={external ? "noopener noreferrer" : undefined}
-    className={twMerge("inline-flex items-center gap-2", VARIANTS[variant], className)}
+    className={twMerge(
+      "inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-base font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
+      VARIANTS[variant],
+      className
+    )}
   >
     {children}
   </a>

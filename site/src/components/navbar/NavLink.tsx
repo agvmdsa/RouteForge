@@ -14,9 +14,9 @@ export const NavLink = ({
   return (
     <Link
       href={href}
-      rel="nofollow"
       target={external ? "_blank" : undefined}
-      className="group flex items-center gap-0.5 text-xs text-zinc-200 transition-colors hover:text-zinc-50 sm:text-sm"
+      rel={external ? "noopener noreferrer" : undefined}
+      className="group flex items-center gap-0.5 text-xs text-coffee transition-colors hover:text-espresso sm:text-sm"
     >
       <span>{children}</span>
       {external && (

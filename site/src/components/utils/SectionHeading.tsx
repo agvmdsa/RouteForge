@@ -9,7 +9,7 @@ export const SectionHeading = ({
 }) => {
   return (
     <h2
-      className={`text-center text-3xl font-semibold leading-tight sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight ${persistCenter ? "" : "md:text-start"}`}
+      className={`text-center text-3xl font-semibold leading-tight text-espresso sm:text-4xl sm:leading-tight md:text-5xl md:leading-tight ${persistCenter ? "" : "md:text-start"}`}
     >
       {children}
     </h2>

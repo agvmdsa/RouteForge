@@ -8,7 +8,7 @@ export default function Document() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" type="image/svg+xml" href="/logo.svg" />
       </Head>
-      <body className="bg-zinc-950 text-zinc-200 selection:bg-zinc-600">
+      <body className="bg-cream text-ink selection:bg-tan">
         <Main />
         <NextScript />
       </body>

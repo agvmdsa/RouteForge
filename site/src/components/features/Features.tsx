@@ -51,20 +51,23 @@ export const Features = () => {
     <section id="features" className="relative overflow-hidden py-20 md:py-28">
       <MaxWidthWrapper className="relative z-10">
         <SectionHeadingSpacing>
-          <SectionHeading>Built for testing, done properly</SectionHeading>
-          <SectionSubheading>
+          <SectionHeading persistCenter>Built for testing, done properly</SectionHeading>
+          <SectionSubheading persistCenter>
             Most fake GPS apps join waypoints with a straight line and ignore
             basic physics. RouteForge aims to do it right.
           </SectionSubheading>
         </SectionHeadingSpacing>
-        <div className="grid gap-9 sm:grid-cols-2 md:gap-12 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map(({ Icon, title, text }) => (
-            <div key={title}>
-              <h3 className="mb-1.5 flex items-start text-lg font-medium md:text-xl">
-                <Icon className="mr-1.5 mt-1 h-[22px] w-[22px] shrink-0 text-blue-300" />
-                {title}
-              </h3>
-              <p className="text-sm text-zinc-400 md:text-base">{text}</p>
+            <div
+              key={title}
+              className="rounded-2xl border border-tan bg-cream-surface p-6 transition-shadow hover:shadow-[0_18px_40px_-24px_rgba(78,47,27,0.5)]"
+            >
+              <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-tan/50 text-route">
+                <Icon className="h-5 w-5" />
+              </span>
+              <h3 className="mb-1.5 text-lg font-semibold text-espresso md:text-xl">{title}</h3>
+              <p className="text-sm text-coffee md:text-base">{text}</p>
             </div>
           ))}
         </div>

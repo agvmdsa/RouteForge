@@ -17,7 +17,7 @@ export const NavBar = () => {
       initial={{ opacity: 0, y: "-100%" }}
       animate={{ opacity: 1, y: "0%" }}
       transition={{ duration: 1.25, ease: "easeInOut" }}
-      className={`fixed left-0 right-0 top-0 z-50 bg-zinc-950/0 py-3 transition-colors ${scrolled && "bg-zinc-950/80 backdrop-blur"}`}
+      className={`fixed left-0 right-0 top-0 z-50 bg-cream/0 py-3 transition-colors ${scrolled && "border-b border-tan/60 bg-cream/85 backdrop-blur"}`}
     >
       <MaxWidthWrapper>
         <div className="flex items-center justify-between">
