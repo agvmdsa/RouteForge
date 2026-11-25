@@ -10,10 +10,4 @@ captures/
 .cxx/
 local.properties
 
-.specify/
-.claude/
-/specs/
-docs/superpowers/specs/
-/.superpowers/
 feature/routing/data/src/main/assets/tiles/*.rd5
-/.handoffs/
