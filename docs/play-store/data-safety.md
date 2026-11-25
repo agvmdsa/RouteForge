@@ -51,8 +51,8 @@ audio, files and documents, calendar, contacts, web browsing, app info and perfo
 ## Things to re-check before the release
 
 - A new network call, a new library or a new kind of stored data changes this page, the privacy policy and the Console answers.
-- The privacy policy (page `privacy/index.html` of the separate `routeforge-site` repository) gets a sentence about the address lookup once it is
-  confirmed on a device; until then the page does not mention it.
+- The privacy policy (`site/src/pages/privacy.tsx`, published at `https://routeforge.andgabx.dev/privacy/`) describes the address lookup (confirmed
+  on a device on 2026-11-21); change it in the same commit as any change to this page.
 - The user agent of the requests will carry the contact address once that change is made; the policy already says it does.
 - The Console's form may list network (IP) addresses under a data type in a later version: if it does, add it to the rows
   above and to the policy.
