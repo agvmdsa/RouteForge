@@ -19,11 +19,11 @@ export const Modes = () => {
   return (
     <section id="features" className="relative scroll-mt-16 py-20 md:py-28">
       <MaxWidthWrapper>
-        <div className="mb-12 max-w-2xl md:mb-14">
-          <h2 className="font-display text-3xl font-semibold leading-[1.1] tracking-tight text-espresso sm:text-4xl md:text-5xl">
+        <div className="mb-12 grid gap-5 md:mb-14 md:grid-cols-2 md:items-end md:gap-8">
+          <h2 className="max-w-xl font-display text-3xl font-semibold leading-[1.1] tracking-tight text-espresso sm:text-4xl md:text-5xl">
             Follow the streets, or go straight
           </h2>
-          <p className="mt-4 max-w-xl text-base text-coffee md:text-lg">
+          <p className="max-w-xl text-base text-coffee md:text-lg">
             When a route is ready, RouteForge checks whether every leg can be
             driven along real roads. If it can, you choose how the route plays.
             If it cannot, only Free-roam is offered, never a broken option.
