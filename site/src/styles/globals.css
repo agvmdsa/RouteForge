@@ -3,6 +3,19 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    scrollbar-color: #c7ae8a #f6ecdd;
+  }
+
+  a {
+    text-underline-offset: 0.2em;
+  }
+
+  :focus-visible {
+    outline: 2px solid #c1521c;
+    outline-offset: 3px;
+  }
+
   h1,
   h2,
   h3 {

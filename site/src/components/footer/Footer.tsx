@@ -36,7 +36,7 @@ export const Footer = () => {
             ))}
           </ul>
         </nav>
-        <p className="max-w-xl text-xs text-coffee/80">
+        <p className="max-w-xl text-xs text-coffee">
           © 2026 Anderson Gabriel. Source available under the PolyForm
           Noncommercial License 1.0.0. Map data © OpenStreetMap contributors.
         </p>
