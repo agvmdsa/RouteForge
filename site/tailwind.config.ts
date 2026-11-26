@@ -12,6 +12,11 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        // Self-hosted through @fontsource-variable (imported in _app.tsx): no request to a font service.
+        display: ['"Fraunces Variable"', "Georgia", "Cambria", "serif"],
+        sans: ['"Instrument Sans Variable"', "ui-sans-serif", "system-ui", "sans-serif"],
+      },
       colors: {
         // The palette of the app's own logo and theme (RouteForgeTheme.kt, MapColors.kt).
         cream: { DEFAULT: "#F6ECDD", deep: "#EEDFC8", surface: "#FBF5EC" },
