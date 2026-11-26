@@ -9,7 +9,7 @@ export const NavBar = () => {
   const { scrollY } = useScroll();
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    setScrolled(latest > 150);
+    setScrolled(latest > 4);
   });
 
   return (
@@ -17,7 +17,7 @@ export const NavBar = () => {
       initial={{ opacity: 0, y: "-100%" }}
       animate={{ opacity: 1, y: "0%" }}
       transition={{ duration: 1.25, ease: "easeInOut" }}
-      className={`fixed left-0 right-0 top-0 z-50 py-2 transition-colors ${scrolled ? "border-b border-tan/60 bg-cream/85 backdrop-blur" : "bg-cream/0"}`}
+      className={`fixed left-0 right-0 top-0 z-50 border-b py-2 transition-colors duration-200 ${scrolled ? "border-tan/60 bg-cream/95 backdrop-blur" : "border-transparent bg-cream/0"}`}
     >
       <MaxWidthWrapper>
         <div className="flex items-center justify-between">
