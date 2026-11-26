@@ -15,7 +15,7 @@ export default function Privacy() {
       </Head>
       <main>
         <MaxWidthWrapper className="relative max-w-3xl pb-20 pt-28">
-          <h1 className="mb-2 text-3xl font-bold text-espresso md:text-5xl">
+          <h1 className="mb-2 font-display text-3xl font-semibold tracking-tight text-espresso md:text-5xl">
             RouteForge: Privacy Policy
           </h1>
           <p className="mb-8 text-coffee/70">Last updated: 25 November 2026</p>

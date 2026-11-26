@@ -10,7 +10,7 @@ export const PrivacyBand = () => {
     <section className="relative overflow-hidden bg-espresso py-20 md:py-24">
       <ContourLines className="text-cream opacity-[0.07]" />
       <MaxWidthWrapper className="relative z-10 flex flex-col items-center text-center">
-        <h2 className="mb-4 max-w-2xl text-3xl font-bold leading-tight text-cream sm:text-4xl md:text-5xl">
+        <h2 className="mb-4 max-w-2xl font-display text-3xl font-semibold leading-[1.1] tracking-tight text-cream sm:text-4xl md:text-5xl">
           Your real location stays on your phone
         </h2>
         <p className="mb-9 max-w-2xl text-base text-tan md:text-lg">

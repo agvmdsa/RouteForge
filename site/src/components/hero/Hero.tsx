@@ -24,7 +24,7 @@ export const Hero = () => {
           </motion.div>
           <motion.h1
             {...rise(0.15)}
-            className="mb-4 text-4xl font-bold leading-tight text-espresso sm:text-5xl sm:leading-tight lg:text-6xl lg:leading-tight"
+            className="mb-4 text-4xl font-display font-semibold leading-[1.08] tracking-tight text-espresso sm:text-5xl lg:text-6xl"
           >
             Simulate your location along real roads
           </motion.h1>
