@@ -4,7 +4,7 @@ import { REPOSITORY_URL } from "../utils/links";
 
 export const NavLinks = () => {
   return (
-    <ul className="flex gap-3 text-coffee md:gap-9">
+    <ul className="flex gap-3 text-coffee md:gap-8">
       <li>
         <NavLink href="/#features">Features</NavLink>
       </li>
