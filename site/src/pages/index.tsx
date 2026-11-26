@@ -1,6 +1,7 @@
 import Head from "next/head";
 import { PrivacyBand } from "@/components/cta/PrivacyBand";
-import { Features } from "@/components/features/Features";
+import { Capabilities } from "@/components/features/Capabilities";
+import { Modes } from "@/components/features/Modes";
 import { Steps } from "@/components/features/Steps";
 import { Hero } from "@/components/hero/Hero";
 
@@ -16,7 +17,8 @@ export default function Home() {
       </Head>
       <main>
         <Hero />
-        <Features />
+        <Modes />
+        <Capabilities />
         <Steps />
         <PrivacyBand />
       </main>

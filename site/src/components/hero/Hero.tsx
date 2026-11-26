@@ -54,7 +54,7 @@ export const Hero = () => {
           </motion.p>
         </div>
         <motion.div {...rise(0.3)}>
-          <RouteMap />
+          <RouteMap animated />
         </motion.div>
       </MaxWidthWrapper>
     </section>
