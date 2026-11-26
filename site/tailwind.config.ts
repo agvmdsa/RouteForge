@@ -15,6 +15,7 @@ const config: Config = {
       fontFamily: {
         // Self-hosted through @fontsource-variable (imported in _app.tsx): no request to a font service.
         display: ['"Fraunces Variable"', "Georgia", "Cambria", "serif"],
+        mono: ['"JetBrains Mono Variable"', "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
         sans: ['"Instrument Sans Variable"', "ui-sans-serif", "system-ui", "sans-serif"],
       },
       colors: {
