@@ -1,15 +1,40 @@
 import React, { useId } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 
-/** The road the Guided route follows: a, b, c and d are the waypoints. */
-const GUIDED_ROUTE = "M70 350 C 125 345, 150 270, 205 255 S 290 262, 335 195 S 410 110, 468 78";
 const WAYPOINTS = [
   { x: 70, y: 350, label: "A" },
-  { x: 205, y: 255, label: "B" },
-  { x: 335, y: 195, label: "C" },
+  { x: 190, y: 238, label: "B" },
+  { x: 340, y: 212, label: "C" },
   { x: 468, y: 78, label: "D" },
 ];
+
 const FREE_ROAM_ROUTE = WAYPOINTS.map((p, i) => `${i === 0 ? "M" : "L"}${p.x} ${p.y}`).join(" ");
+
+/**
+ * The road the Guided route follows: it leaves each waypoint and comes back to the next one by a winding way, bulging to one
+ * side and then the other (the sine terms are zero at both waypoints, so the route still passes through every one of them).
+ * Sampled at fixed steps with rounded numbers, so the server and the browser draw the same path.
+ */
+const windingRoute = (points: { x: number; y: number }[]) => {
+  const steps = 28;
+  const coordinates: string[] = [];
+  points.slice(0, -1).forEach((from, i) => {
+    const to = points[i + 1];
+    const dx = to.x - from.x;
+    const dy = to.y - from.y;
+    const length = Math.hypot(dx, dy);
+    const normal = { x: -dy / length, y: dx / length };
+    const side = i % 2 === 0 ? 1 : -1;
+    for (let k = i === 0 ? 0 : 1; k <= steps; k++) {
+      const u = k / steps;
+      const bulge = side * length * 0.3 * (Math.sin(Math.PI * u) + 0.4 * Math.sin(3 * Math.PI * u));
+      coordinates.push(`${(from.x + dx * u + normal.x * bulge).toFixed(1)} ${(from.y + dy * u + normal.y * bulge).toFixed(1)}`);
+    }
+  });
+  return `M${coordinates.join(" L")}`;
+};
+
+const GUIDED_ROUTE = windingRoute(WAYPOINTS);
 
 const ROADS = [
   "M20 300 C 120 300, 180 330, 260 310 S 400 260, 500 285",
