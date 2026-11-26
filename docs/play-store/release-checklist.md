@@ -16,9 +16,9 @@ when you reach it. Order matters: the first two parts are mostly waiting, so sta
 
 ## 2. Places the Console needs (outside the app)
 
-- [ ] The privacy policy at a public address: page `site/src/pages/privacy.tsx` of this repository, published by the `Site` workflow
-      with GitHub Pages at `https://routeforge.andgabx.dev/privacy/` (the domain is the maintainer's; it needs the `CNAME` record
-      `routeforge` pointing at `agvmdsa.github.io` and the custom domain set in the Pages settings). **Do not change this address afterwards.**
+- [ ] The privacy policy at a public address: page `site/src/pages/privacy.tsx` of this repository, built and served by Vercel (project
+      `routeforge-website`, root directory `site`) at `https://routeforge.andgabx.dev/privacy/`; the domain is the maintainer's and is
+      attached to that project. **Do not change this address afterwards.**
 - [ ] A public contact: `agvmdsa@gmail.com` (it is shown on the store page).
 - [ ] A new release key (the maintainer creates it; the key of the 1.0.0 test file is abandoned). With Play App Signing it becomes the upload key, and Google keeps the key that signs what users install.
 

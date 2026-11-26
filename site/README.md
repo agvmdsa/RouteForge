@@ -10,6 +10,7 @@ npm run dev       # http://localhost:3000
 npm run build     # writes the site to site/out
 ```
 
-The `Site` workflow builds it on every change to this folder and publishes it to GitHub Pages from `main`. The policy page
+Vercel builds and serves it (project `routeforge-website`, root directory `site`, domain `routeforge.andgabx.dev`); that setting lives in the
+Vercel dashboard, not in this repository. The `Site` workflow only checks every change to this folder (install, lint, build). The policy page
 (`src/pages/privacy.tsx`) must stay true to what the app does: change it together with `docs/play-store/data-safety.md` whenever the app
 starts sending something new off the device.
