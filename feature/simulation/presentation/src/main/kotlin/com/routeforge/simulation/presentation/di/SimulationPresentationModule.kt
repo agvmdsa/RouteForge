@@ -25,6 +25,7 @@ import com.routeforge.simulation.presentation.RouteStarter
 import com.routeforge.simulation.presentation.SimulationViewModel
 import com.routeforge.simulation.presentation.waypointedit.WaypointEditViewModel
 import org.koin.core.module.dsl.factoryOf
+import org.koin.core.module.dsl.viewModel
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 
@@ -53,5 +54,13 @@ val simulationPresentationModule =
         factoryOf(::PlaybackControls)
         factoryOf(::RealLocationTracker)
         viewModelOf(::SimulationViewModel)
-        viewModelOf(::WaypointEditViewModel)
+        viewModel {
+            WaypointEditViewModel(
+                recomputeRouteForBothModes = get(),
+                computeEditableWaypointRange = get(),
+                favoriteWaypointsRepository = get(),
+                recentPlacesRepository = get(),
+                addressLookup = get(),
+            )
+        }
     }

@@ -11,6 +11,8 @@ import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.usecase.ComputeEditableWaypointRangeUseCase
 import com.routeforge.coredomain.usecase.RecomputeRouteForBothModesUseCase
 import com.routeforge.coredomain.usecase.RouteRecomputeResult
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val MIN_EDITABLE_WAYPOINTS = 2
 
@@ -33,6 +36,7 @@ internal class WaypointEditViewModel(
     private val favoriteWaypointsRepository: FavoriteWaypointsRepository,
     private val recentPlacesRepository: RecentPlacesRepository,
     private val addressLookup: AddressLookup,
+    private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val _state = MutableStateFlow(WaypointEditState())
     val state = _state.asStateFlow()
@@ -214,7 +218,8 @@ internal class WaypointEditViewModel(
         editJob?.cancel()
         editJob =
             viewModelScope.launch {
-                when (val result = recomputeRouteForBothModes(newPoints, activeMode, bypassRegionCheck)) {
+                val recomputed = withContext(backgroundDispatcher) { recomputeRouteForBothModes(newPoints, activeMode, bypassRegionCheck) }
+                when (val result = recomputed) {
                     is RouteRecomputeResult.Applied -> {
                         route = result.activeRoute
                         committedPoints = newPoints

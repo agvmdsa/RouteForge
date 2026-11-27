@@ -16,6 +16,7 @@ import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
 import com.routeforge.coredomain.usecase.RecomputeRouteForBothModesUseCase
 import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.util.concurrent.Executors
 
 class WaypointEditViewModelTest {
     private val routingEngine = FakeRoutingEngine(snappableLatitudes = emptySet())
@@ -40,7 +42,8 @@ class WaypointEditViewModelTest {
             PrepareRouteOptionsUseCase(computeRoute, FreeRoamRouteBuilder()),
             computeRoute,
         )
-    private val viewModel = WaypointEditViewModel(recomputeRouteForBothModes)
+    private val dispatcher = UnconfinedTestDispatcher()
+    private val viewModel = WaypointEditViewModel(recomputeRouteForBothModes, dispatcher)
 
     private val points =
         listOf(
@@ -51,7 +54,7 @@ class WaypointEditViewModelTest {
 
     @BeforeEach
     fun setUp() {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
+        Dispatchers.setMain(dispatcher)
         routingEngine.snappableLatitudes = setOf(0.0, 1.0, 2.0)
     }
 
@@ -84,6 +87,28 @@ class WaypointEditViewModelTest {
             val event = eventDeferred.await() as WaypointEditEvent.Committed
             assertEquals(listOf(points[1], points[2], points[0]), event.points)
             assertFalse(viewModel.state.value.hasUnappliedReorder)
+        }
+
+    @Test
+    fun `the route is recomputed on the background dispatcher, not on the thread that handles the tap`() =
+        runTest {
+            val worker = Executors.newSingleThreadExecutor { Thread(it, "recompute-worker") }
+            try {
+                val viewModel = WaypointEditViewModel(recomputeRouteForBothModes, worker.asCoroutineDispatcher())
+                routingEngine.computePathResult =
+                    Route(points = points, geometry = points.map { LatLng(it.latitude, it.longitude) }, distanceMeters = 1.0)
+                viewModel.onAction(WaypointEditAction.OnOpen(points, RoutePlaybackMode.FREE_ROAM))
+                viewModel.onAction(WaypointEditAction.OnReorder(fromIndex = 0, toIndex = 2))
+                val eventDeferred = async { viewModel.events.first() }
+
+                viewModel.onAction(WaypointEditAction.OnApplyChanges)
+                eventDeferred.await()
+
+                assertTrue(routingEngine.computePathThreadNames.isNotEmpty())
+                assertTrue(routingEngine.computePathThreadNames.all { it == "recompute-worker" })
+            } finally {
+                worker.shutdown()
+            }
         }
 
     @Test
