@@ -105,7 +105,9 @@ class WaypointEditViewModelTest {
                 eventDeferred.await()
 
                 assertTrue(routingEngine.computePathThreadNames.isNotEmpty())
-                assertTrue(routingEngine.computePathThreadNames.all { it == "recompute-worker" })
+                // With assertions on (as Gradle runs the tests) coroutines append " @coroutine#N" to the name of their thread.
+                val threads = routingEngine.computePathThreadNames
+                assertTrue(threads.all { it.startsWith("recompute-worker") }, "the route was computed on $threads")
             } finally {
                 worker.shutdown()
             }
