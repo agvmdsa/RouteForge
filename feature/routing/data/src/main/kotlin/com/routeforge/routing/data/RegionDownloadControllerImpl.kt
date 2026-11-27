@@ -2,6 +2,7 @@ package com.routeforge.routing.data
 
 import com.routeforge.coredata.ForegroundServiceController
 import com.routeforge.coredata.NoOpForegroundServiceController
+import com.routeforge.coredomain.DataError
 import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.coredomain.RegionUsageTracker
 import com.routeforge.coredomain.Result
@@ -10,6 +11,7 @@ import com.routeforge.routing.domain.RegionDownloadController
 import com.routeforge.routing.domain.RegionDownloadEvent
 import com.routeforge.routing.domain.model.RegionDownloadState
 import com.routeforge.routing.domain.usecase.DownloadRegionUseCase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -32,7 +34,8 @@ internal class RegionDownloadControllerImpl(
     private val _state = MutableStateFlow<RegionDownloadState?>(null)
     override val state: StateFlow<RegionDownloadState?> = _state.asStateFlow()
 
-    private val _events = Channel<RegionDownloadEvent>()
+    // Buffered: a failure that happens while no screen listens must not hold the download open (state and notification stuck).
+    private val _events = Channel<RegionDownloadEvent>(Channel.BUFFERED)
     override val events = _events.receiveAsFlow()
 
     private var downloadJob: Job? = null
@@ -44,10 +47,16 @@ internal class RegionDownloadControllerImpl(
         downloadJob =
             coroutineScope.launch {
                 val result =
-                    downloadRegion(region.id) { fraction ->
-                        _state.update { it?.copy(progress = fraction) }
+                    try {
+                        downloadRegion(region.id) { fraction ->
+                            _state.update { it?.copy(progress = fraction) }
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Result.Error(DataError.Network.UNKNOWN)
                     }
-                if (result is Result.Error) _events.send(RegionDownloadEvent.Failed(region.id))
+                if (result is Result.Error) _events.trySend(RegionDownloadEvent.Failed(region.id))
                 _state.value = null
                 foregroundServiceController.stop()
             }

@@ -1,6 +1,9 @@
 package com.routeforge.routing.data
 
+import com.routeforge.coredata.ForegroundServiceController
+import com.routeforge.coredata.NoOpForegroundServiceController
 import com.routeforge.coredomain.DataError
+import com.routeforge.coredomain.EmptyResult
 import com.routeforge.coredomain.RegionCatalog
 import com.routeforge.coredomain.RegionDeletionResult
 import com.routeforge.coredomain.RegionUsageTracker
@@ -11,6 +14,7 @@ import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.RegionStatus
 import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
 import com.routeforge.routing.domain.RegionDownloadEvent
+import com.routeforge.routing.domain.RegionDownloader
 import com.routeforge.routing.domain.testing.FakeRegionDownloader
 import com.routeforge.routing.domain.testing.FakeStorageQuotaStore
 import com.routeforge.routing.domain.usecase.DownloadRegionUseCase
@@ -60,6 +64,26 @@ private class FakeRegionCatalog : RegionCatalog {
     }
 }
 
+private class CountingForegroundService : ForegroundServiceController {
+    var starts = 0
+    var stops = 0
+
+    override fun start() {
+        starts++
+    }
+
+    override fun stop() {
+        stops++
+    }
+}
+
+private class ThrowingRegionDownloader : RegionDownloader {
+    override suspend fun download(
+        region: Region,
+        onProgress: (fraction: Float?) -> Unit,
+    ): EmptyResult<DataError.Network> = throw IllegalStateException("the download blew up")
+}
+
 private class FakeRegionUsageTracker : RegionUsageTracker {
     private val lastUsed = mutableMapOf<String, Long>()
     val clearCalls = mutableListOf<String>()
@@ -85,11 +109,14 @@ class RegionDownloadControllerImplTest {
     private val catalog = FakeRegionCatalog()
     private val regionUsageTracker = FakeRegionUsageTracker()
 
-    private fun createController(): RegionDownloadControllerImpl =
+    private fun createController(
+        foregroundService: ForegroundServiceController = NoOpForegroundServiceController,
+        regionDownloader: RegionDownloader = downloader,
+    ): RegionDownloadControllerImpl =
         RegionDownloadControllerImpl(
             downloadRegion =
                 DownloadRegionUseCase(
-                    regionDownloader = downloader,
+                    regionDownloader = regionDownloader,
                     regionCatalog = catalog,
                     recordRegionUsage = RecordRegionUsageUseCase(regionUsageTracker),
                     enforceStorageQuota =
@@ -103,6 +130,7 @@ class RegionDownloadControllerImplTest {
                 ),
             regionCatalog = catalog,
             regionUsageTracker = regionUsageTracker,
+            foregroundServiceController = foregroundService,
             coroutineScope = CoroutineScope(dispatcher),
         )
 
@@ -146,6 +174,45 @@ class RegionDownloadControllerImplTest {
             assertEquals(RegionDownloadEvent.Failed(region.id), eventDeferred.await())
             assertNull(controller.state.value)
             assertTrue(catalog.deleteRegionCalls.isEmpty())
+        }
+
+    @Test
+    fun `a failed download with nobody listening still clears the state and stops the service`() {
+        downloader.result = Result.Error(DataError.Network.NO_INTERNET)
+        val service = CountingForegroundService()
+        val controller = createController(service)
+
+        controller.start(region)
+
+        assertNull(controller.state.value)
+        assertEquals(1, service.stops)
+        downloader.result = Result.Success(Unit)
+        controller.start(otherRegion)
+        assertEquals(2, service.starts)
+    }
+
+    @Test
+    fun `a failure that happened with nobody listening is delivered to the first listener`() =
+        runTest(dispatcher) {
+            downloader.result = Result.Error(DataError.Network.NO_INTERNET)
+            val controller = createController()
+
+            controller.start(region)
+
+            assertEquals(RegionDownloadEvent.Failed(region.id), controller.events.first())
+        }
+
+    @Test
+    fun `a download that throws clears the state, stops the service and reports a failure`() =
+        runTest(dispatcher) {
+            val service = CountingForegroundService()
+            val controller = createController(service, ThrowingRegionDownloader())
+
+            controller.start(region)
+
+            assertNull(controller.state.value)
+            assertEquals(1, service.stops)
+            assertEquals(RegionDownloadEvent.Failed(region.id), controller.events.first())
         }
 
     @Test
