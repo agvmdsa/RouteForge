@@ -166,6 +166,53 @@ class SimulationControllerImplTest {
         }
 
     @Test
+    fun `changing the speed of a finished route within the delay does not keep the session alive`() =
+        runTest {
+            val controller =
+                SimulationControllerImpl(
+                    mockLocationPublisher = publisher,
+                    mockLocationAuthorizationChecker = authorizationChecker,
+                    lastKnownRealLocationReader = lastKnownRealLocation,
+                    coroutineScope = this,
+                    completionAutoStopDelayMillis = 5_000L,
+                )
+            controller.startRoute(shortRoute, speedSetting = SpeedSetting.Manual(100f))
+            controller.tick(elapsedSeconds = 1.0)
+            assertEquals(SimulationStatus.COMPLETED, controller.mockedSession.value?.status)
+
+            advanceTimeBy(2_000)
+            controller.setSpeed(SpeedSetting.Manual(50f))
+            advanceTimeBy(4_000) // total 6_000ms, past the delay counted from the moment the route finished
+
+            assertNull(controller.mockedSession.value)
+        }
+
+    @Test
+    fun `a route that finishes inside the window of an earlier one is not ended by the earlier timer`() =
+        runTest {
+            val controller =
+                SimulationControllerImpl(
+                    mockLocationPublisher = publisher,
+                    mockLocationAuthorizationChecker = authorizationChecker,
+                    lastKnownRealLocationReader = lastKnownRealLocation,
+                    coroutineScope = this,
+                    completionAutoStopDelayMillis = 5_000L,
+                )
+            controller.startRoute(shortRoute, speedSetting = SpeedSetting.Manual(100f))
+            controller.tick(elapsedSeconds = 1.0)
+            advanceTimeBy(3_000)
+            controller.startRoute(shortRoute, speedSetting = SpeedSetting.Manual(100f))
+            controller.tick(elapsedSeconds = 1.0)
+            assertEquals(SimulationStatus.COMPLETED, controller.mockedSession.value?.status)
+
+            advanceTimeBy(3_000) // total 6_000ms: the first timer (5_000ms) has fired, the second (8_000ms) has not
+            assertEquals(SimulationStatus.COMPLETED, controller.mockedSession.value?.status)
+
+            advanceTimeBy(3_000) // total 9_000ms: the second timer has fired too
+            assertNull(controller.mockedSession.value)
+        }
+
+    @Test
     fun `a manual stop before the completion-auto-stop delay ends the session at once, and the later scheduled callback is a no-op`() =
         runTest {
             val controller =

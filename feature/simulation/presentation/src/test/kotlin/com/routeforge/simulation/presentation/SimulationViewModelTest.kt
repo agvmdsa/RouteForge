@@ -137,6 +137,7 @@ class SimulationViewModelTest {
                     stopSimulation = StopSimulationUseCase(controller),
                     setSpeed = SetSpeedUseCase(controller),
                     lastComputedRouteClearer = lastComputedRoute,
+                    mockLocationAuthorizationGuard = mockLocationAuthorizationGuard,
                 ),
             routeModeSwitcher =
                 RouteModeSwitcher(

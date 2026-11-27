@@ -26,6 +26,7 @@ internal class JoystickSessionController(
     private val stopSimulation: StopSimulationUseCase,
     private val setSpeed: SetSpeedUseCase,
     private val lastComputedRouteClearer: LastComputedRouteHandoffClearer,
+    private val mockLocationAuthorizationGuard: MockLocationAuthorizationGuard,
 ) {
     /**
      * Tracks locally (synchronously) whether the current joystick drag has already started a
@@ -49,10 +50,14 @@ internal class JoystickSessionController(
         state: MutableStateFlow<SimulationState>,
     ) {
         if (!joystickSessionStarted) {
+            if (!mockLocationAuthorizationGuard.isAuthorized()) {
+                mockLocationAuthorizationGuard.reportUnauthorized(state)
+                return
+            }
             when (confirmInterrupt()) {
                 is Result.Success -> {
                     joystickSessionStarted = true
-                    state.update { it.copy(errorType = null) }
+                    state.update { it.copy(errorType = null, isBlockedByAuthorization = false) }
                     setSpeed(SpeedSetting.Manual(state.value.joystickSpeedKmh / KMH_TO_MPS_DIVISOR))
                 }
                 is Result.Error -> {

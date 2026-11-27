@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicInteger
 
 private const val DEFAULT_TICK_INTERVAL_MILLIS = 100L
 private const val DEFAULT_COMPLETION_AUTO_STOP_DELAY_MILLIS = 5_000L
@@ -53,6 +54,7 @@ internal class SimulationControllerImpl(
     private val _authorizationLost = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     override val authorizationLost: SharedFlow<Unit> = _authorizationLost.asSharedFlow()
 
+    private val completionCount = AtomicInteger()
     private var tickJob: Job? = null
 
     override fun teleport(
@@ -230,19 +232,20 @@ internal class SimulationControllerImpl(
         publishCurrent()
 
         if (current.status != SimulationStatus.COMPLETED && updated.status == SimulationStatus.COMPLETED) {
-            scheduleCompletionAutoStop(updated)
+            scheduleCompletionAutoStop(completionCount.incrementAndGet())
         }
     }
 
     /** FR-008/009/010/011: a route's truly final completion stays visible (notification + every UI
      *  surface reactive to [mockedSession]) for [completionAutoStopDelayMillis], then ends the session
-     *  exactly as [stop] would. Guarding by reference identity (`===`), not just status, means a later,
-     *  different session reaching COMPLETED within the same window is unaffected by this stale callback;
+     *  exactly as [stop] would. The timer carries the number of the completion that started it: a later session
+     *  reaching COMPLETED within the same window has a higher number, so it is unaffected by this stale callback, while a
+     *  copy of the same finished session (the user changing the speed or the mode in the meantime) still counts.
      *  [stop] is already idempotent, so a manual stop racing this timer needs no extra guard either way. */
-    private fun scheduleCompletionAutoStop(completedSession: SimulationSession) {
+    private fun scheduleCompletionAutoStop(completion: Int) {
         coroutineScope.launch {
             delay(completionAutoStopDelayMillis)
-            if (_mockedSession.value === completedSession) stop()
+            if (completionCount.get() == completion && _mockedSession.value?.status == SimulationStatus.COMPLETED) stop()
         }
     }
 

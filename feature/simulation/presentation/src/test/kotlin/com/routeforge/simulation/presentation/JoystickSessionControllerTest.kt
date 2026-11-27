@@ -4,6 +4,7 @@ import com.routeforge.coredomain.Result
 import com.routeforge.coredomain.handoff.LastComputedRouteHandoffImpl
 import com.routeforge.coredomain.model.LatLng
 import com.routeforge.coredomain.model.Route
+import com.routeforge.coredomain.testing.FakeMockLocationAuthorizationChecker
 import com.routeforge.simulation.domain.JoystickStartFailure
 import com.routeforge.simulation.domain.model.SimulationMode
 import com.routeforge.simulation.domain.model.SimulationSession
@@ -11,6 +12,7 @@ import com.routeforge.simulation.domain.model.SimulationStatus
 import com.routeforge.simulation.domain.model.SpeedSetting
 import com.routeforge.simulation.domain.testing.FakeSimulationController
 import com.routeforge.simulation.domain.usecase.ConfirmJoystickInterruptUseCase
+import com.routeforge.simulation.domain.usecase.ObserveAuthorizationLostUseCase
 import com.routeforge.simulation.domain.usecase.PauseSimulationUseCase
 import com.routeforge.simulation.domain.usecase.RequestJoystickInterruptUseCase
 import com.routeforge.simulation.domain.usecase.ResumeSimulationUseCase
@@ -27,6 +29,7 @@ import org.junit.jupiter.api.Test
 class JoystickSessionControllerTest {
     private val controller = FakeSimulationController()
     private val lastComputedRoute = LastComputedRouteHandoffImpl()
+    private val authorizationChecker = FakeMockLocationAuthorizationChecker()
     private val joystickSessionController =
         JoystickSessionController(
             requestJoystickInterrupt = RequestJoystickInterruptUseCase(controller),
@@ -37,6 +40,11 @@ class JoystickSessionControllerTest {
             stopSimulation = StopSimulationUseCase(controller),
             setSpeed = SetSpeedUseCase(controller),
             lastComputedRouteClearer = lastComputedRoute,
+            mockLocationAuthorizationGuard =
+                MockLocationAuthorizationGuard(
+                    mockLocationAuthorizationChecker = authorizationChecker,
+                    observeAuthorizationLost = ObserveAuthorizationLostUseCase(controller),
+                ),
         )
 
     private val sampleRoute =
@@ -59,6 +67,32 @@ class JoystickSessionControllerTest {
         route = null,
         distanceTraveledMeters = 0.0,
     )
+
+    @Test
+    fun `a drag while the app is not the mock location app is blocked and never starts the joystick`() {
+        authorizationChecker.authorized = false
+        val state = MutableStateFlow(SimulationState(isJoystickVisible = true))
+
+        joystickSessionController.steerJoystick(90f, state)
+
+        assertEquals(0, controller.startJoystickCallCount)
+        assertEquals(SimulationErrorType.NOT_AUTHORIZED, state.value.errorType)
+        assertTrue(state.value.isBlockedByAuthorization)
+    }
+
+    @Test
+    fun `a drag after the authorization is back starts the joystick and lifts the block`() {
+        authorizationChecker.authorized = false
+        val state = MutableStateFlow(SimulationState(isJoystickVisible = true))
+        joystickSessionController.steerJoystick(90f, state)
+        authorizationChecker.authorized = true
+
+        joystickSessionController.steerJoystick(90f, state)
+
+        assertEquals(1, controller.startJoystickCallCount)
+        assertNull(state.value.errorType)
+        assertFalse(state.value.isBlockedByAuthorization)
+    }
 
     @Test
     fun `a drag with no real fix yet gives the no real fix error and never updates the direction`() {

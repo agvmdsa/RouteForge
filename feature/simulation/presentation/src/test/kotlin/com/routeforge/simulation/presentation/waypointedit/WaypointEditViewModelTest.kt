@@ -25,6 +25,7 @@ import com.routeforge.coredomain.usecase.PrepareRouteOptionsUseCase
 import com.routeforge.coredomain.usecase.RecomputeRouteForBothModesUseCase
 import com.routeforge.coredomain.usecase.RecordRegionUsageUseCase
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -40,6 +41,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.util.concurrent.Executors
 
 class WaypointEditViewModelTest {
     private val routingEngine = FakeRoutingEngine()
@@ -63,6 +65,7 @@ class WaypointEditViewModelTest {
             favoriteWaypointsRepository,
             recentPlaces,
             AddressLookup(reverseGeocoder),
+            backgroundDispatcher = dispatcher,
         )
 
     private val points =
@@ -111,6 +114,36 @@ class WaypointEditViewModelTest {
         assertEquals(2, viewModel.state.value.firstEditableIndex)
         assertTrue(viewModel.state.value.isSessionActive)
     }
+
+    @Test
+    fun `the route is recomputed on the background dispatcher, not on the thread that handles the tap`() =
+        runTest {
+            val worker = Executors.newSingleThreadExecutor { Thread(it, "recompute-worker") }
+            try {
+                val viewModel =
+                    WaypointEditViewModel(
+                        recomputeRouteForBothModes,
+                        computeEditableWaypointRange,
+                        favoriteWaypointsRepository,
+                        recentPlaces,
+                        AddressLookup(reverseGeocoder),
+                        backgroundDispatcher = worker.asCoroutineDispatcher(),
+                    )
+                viewModel.onAction(WaypointEditAction.OnOpen(loadedRoute, distanceTraveledMeters = null))
+                viewModel.onAction(WaypointEditAction.OnReorder(fromIndex = 0, toIndex = 2))
+                val eventDeferred = async { viewModel.events.first() }
+
+                viewModel.onAction(WaypointEditAction.OnApplyChanges)
+                eventDeferred.await()
+
+                assertTrue(routingEngine.computePathThreadNames.isNotEmpty())
+                // With assertions on (as Gradle runs the tests) coroutines append " @coroutine#N" to the name of their thread.
+                val threads = routingEngine.computePathThreadNames
+                assertTrue(threads.all { it.startsWith("recompute-worker") }, "the route was computed on $threads")
+            } finally {
+                worker.shutdown()
+            }
+        }
 
     @Test
     fun `reordering alone only updates the displayed order, without recomputing`() {

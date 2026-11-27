@@ -6,6 +6,8 @@ import com.routeforge.coredomain.model.RoutePlaybackMode
 import com.routeforge.coredomain.model.RoutePoint
 import com.routeforge.coredomain.usecase.RecomputeRouteForBothModesUseCase
 import com.routeforge.coredomain.usecase.RouteRecomputeResult
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val MIN_WAYPOINTS = 2
 
@@ -24,6 +27,7 @@ private const val MIN_WAYPOINTS = 2
  *  never trigger FR-010's revert path, matching Plan Route's existing never-reverts behavior. */
 internal class WaypointEditViewModel(
     private val recomputeRouteForBothModes: RecomputeRouteForBothModesUseCase,
+    private val backgroundDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val _state = MutableStateFlow(WaypointEditState())
     val state = _state.asStateFlow()
@@ -89,7 +93,8 @@ internal class WaypointEditViewModel(
         editJob?.cancel()
         editJob =
             viewModelScope.launch {
-                when (val result = recomputeRouteForBothModes(points, activeMode, bypassRegionCheck)) {
+                val recomputed = withContext(backgroundDispatcher) { recomputeRouteForBothModes(points, activeMode, bypassRegionCheck) }
+                when (val result = recomputed) {
                     is RouteRecomputeResult.Applied -> {
                         committedPoints = points
                         _state.update {

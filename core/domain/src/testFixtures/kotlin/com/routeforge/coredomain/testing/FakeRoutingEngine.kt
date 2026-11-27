@@ -4,6 +4,7 @@ import com.routeforge.coredomain.RoutingEngine
 import com.routeforge.coredomain.model.Region
 import com.routeforge.coredomain.model.Route
 import com.routeforge.coredomain.model.RoutePoint
+import java.util.concurrent.CopyOnWriteArrayList
 
 class FakeRoutingEngine(
     snappableLatitudes: Set<Double>? = null,
@@ -23,6 +24,9 @@ class FakeRoutingEngine(
     var computePathResults: List<Route?>? = null
     private var computePathCallCount = 0
 
+    /** The name of the thread each [computePath] call ran on, so a test can tell where a use case did its blocking work. */
+    val computePathThreadNames = CopyOnWriteArrayList<String>()
+
     override fun snap(
         point: RoutePoint,
         availableRegions: List<Region>,
@@ -36,6 +40,7 @@ class FakeRoutingEngine(
     }
 
     override fun computePath(points: List<RoutePoint>): Route? {
+        computePathThreadNames.add(Thread.currentThread().name)
         val sequence = computePathResults ?: return computePathResult
         val index = computePathCallCount.coerceAtMost(sequence.size - 1)
         computePathCallCount++

@@ -112,7 +112,7 @@ val routingPresentationModule =
                 observeMapStyle = get(),
             )
         }
-        viewModelOf(::WaypointEditViewModel)
+        viewModel { WaypointEditViewModel(recomputeRouteForBothModes = get()) }
         viewModelOf(::RegionCatalogViewModel)
         viewModelOf(::RegionCoverageMapViewModel)
         viewModelOf(::SettingsViewModel)
